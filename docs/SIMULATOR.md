@@ -1199,8 +1199,8 @@ path, so it must not write to `web/leaf_battery.db`.
 **A physical adapter (`--bench`).** This tool *transmits*. A channel that is not
 `vcan*` is refused unless `--bench` is given and the link is up, in normal
 (not listen-only) mode, at `--bitrate` (500000): the kernel only reports that
-after you set it yourself (`sudo ip link set can0 type can bitrate 500000
-restart-ms 100`). The bench is a CANable wired to an ELM327 dongle on a
+after you set it yourself (`sudo ip link set can0 type can bitrate 500000`; the CANable's `gs_usb`
+driver rejects `restart-ms`). The bench is a CANable wired to an ELM327 dongle on a
 harness with **no car**; the dongle is the second node that ACKs, and with the
 dashboard on `--adapter ble` the whole chain is the real one: model, frames,
 adapter, ELM327, Bluetooth, reader. **Never** run it with the adapter plugged

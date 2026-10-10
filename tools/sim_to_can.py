@@ -8,7 +8,7 @@
 
 On a physical adapter (the bench: a CANable wired to an ELM327 dongle, no car):
 
-    sudo ip link set can0 down && sudo ip link set can0 type can bitrate 500000 restart-ms 100
+    sudo ip link set can0 down && sudo ip link set can0 type can bitrate 500000
     sudo ip link set can0 up
     python tools/sim_to_can.py --channel can0 --bench
 
@@ -69,7 +69,7 @@ def check_channel(channel, bench=False, bitrate=500000, info=link_info):
     if (link.get("linkinfo") or {}).get("info_kind") != "can":
         return f"{channel!r} is not a CAN device"
     if "UP" not in (link.get("flags") or []):
-        return f"{channel!r} is down: sudo ip link set {channel} type can bitrate {bitrate} restart-ms 100; sudo ip link set {channel} up"
+        return f"{channel!r} is down: sudo ip link set {channel} type can bitrate {bitrate}; sudo ip link set {channel} up"
     ctrl = data.get("ctrlmode") or []
     if "LISTEN-ONLY" in ctrl:
         return f"{channel!r} is in listen-only mode and cannot transmit; drop 'listen-only on'"
