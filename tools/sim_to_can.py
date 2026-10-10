@@ -20,7 +20,8 @@ them.
 
 Every frame is ASSERTED / simulated (see `simulator/canbus.py`).
 
-A physical channel needs `--bench`, and is refused unless the link is up, in
+A physical channel needs `--bench` (or the controller in loopback mode, where
+nothing reaches the wire), and is refused unless the link is up, in
 normal (not listen-only) mode, at the expected bitrate. This tool TRANSMITS
 fake ECU frames. Never run it with the adapter plugged into a car: the car's
 own modules would hear a second battery pack on their bus. A bus with only one
@@ -59,18 +60,20 @@ def check_channel(channel, bench=False, bitrate=500000, info=link_info):
     in normal mode, at `bitrate`. The kernel only reports a bitrate once one is set."""
     if channel.startswith("vcan"):
         return None
-    if not bench:
-        return (f"refusing {channel!r}: simulated frames on a physical adapter need --bench, "
-                "and the adapter must be on a bench harness, never plugged into a car")
     link = info(channel)
+    data = ((link or {}).get("linkinfo") or {}).get("info_data") or {}
+    ctrl = data.get("ctrlmode") or []
+    loop = "LOOPBACK" in ctrl and "UP" in ((link or {}).get("flags") or [])
+    if not bench and not loop:
+        return (f"refusing {channel!r}: simulated frames on a physical adapter need --bench "
+                "(bench harness, never a car) or the controller in loopback mode "
+                f"(sudo ip link set {channel} type can bitrate {bitrate} loopback on)")
     if link is None:
         return f"no such link {channel!r} (is the adapter plugged in?)"
-    data = (link.get("linkinfo") or {}).get("info_data") or {}
-    if (link.get("linkinfo") or {}).get("info_kind") != "can":
+    if link["linkinfo"].get("info_kind") != "can":
         return f"{channel!r} is not a CAN device"
     if "UP" not in (link.get("flags") or []):
         return f"{channel!r} is down: sudo ip link set {channel} type can bitrate {bitrate}; sudo ip link set {channel} up"
-    ctrl = data.get("ctrlmode") or []
     if "LISTEN-ONLY" in ctrl:
         return f"{channel!r} is in listen-only mode and cannot transmit; drop 'listen-only on'"
     got = (data.get("bittiming") or {}).get("bitrate")

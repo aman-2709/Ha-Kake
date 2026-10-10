@@ -1205,6 +1205,14 @@ harness with **no car**; the dongle is the second node that ACKs, and with the
 dashboard on `--adapter ble` the whole chain is the real one: model, frames,
 adapter, ELM327, Bluetooth, reader. **Never** run it with the adapter plugged
 into a vehicle: it would put a second battery pack's ECUs on the car's bus.
+**Loopback, no second node.** With `sudo ip link set can0 down; sudo ip link set
+can0 type can bitrate 500000 loopback on; sudo ip link set can0 up` the
+controller loops its own frames back to the other programs on the host and
+puts nothing on the wire, so no ACK is needed and `--bench` is not required.
+`tools/sim_to_can.py --channel can0`, `candump can0` and a dashboard on
+`--adapter can` (`can_channel: can0`) then exercise the real `gs_usb` driver
+and CANable with nothing else attached. Turn it off with `loopback off`
+before wiring up the dongle.
 Only the `0x21` read service is answered, so a generic OBD app that asks for
 mode 01 on `0x7DF` gets nothing; use `ecu-simulator` for that. Every frame is
 ASSERTED and the guard is tested (`tests/test_sim_to_can.py`).

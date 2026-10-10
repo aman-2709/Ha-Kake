@@ -40,3 +40,9 @@ def test_missing_link_down_listen_only_and_wrong_bitrate_are_refused():
     assert "expected 500000" in check("can0", info=link(bitrate=250000))
     assert "expected 500000" in check("can0", info=link(bitrate=None))
     assert "not a CAN" in check("eth0", info=link(kind="veth"))
+
+
+def test_loopback_needs_no_bench_flag_but_still_a_good_link():
+    assert check("can0", bench=False, info=link(ctrl=["LOOPBACK"])) is None
+    assert "expected 500000" in check("can0", bench=False, info=link(ctrl=["LOOPBACK"], bitrate=250000))
+    assert "--bench" in check("can0", bench=False, info=link(up=False, ctrl=["LOOPBACK"]))
