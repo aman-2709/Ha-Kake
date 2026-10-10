@@ -17,6 +17,7 @@ Stop a demo with `Ctrl-C` before starting the next one. The dashboard uses port 
 | 3 | Replay | Real recorded data, decoded by the real code |
 | 4 | Simulated CAN bus | The native CAN path at the real frame rate |
 | 5 | Canned JSON | The page only, no reader |
+| 6 | CAN frames on `vcan0` | Raw frames you can see with `candump`, read by the dashboard |
 
 ---
 
@@ -114,6 +115,37 @@ venv/bin/python web/app.py --demo
 | Argument | Meaning |
 |---|---|
 | `--demo` | Serve frozen JSON from `docs/demo/` and start no reader. It is good for a quick look or for screenshots. `--demo PATH` uses another folder. |
+
+---
+
+## 6. Simulated CAN frames on `vcan0` (visible with `candump`)
+
+Demo 4 keeps the CAN bus inside one Python process. This one puts it on a real Linux CAN device, so you can watch the frames and read them from a second program. Linux only.
+
+One-time setup (it does not survive a reboot), then four terminals:
+
+```bash
+sudo modprobe vcan && sudo ip link add dev vcan0 type vcan && sudo ip link set up vcan0
+```
+
+```bash
+venv/bin/python -u tools/sim_to_can.py --scenario drive --knob soc=20     # 1: the simulated car
+candump vcan0                                                               # 2: the raw frames
+venv/bin/python web/app.py --adapter can --db /tmp/vcan.db                  # 3: the dashboard
+```
+
+| Part | Meaning |
+|---|---|
+| `tools/sim_to_can.py` | Runs the simulated ECUs and sends their frames, about 1,700 a second, on a SocketCAN device. |
+| `--channel vcan0` | The device (the default). `can0` also works on a bench with `--bench`; see `docs/SIMULATOR.md`. |
+| `--scenario drive` | The scripted drive from demo 2. |
+| `--knob soc=20` | Set one simulator control. Here the battery starts at 20 %. Repeat the flag for more. |
+| `-u` | Python flag: unbuffered output, so the progress line appears at once. |
+| `candump vcan0` | From `can-utils`: prints every frame on the device. |
+| `--adapter can` | Read a real CAN device through the native CAN code. Set `can_interface`, `can_channel` and `can_bitrate` in `config.local.json` first. |
+| `--db /tmp/vcan.db` | A scratch database. This path is not marked as simulated, so keep it away from the real one. |
+
+To switch to the real CANable later, change `can_channel` to `can0`. Nothing else in the reader changes.
 
 ---
 

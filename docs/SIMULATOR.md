@@ -1175,6 +1175,40 @@ scenario, the seed and `sim_bus_load`. `can_interface: "sim"` through
 database from `--adapter` and generated rows must never land next to real
 ones.
 
+### On a kernel CAN device (`tools/sim_to_can.py`)
+
+`--sim-can` keeps the ECUs on a python-can channel that only its own process
+can see. `tools/sim_to_can.py` puts the same `SimCanEcu` on a SocketCAN device
+instead, so other processes can read it: `candump`, `cansniffer`, or a
+dashboard started with `--adapter can` (`can_interface: socketcan`,
+`can_channel: vcan0`, in `config.local.json`). That is the same code path the
+CANable takes, so moving to the board changes one config key.
+
+```bash
+sudo ip link add dev vcan0 type vcan && sudo ip link set up vcan0     # once per boot
+python tools/sim_to_can.py --scenario drive --knob soc=20             # terminal 1
+candump vcan0                                                         # terminal 2
+python web/app.py --adapter can --db /tmp/vcan.db                     # terminal 3
+```
+
+Flags: `--channel` (default `vcan0`), `--bus car|ev`, `--vehicle`, `--scenario`,
+`--seed`, `--knob NAME=VALUE` (repeatable), `--bench`, `--bitrate`. Start the
+dashboard with a scratch `--db`: the reader reports `simulated: false` on this
+path, so it must not write to `web/leaf_battery.db`.
+
+**A physical adapter (`--bench`).** This tool *transmits*. A channel that is not
+`vcan*` is refused unless `--bench` is given and the link is up, in normal
+(not listen-only) mode, at `--bitrate` (500000): the kernel only reports that
+after you set it yourself (`sudo ip link set can0 type can bitrate 500000
+restart-ms 100`). The bench is a CANable wired to an ELM327 dongle on a
+harness with **no car**; the dongle is the second node that ACKs, and with the
+dashboard on `--adapter ble` the whole chain is the real one: model, frames,
+adapter, ELM327, Bluetooth, reader. **Never** run it with the adapter plugged
+into a vehicle: it would put a second battery pack's ECUs on the car's bus.
+Only the `0x21` read service is answered, so a generic OBD app that asks for
+mode 01 on `0x7DF` gets nothing; use `ecu-simulator` for that. Every frame is
+ASSERTED and the guard is tested (`tests/test_sim_to_can.py`).
+
 **What is on the bus.** Every Car-CAN id the profile's passive items decode
 (`0x421`, `0x358`, `0x284`, `0x60D`, `0x5C5`, `0x385`, `0x5B3`, `0x5A9`,
 `0x355`, `0x292`, plus `0x174` / `0x180` / `0x625`) encoded from the model
