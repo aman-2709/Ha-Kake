@@ -63,6 +63,11 @@
 /* body / doors */
 .door { transition: transform .35s cubic-bezier(.4,1.3,.5,1), fill .3s; }
 .door.open { fill: var(--orange) !important; }
+.tread { animation: treadroll 1s linear infinite; animation-play-state: paused; stroke: var(--card); stroke-width: 1.8; opacity: .7; }
+.tread.on { animation-play-state: running; stroke: var(--accent); }
+.tread.rev { animation-direction: reverse; }
+/* seen from above, the top of a rolling tyre moves forward (up the page) relative to the car */
+@keyframes treadroll { to { transform: translateY(-6px); } }
 .lamp { transition: fill .25s, opacity .25s, filter .25s; }
 .lamp.blink { animation: lampblink .48s steps(1, end) infinite; }
 @keyframes lampblink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.12; } }
@@ -74,7 +79,8 @@
 .fan-wrap svg { width: 64px; height: 64px; flex: none; }
 .fan-rotor { transform-origin: 32px 32px; animation: fanspin 2s linear infinite; animation-play-state: paused; }
 .fan-rotor.on { animation-play-state: running; }
-html.shot .fan-rotor, html.shot .lamp.blink { animation: none !important; }
+html.shot .fan-rotor, html.shot .lamp.blink, html.shot .tread { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .tread { animation: none; } }
 html.shot * { transition: none !important; }
 @keyframes fanspin { to { transform: rotate(360deg); } }
 .fan-bars { display: flex; gap: 3px; align-items: flex-end; height: 22px; }

@@ -515,6 +515,13 @@ depends on the card's height being known in advance, so `measureRows()` still
 sees a width-derived height on first load. The same files serve the dashboard
 and the cockpit.
 
+The **body** tile's wheels roll while the car moves: tread marks scroll up
+each wheel, toward the front (down in reverse) from `speed_mph`, so the tile lists the speed item
+`p284` and polls it even when the vehicle tile is off. The speed is a look, not
+a scale: the pitch is stretched so 3 mph is a slow roll and 50 mph a fast one,
+capped at 0.12 s per tread step to avoid strobing. It stops under
+`prefers-reduced-motion` and in the `html.shot` screenshot mode.
+
 Every tile that depends on a slow item shows its age. Power sign comes from
 the BMS, not from an SOC-delta guess. Temperatures are °F with °C beside them.
 

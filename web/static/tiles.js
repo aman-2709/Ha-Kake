@@ -172,6 +172,16 @@
     setLamp('lamp-brake-r', rearOn, brake ? BRAKE : TAIL, { glow: brake ? 10 : 3, opacity: brake ? 1 : 0.7 });
     setLamp('lamp-rev-l', rev, REV, { glow: 6 }); setLamp('lamp-rev-r', rev, REV, { glow: 6 });
 
+    // wheels: tread marks roll while the car moves. A look, not a scale: the pitch is stretched so
+    // 3 mph is a slow roll and 50 mph a fast one, and the cap keeps it from strobing.
+    const mph = Number(data.speed_mph) || 0, rolling = mph >= 1;
+    const roll = Math.min(1.5, Math.max(0.12, 6 / Math.max(mph, 1))).toFixed(2) + 's';
+    for (const el of root.querySelectorAll('.tread')) {
+      el.classList.toggle('on', rolling);
+      el.classList.toggle('rev', rev);
+      if (el.style.animationDuration !== roll) el.style.animationDuration = roll;
+    }
+
     // per-door padlocks: red closed when locked, grey open when unlocked
     const LOCKPOS = { 'lock-dl': [64, 130], 'lock-dr': [136, 130], 'lock-rl': [64, 184], 'lock-rr': [136, 184] };
     const locked = !!data.locked;

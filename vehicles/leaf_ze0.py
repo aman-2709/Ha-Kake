@@ -58,7 +58,7 @@ TILES = [
      "signals": ["speed_mph", "odometer_mi", "range_mi", "soh_dash_pct", "handbrake", "door_any", "headlights"]},
     {"id": "tires",       "name": "Tires (TPMS)",           "items": ["p385"],
      "signals": ["tpms_psi.0", "tpms_psi.1", "tpms_psi.2", "tpms_psi.3"]},
-    {"id": "body",        "name": "Body (doors / lights)",  "items": ["p60D", "p358", "p421", "p292"],
+    {"id": "body",        "name": "Body (doors / lights)",  "items": ["p60D", "p358", "p421", "p292", "p284"],
      "signals": ["door_driver", "door_pass", "door_rl", "door_rr", "door_hatch", "door_any", "locked",
                  "headlights", "high_beam", "parking_lights", "fog_lights", "brake_on"]},
     {"id": "climate",     "name": "Climate (HVAC amp)",     "items": ["hvac10", "hvac11", "hvac00"],
