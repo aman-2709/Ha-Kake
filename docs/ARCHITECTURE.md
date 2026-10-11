@@ -521,7 +521,7 @@ each wheel, toward the front (down in reverse) from `speed_mph`, so the tile lis
 a scale: the pitch is stretched so 3 mph is a slow roll and 50 mph a fast one,
 capped at 0.12 s per tread step to avoid strobing. It stops under
 `prefers-reduced-motion` and in the `html.shot` screenshot mode. In gear R the
-two reverse lamps light white with a glow and a faint beam behind each, drawn
+two reverse lamps light white with a glow and a beam behind each that fades out with distance, drawn
 large enough to read at a glance on a small tile.
 
 Every tile that depends on a slow item shows its age. Power sign comes from
