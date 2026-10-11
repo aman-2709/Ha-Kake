@@ -18,6 +18,7 @@ Stop a demo with `Ctrl-C` before starting the next one. The dashboard uses port 
 | 4 | Simulated CAN bus | The native CAN path at the real frame rate |
 | 5 | Canned JSON | The page only, no reader |
 | 6 | CAN frames on `vcan0` | Raw frames you can see with `candump`, read by the dashboard |
+| 7 | The CANable bench (`can0`) | The simulated car on the real adapter and an ELM327 dongle, no car |
 
 ---
 
@@ -150,11 +151,60 @@ To switch to the real CANable later, use `--can-channel can0`. Nothing else in t
 
 ---
 
+## 7. The CANable bench (`can0`, no car)
+
+This sends the simulated car through the real CANable and an OBDLink LX (ELM327) dongle on the same two wires, and reads it back through the dongle over Bluetooth. It is the only demo that uses real hardware, and it needs someone at the bench. Status: the transmit side is verified on the CANable; the dongle-and-Bluetooth step is still to be run.
+
+**Never do this with the adapter plugged into a car.** `sim_to_can.py` transmits fake ECU frames, so a car's own modules would hear a second battery pack. That is why `--bench` is required.
+
+Setup: the CANable's CAN-H and CAN-L go to OBD pins 6 and 14 on a bench harness, the dongle is powered from 12 V (pin 16, ground on pins 4 and 5, shared with the CANable), and the bus has exactly two 120 Ω terminations (about 60 Ω between H and L with everything off). Press the dongle's Bluetooth button and close the phone app, because it takes one connection at a time.
+
+```bash
+sudo ip link set can0 down
+sudo ip link set can0 type can bitrate 500000        # no restart-ms: the CANable driver rejects it
+sudo ip link set can0 up
+```
+
+```bash
+venv/bin/python -u tools/sim_to_can.py --channel can0 --bench --scenario drive   # 1: the simulated car on the CANable
+candump can0                                                                      # 2: every frame; look for 79B and 7BB
+venv/bin/python web/app.py --adapter ble --db /tmp/can0.db                        # 3: the dashboard, through the dongle
+```
+
+| Part | Meaning |
+|---|---|
+| `ip link set can0 type can bitrate 500000` | Sets the bus speed (500 kbit/s, the Leaf's). Needs sudo, and the tool refuses to start if it is wrong. |
+| `--channel can0` | The physical adapter instead of `vcan0`. |
+| `--bench` | Your statement that this is a bench harness and not a car. Required for any non-`vcan` device. |
+| `--adapter ble` | The dashboard reads the ELM327 dongle over Bluetooth LE, so the dongle does the ISO-TP framing for real. |
+| `--db /tmp/can0.db` | A scratch database. |
+
+If `sent` stalls near 24 frames with `No buffer space available`, nothing is acknowledging the frames: the dongle is not connected yet, or the wiring, power or termination is wrong. Run `sudo ip link set can0 down` and up again to clear the stuck queue.
+
+**Loopback (`loopback on`) is not a substitute.** It needs no second node, but on this CANable every frame arrives twice, which breaks multi-frame UDS replies. It shows the adapter transmits and no more. Details are in `docs/SIMULATOR.md`.
+
+---
+
+## `--adapter` values
+
+| Value | Source |
+|---|---|
+| `auto` | The default. Detects a real ELM327 over USB or BLE. It never picks `sim`, `replay` or `can` by itself. |
+| `usb` | An ELM327 on a serial port. |
+| `ble` | An ELM327 over Bluetooth LE, such as the OBDLink LX. |
+| `replay` | A recorded fixture (demo 3). |
+| `sim` | The simulated car (demos 1, 2 and 4). |
+| `can` | Native CAN through python-can: SocketCAN (`can0`, `vcan0`), slcan, gs_usb. Demos 6 and 7 use it. |
+| `mqtt` | A remote car through the Raspberry Pi bridge (`docs/MQTT.md`). |
+
+`config.local.json` (gitignored) holds the per-machine keys. For `--adapter can` it needs `can_interface` (`socketcan`), `can_bus` (`car`) and `can_bitrate` (`500000`); `can_channel` can come from `--can-channel` instead.
+
 ## Arguments used above
 
 | Argument | Meaning |
 |---|---|
-| `--adapter` | The data source: `sim`, `replay`, `can`, or the real ones (`ble`, `usb`, `mqtt`). The default `auto` detects a real adapter. |
+| `--adapter` | The data source. See the next table. The default `auto` detects a real adapter. |
+| `--can-channel DEV` | The SocketCAN device for `--adapter can` (`can0`, `vcan0`); overrides `can_channel` in `config.local.json`. |
 | `--scenario` | The scripted simulator timeline to run. |
 | `--seed` | Random seed for the simulator, so a run can be repeated. |
 | `--speed` | Time scaling for the simulator and for replay. |
