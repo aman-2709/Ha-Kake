@@ -170,7 +170,8 @@
     const brake = !!data.brake_on, rev = (data.gear === 'R'), rearOn = brake || park;
     setLamp('lamp-brake-l', rearOn, brake ? BRAKE : TAIL, { glow: brake ? 10 : 3, opacity: brake ? 1 : 0.7 });
     setLamp('lamp-brake-r', rearOn, brake ? BRAKE : TAIL, { glow: brake ? 10 : 3, opacity: brake ? 1 : 0.7 });
-    setLamp('lamp-rev-l', rev, REV, { glow: 6 }); setLamp('lamp-rev-r', rev, REV, { glow: 6 });
+    setLamp('lamp-rev-l', rev, REV, { glow: 12 }); setLamp('lamp-rev-r', rev, REV, { glow: 12 });
+    setLamp('lamp-rev-beam-l', rev, REV, { glow: 0, opacity: 0.2 }); setLamp('lamp-rev-beam-r', rev, REV, { glow: 0, opacity: 0.2 });
 
     // wheels: tread marks roll while the car moves. A look, not a scale: the pitch is stretched so
     // 3 mph is a slow roll and 50 mph a fast one, and the cap keeps it from strobing.
