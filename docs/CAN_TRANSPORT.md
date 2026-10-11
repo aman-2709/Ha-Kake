@@ -149,7 +149,9 @@ mode this transport ever opens the EV bus in:
 ## Configuration
 
 `config.local.json` (gitignored). `HAKAKE_CAN_*` environment variables win
-over the file, the way the BLE keys do.
+over the file, the way the BLE keys do. `--can-channel DEV` on `web/app.py` and
+`web/reader.py` is the command-line spelling of `HAKAKE_CAN_CHANNEL`, handy
+for switching between `can0` and `vcan0` without editing the file.
 
 ```json
 {

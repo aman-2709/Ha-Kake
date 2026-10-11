@@ -1636,9 +1636,14 @@ if __name__ == "__main__":
                          "CAN façade at the real frame rate (--adapter sim); 'ev' also starts the "
                          "EV-CAN channel (listen-only)")
     ap.add_argument("--db", default=None, help="SQLite file (default: the profile's; replay/sim get their own)")
+    ap.add_argument("--can-channel", default=None, metavar="DEV",
+                    help="SocketCAN device for --adapter can, e.g. can0 or vcan0 "
+                         "(overrides can_channel in config.local.json)")
     args = ap.parse_args()
     if args.vehicle:
         set_vehicle(args.vehicle)
+    if args.can_channel:
+        os.environ["HAKAKE_CAN_CHANNEL"] = args.can_channel     # can_config() reads it
     pref = None if args.adapter == "auto" else args.adapter
     db = args.db
     if pref == "replay":

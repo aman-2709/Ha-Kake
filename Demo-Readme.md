@@ -131,7 +131,7 @@ sudo modprobe vcan && sudo ip link add dev vcan0 type vcan && sudo ip link set u
 ```bash
 venv/bin/python -u tools/sim_to_can.py --scenario drive --knob soc=20     # 1: the simulated car
 candump vcan0                                                               # 2: the raw frames
-venv/bin/python web/app.py --adapter can --db /tmp/vcan.db                  # 3: the dashboard
+venv/bin/python web/app.py --adapter can --can-channel vcan0 --db /tmp/vcan.db # 3: the dashboard
 ```
 
 | Part | Meaning |
@@ -142,10 +142,11 @@ venv/bin/python web/app.py --adapter can --db /tmp/vcan.db                  # 3:
 | `--knob soc=20` | Set one simulator control. Here the battery starts at 20 %. Repeat the flag for more. |
 | `-u` | Python flag: unbuffered output, so the progress line appears at once. |
 | `candump vcan0` | From `can-utils`: prints every frame on the device. |
-| `--adapter can` | Read a real CAN device through the native CAN code. Set `can_interface`, `can_channel` and `can_bitrate` in `config.local.json` first. |
+| `--adapter can` | Read a CAN device through the native CAN code. `config.local.json` must set `can_interface` (`socketcan`), `can_bus` (`car`) and `can_bitrate` (`500000`). |
+| `--can-channel vcan0` | Which device to read. It overrides `can_channel` in the config, so the same command takes `can0` for the CANable. |
 | `--db /tmp/vcan.db` | A scratch database. This path is not marked as simulated, so keep it away from the real one. |
 
-To switch to the real CANable later, change `can_channel` to `can0`. Nothing else in the reader changes.
+To switch to the real CANable later, use `--can-channel can0`. Nothing else in the reader changes.
 
 ---
 

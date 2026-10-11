@@ -1180,15 +1180,16 @@ ones.
 `--sim-can` keeps the ECUs on a python-can channel that only its own process
 can see. `tools/sim_to_can.py` puts the same `SimCanEcu` on a SocketCAN device
 instead, so other processes can read it: `candump`, `cansniffer`, or a
-dashboard started with `--adapter can` (`can_interface: socketcan`,
-`can_channel: vcan0`, in `config.local.json`). That is the same code path the
+dashboard started with `--adapter can --can-channel vcan0` (the flag
+overrides `can_channel` in `config.local.json`; `can_interface: socketcan` still
+comes from the file). That is the same code path the
 CANable takes, so moving to the board changes one config key.
 
 ```bash
 sudo ip link add dev vcan0 type vcan && sudo ip link set up vcan0     # once per boot
 python tools/sim_to_can.py --scenario drive --knob soc=20             # terminal 1
 candump vcan0                                                         # terminal 2
-python web/app.py --adapter can --db /tmp/vcan.db                     # terminal 3
+python web/app.py --adapter can --can-channel vcan0 --db /tmp/vcan.db # terminal 3
 ```
 
 Flags: `--channel` (default `vcan0`), `--bus car|ev`, `--vehicle`, `--scenario`,

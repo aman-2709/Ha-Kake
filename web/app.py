@@ -667,8 +667,13 @@ if __name__ == "__main__":
                          "The route for generated history: hakake_sim.py --generate "
                          "writes one, this opens it (with its _state.json sibling if "
                          "there is one). --adapter replay/sim still use their own file.")
+    ap.add_argument("--can-channel", default=None, metavar="DEV",
+                    help="SocketCAN device for --adapter can, e.g. can0 or vcan0 "
+                         "(overrides can_channel in config.local.json)")
     ap.add_argument("--port", type=int, default=5000)
     args = ap.parse_args()
+    if args.can_channel:
+        os.environ["HAKAKE_CAN_CHANNEL"] = args.can_channel     # the reader child inherits it
 
     pref = None if args.adapter == "auto" else args.adapter
     if args.no_sim_control:

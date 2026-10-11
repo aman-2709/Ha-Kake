@@ -770,3 +770,18 @@ def test_read_duration_and_gap_are_never_stored(tmp_store):
     extra = json.loads(extra or "{}")
     assert "item_dur" not in extra and "item_gap" not in extra
     assert "item_age" in extra                                         # unchanged: only the two new maps are live-only
+
+
+def test_can_channel_flag_is_on_both_entry_points():
+    # --can-channel only sets HAKAKE_CAN_CHANNEL, which can_config() already honours
+    import subprocess, sys
+    for script in ("web/app.py", "web/reader.py"):
+        out = subprocess.run([sys.executable, script, "--help"], capture_output=True, text=True,
+                             cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))).stdout
+        assert "--can-channel" in out, script
+
+
+def test_can_channel_environment_wins_over_the_file(monkeypatch):
+    monkeypatch.setenv("HAKAKE_CAN_CHANNEL", "vcan0")
+    monkeypatch.delenv("HAKAKE_CAN_BUS", raising=False)
+    assert ct.can_config({"can_bus": "car", "can_channel": "can0"})["channel"] == "vcan0"
