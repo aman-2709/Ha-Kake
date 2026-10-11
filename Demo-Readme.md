@@ -139,13 +139,27 @@ venv/bin/python web/app.py --adapter can --can-channel vcan0 --db /tmp/vcan.db #
 |---|---|
 | `tools/sim_to_can.py` | Runs the simulated ECUs and sends their frames, about 1,700 a second, on a SocketCAN device. |
 | `--channel vcan0` | The device (the default). `can0` also works on a bench with `--bench`; see `docs/SIMULATOR.md`. |
-| `--scenario drive` | The scripted drive from demo 2. |
+| `--scenario drive` | The scripted drive from demo 2 (see the scenario guide below). |
+| `--speed 10` | Time scaling, as in demo 2: `10` plays the 135-second `drive` in about 14 seconds. Without it the run is real time. |
 | `--knob soc=20` | Set one simulator control. Here the battery starts at 20 %. Repeat the flag for more. |
 | `-u` | Python flag: unbuffered output, so the progress line appears at once. |
 | `candump vcan0` | From `can-utils`: prints every frame on the device. |
 | `--adapter can` | Read a CAN device through the native CAN code. `config.local.json` must set `can_interface` (`socketcan`), `can_bus` (`car`) and `can_bitrate` (`500000`). |
 | `--can-channel vcan0` | Which device to read. It overrides `can_channel` in the config, so the same command takes `can0` for the CANable. |
 | `--db /tmp/vcan.db` | A scratch database. This path is not marked as simulated, so keep it away from the real one. |
+
+Which scenario to run with `sim_to_can.py` (the same names work in demo 2, and the table is also in demo 2):
+
+| You want to see | Run | How long (real time) |
+|---|---|---|
+| Speed, wheels, current and SoC change within a minute | `--scenario drive --speed 10` | about 14 s |
+| A busy dashboard for a demo or a screenshot | `--scenario commute --speed 10` | about 1.5 min |
+| The pack sagging under repeated load | `--scenario pulls` | about 2 min |
+| A steady, parked car for checking the CAN frames in `candump` | `--scenario idle` | no end |
+| The charging taper | `--scenario charge --speed 120` | about 2.5 min (about 5 h at real time) |
+| A fault on the dashboard | `--scenario degraded_pack` | about 1.5 min |
+
+The simulator starts its clock when `sim_to_can.py` starts, not when the dashboard connects. If you start the dashboard late you join the scenario part-way through, and when it ends (`drive` parks at 135 s) the values stop changing. `sim_to_can.py` has no control panel, so restart it to run a scenario again. For live controls use demo 1.
 
 To switch to the real CANable later, use `--can-channel can0`. Nothing else in the reader changes.
 

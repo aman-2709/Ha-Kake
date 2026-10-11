@@ -94,6 +94,8 @@ def main():
     ap.add_argument("--vehicle", default=None)
     ap.add_argument("--scenario", default=None)
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--speed", type=float, default=None,
+                    help="time scaling for the scenario (10 = ten times real time)")
     ap.add_argument("--knob", action="append", default=[], metavar="NAME=VALUE")
     args = ap.parse_args()
 
@@ -115,7 +117,8 @@ def main():
             except ValueError:
                 pass
 
-    sim = make_sim(vehicle=args.vehicle, knobs=knobs or None, seed=args.seed, scenario=args.scenario)
+    sim = make_sim(vehicle=args.vehicle, knobs=knobs or None, seed=args.seed, scenario=args.scenario,
+                   speed=args.speed)
     ecu = SimCanEcu(sim, bus=args.bus, clock=True, log=print,
                     bus_factory=lambda: can.Bus(interface="socketcan", channel=args.channel,
                                                 receive_own_messages=False))

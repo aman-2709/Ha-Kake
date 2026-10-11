@@ -1193,7 +1193,8 @@ python web/app.py --adapter can --can-channel vcan0 --db /tmp/vcan.db # terminal
 ```
 
 Flags: `--channel` (default `vcan0`), `--bus car|ev`, `--vehicle`, `--scenario`,
-`--seed`, `--knob NAME=VALUE` (repeatable), `--bench`, `--bitrate`. Start the
+`--seed`, `--speed` (time scaling, `10` = ten times real time),
+`--knob NAME=VALUE` (repeatable), `--bench`, `--bitrate`. Start the
 dashboard with a scratch `--db`: the reader reports `simulated: false` on this
 path, so it must not write to `web/leaf_battery.db`.
 

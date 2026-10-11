@@ -46,3 +46,9 @@ def test_loopback_needs_no_bench_flag_but_still_a_good_link():
     assert check("can0", bench=False, info=link(ctrl=["LOOPBACK"])) is None
     assert "expected 500000" in check("can0", bench=False, info=link(ctrl=["LOOPBACK"], bitrate=250000))
     assert "--bench" in check("can0", bench=False, info=link(up=False, ctrl=["LOOPBACK"]))
+
+
+def test_speed_flag_scales_the_simulated_clock():
+    from simulator import make_sim
+    assert make_sim(scenario="drive", seed=1, speed=None).time_scale() == 1.0
+    assert make_sim(scenario="drive", seed=1, speed=10).time_scale() == 10.0
