@@ -39,6 +39,8 @@ venv/bin/python web/app.py --adapter sim
 
 **What to show:** press the power button, put the car in gear and press the pedal. Turn the A/C on, open a door, plug it in to charge, and watch the dashboard follow. Fault injection is the strongest part: degrade a cell, trigger low insulation resistance, make the car go to sleep or return an ECU error.
 
+**Driving in reverse (demo 1).** In the cockpit (`/sim`) press the power button with the brake held (the car goes READY), release the handbrake, set the shifter to **R**, then raise the speed and the pedal. The Body tile shows R, the reversing lamps light and the wheels roll the other way. The car refuses a gear change while it is moving in the wrong direction and refuses READY unless the brake is held.
+
 ---
 
 ## 2. A scripted scenario that runs itself
@@ -160,6 +162,22 @@ Which scenario to run with `sim_to_can.py` (the same names work in demo 2, and t
 | A fault on the dashboard | `--scenario degraded_pack` | about 1.5 min |
 
 The simulator starts its clock when `sim_to_can.py` starts, not when the dashboard connects. If you start the dashboard late you join the scenario part-way through, and when it ends (`drive` parks at 135 s) the values stop changing. `sim_to_can.py` has no control panel, so restart it to run a scenario again. For live controls use demo 1.
+
+**Driving in reverse (this demo).** No shipped scenario reverses, so set the car's state with knobs and leave `--scenario` out:
+
+```bash
+venv/bin/python -u tools/sim_to_can.py --knob start_state=ready --knob gear=R --knob handbrake=false --knob speed_mph=5 --knob accel_pedal_pct=10
+```
+
+| Knob | Meaning |
+|---|---|
+| `start_state=ready` | The car starts powered on and ready to drive. |
+| `gear=R` | The shifter position: `P`, `R`, `N`, `D` or `Eco`. |
+| `handbrake=false` | Release the handbrake, which otherwise holds the car. |
+| `speed_mph=5` | Road speed. The dashboard shows it, and the Body tile's wheels roll backwards. |
+| `accel_pedal_pct=10` | Accelerator position, which sets the motor draw. |
+
+Without a scenario nothing changes over time, so the car reverses at 5 mph until you stop the tool. For a scripted change of gear, copy `simulator/scenarios/drive.json` and set `"gear": "R"` in a timeline entry; the name or path goes to `--scenario`.
 
 To switch to the real CANable later, use `--can-channel can0`. Nothing else in the reader changes.
 
