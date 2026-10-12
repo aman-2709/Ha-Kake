@@ -198,15 +198,15 @@ The loop in `calibrate_input.py` is not complicated, but several of its details
 were added after something went wrong, and they are worth copying.
 
 **Pause the dashboard first.** The reader process owns the adapter. The walker
-writes `web/reader.pause`, waits up to 15 s for the reader's state file to
+writes `<data>/reader.pause`, waits up to 15 s for the reader's state file to
 report `paused`, and only then connects. On exit — including Ctrl-C, including
 an exception — it removes the pause file so the dashboard comes back. If you are
 doing this by hand rather than with the walker:
 
 ```bash
-touch web/reader.pause      # wait a few seconds for the reader to let go
+touch "${HAKAKE_DATA_DIR:-$HOME/Library/Application Support/Ha-Kake}"/reader.pause      # wait a few seconds for the reader to let go
 # ... capture ...
-rm web/reader.pause
+rm "${HAKAKE_DATA_DIR:-$HOME/Library/Application Support/Ha-Kake}"/reader.pause
 ```
 
 **Print the instruction and wait for a human.** Each step prints what to do and

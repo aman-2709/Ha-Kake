@@ -239,7 +239,7 @@ asleep every time a slow cycle comes around.
 | `apply_policy(cache, calib, state)` | callable | Per-vehicle sensor policy, run every cycle after decode: fusion, calibration, sign correction. `state` is a dict the profile owns and the reader carries between cycles. **It may add keys but must never change a value `decode()` reported** — the database stores what the car said; a derived value gets its own key (`tests/test_policy_raw.py` checks every profile). The Leaf derives `current_adj_a` / `power_adj_kw` (zero-current offset, sensor fusion, direction from the BMS discharge flag) and leaves `current_a` / `power_kw` raw. |
 | `BUSES` | `tuple` of names | The car's networks, default `("car",)`. Every item's `bus` must be listed, and the `FAST_ONLY` items must share one bus — the primary, whose silence means the car is asleep. |
 | `SIGNALS[k]["sources"]`, `["tolerance"]` | list, number | A value reachable more than one way: `sources: [{"key": "ev_pack_v", "item": "p1DB", "confidence": "verified", "rate_hz": 100}, {"key": "pack_v", "item": "lbc01", "confidence": "verified", "rate_hz": 0.5}]` names the record key each source writes (decoders never write one key from two items); `tolerance` is in the signal's unit. The reader's generic resolver picks — pin, then verified over tentative, then freshness, then rate — and stamps `<k>_src`; it writes `k` itself only when no decoder does, else `<k>_resolved`; two fresh sources apart by more than `tolerance` set `<k>_disagree` and log an event. See `docs/ARCHITECTURE.md` "Provenance" and the Leaf's `current_a`. |
-| `DB_FILE` | `str` | A database file of this profile's own, in `web/`. Unset is the normal case: every profile shares `web/leaf_battery.db` and rows are separated by the `vehicle` column. |
+| `DB_FILE` | `str` | A database file of this profile's own, in the data folder. Unset is the normal case: every profile shares `<data>/leaf_battery.db` and rows are separated by the `vehicle` column. |
 | `LOGO` | `str` | Header wordmark art. `"leaf"` gives the leaf silhouette; anything else — including omitting it — gives a neutral dial. The mark fills with the first level-ish signal your registry declares (`soc`, then `fuel_pct`), or stays static if you declare neither. |
 
 `HISTORY_COLS` spec keys, all optional except `kind`:
@@ -317,7 +317,7 @@ python web/app.py --adapter replay --speed 10               # 10x the clock
 Replay swaps the transport and nothing else: the reader, the scheduler,
 `elm327.py`'s command surface, your `configure()` and `decode()`, the store,
 the API and the page are all the live ones. It writes to its own throwaway
-database (`web/replay_<profile>.db`), and every record carries `replay: true`,
+database (`<data>/replay_<profile>.db`), and every record carries `replay: true`,
 so a playback can never be mistaken for a reading. The default fixture for a
 profile is `tests/fixtures/session_<name>.json`. Details:
 [`REPLAY.md`](REPLAY.md).

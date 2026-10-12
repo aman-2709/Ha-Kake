@@ -106,7 +106,7 @@ model produces is labelled — `simulated: true` in every state record, `sim`
 as the adapter type, a badge on the dashboard, a hazard bar on the cockpit,
 and a shout in the startup log — precisely so that no screenshot, database
 row, or API response can later be mistaken for a reading from a vehicle.
-Simulated rows go to `web/sim_<profile>.db`, never to `web/leaf_battery.db`.
+Simulated rows go to `<data>/sim_<profile>.db`, never to `<data>/leaf_battery.db`.
 
 The model's numbers are honest about their provenance, too. Every row of the
 load table (below) is labelled **MEASURED**, **OWNER REPORT** or
@@ -152,7 +152,7 @@ and the notice says so — the control API only ever runs locally.
 
 **What is on it**, top to bottom by default — every card can be dragged by
 its title, resized or hidden from its ⋯ menu, and the arrangement persists
-in `web/sim_tiles.json` (gitignored; `GET/PUT /api/sim/tiles`, with a
+in `<data>/sim_tiles.json` (gitignored; `GET/PUT /api/sim/tiles`, with a
 localStorage mirror `hakake-sim-tiles-v1`). *Cards ▾ → reset arrangement*
 puts it back.
 
@@ -587,7 +587,7 @@ carries a load lump of its own).
 |---|---|---|
 | `--generate` | — | do this instead of running a rig |
 | `--days N` | 180 | days of history, ending now |
-| `--out PATH` | `web/sim_history.db` | where to write (the real database is refused) |
+| `--out PATH` | `<data>/sim_history.db` | where to write (the real database is refused) |
 | `--seed N` | 1 | same seed, same code and the same day, same database, byte for byte. The window ends *now*, so tomorrow's run of the same command lands on a different calendar and produces different counts |
 | `--sample S` | 120 | seconds between rows while the car is doing something |
 | `--idle-sample S` | 1800 | seconds between rows while it is parked |
@@ -632,7 +632,7 @@ from now. So:
   `simulated: true, generated: true`;
 * `web/app.py --db` prints **SYNTHETIC DATABASE** on startup when it sees the
   meta flag, and the state file's `message` says the same;
-* the generator **refuses** to write to `web/leaf_battery.db`, or to any file
+* the generator **refuses** to write to `<data>/leaf_battery.db`, or to any file
   named like it in any letter case, reached through a link, or a profile's own
   `DB_FILE` — and to any existing database that holds readings and is not
   stamped synthetic (a backup or a renamed copy) — with an error rather than a
@@ -1177,7 +1177,7 @@ the dashboard and the cockpit at `/sim` all run exactly as they would on the
 board, at the real frame rate, with no board and no car. The control API is
 in-process as before (`:8099`), and `bus_load` is a knob in its schema. It is
 still `--adapter sim`: never auto-detected, rows in the throwaway
-`web/sim_<profile>.db`, every record stamped `simulated: true` with the
+`<data>/sim_<profile>.db`, every record stamped `simulated: true` with the
 scenario, the seed and `sim_bus_load`. `can_interface: "sim"` through
 `--adapter can` is refused with that advice, because the reader chooses the
 database from `--adapter` and generated rows must never land next to real
@@ -1297,7 +1297,7 @@ drive, narrow it to the pull with `--obs-from/--obs-to` (or `--exp-from/--exp-to
 for the expected side; epoch seconds or an ISO time, local unless `Z`):
 
 ```bash
-python tools/compare_sessions.py tests/fixtures/session_leaf_ze0_pull_sim.json web/leaf_battery.db \
+python tools/compare_sessions.py tests/fixtures/session_leaf_ze0_pull_sim.json "${HAKAKE_DATA_DIR:-$HOME/Library/Application Support/Ha-Kake}"/leaf_battery.db \
     --obs-from 2026-10-05T12:10:00 --obs-to 2026-10-05T12:12:00
 ```
 
@@ -1355,10 +1355,10 @@ a Lancer.
 - Auto-detect **never** picks the simulator. `--adapter sim` must be asked
   for, the same rule replay follows, for the same reason: a dashboard with a
   dead adapter must show a dead adapter, not a healthy imaginary car.
-- Simulated rows go to `web/sim_<profile>.db` and `web/sim_<profile>_state.json`
-  (both gitignored). `web/leaf_battery.db` is never opened in this mode.
-- Generated history goes to `--out` (default `web/sim_history.db`, gitignored).
-  The generator refuses `web/leaf_battery.db`, anything named like it (in any
+- Simulated rows go to `<data>/sim_<profile>.db` and `web/sim_<profile>_state.json`
+  (both gitignored). `<data>/leaf_battery.db` is never opened in this mode.
+- Generated history goes to `--out` (default `sim_history.db` in the data folder, `docs/DATA.md`).
+  The generator refuses `<data>/leaf_battery.db`, anything named like it (in any
   case, or through a link) and any unstamped database with readings, and
   every generated database is stamped synthetic in its `meta` table. Generated
   data is **never** merged into the real database.

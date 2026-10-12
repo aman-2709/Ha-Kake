@@ -53,7 +53,7 @@ the bottom of the window by default (see *Docked* below):
   only in playback: live, use the button. Flags are yellow triangles on the
   strip with a dotted line; the `⚑ jump to…` list seeks to one, `✕` removes
   the selected one, and only your own — an auto-detected pull cannot be
-  removed. They live in `web/bookmarks.json`
+  removed. They live in `<data>/bookmarks.json`
   (gitignored, per machine, stamped with the vehicle).
 - **Auto-detected pulls** show as hollow orange triangles: every run of rows
   with pack current below −40 A in the loaded window, runs closer together
@@ -66,7 +66,7 @@ the bottom of the window by default (see *Docked* below):
 
 Under `--demo` there is one canned session; under `--adapter replay` or
 `--adapter sim` playback reads that run's own throwaway database, never
-`web/leaf_battery.db`.
+`<data>/leaf_battery.db`.
 
 ## What it is built from
 

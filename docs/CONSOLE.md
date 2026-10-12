@@ -22,7 +22,7 @@ Nothing in it is evidence of what was on the bus.
 - To record a drive properly: `record_session.py` (and `docs/REPLAY.md`).
 - To log frames losslessly: the MQTT bridge (`bridge/`, `docs/MQTT.md`).
 
-The file it writes (`web/console.jsonl`) is gitignored, size-capped, cleared
+The file it writes (`<data>/console.jsonl`) is gitignored, size-capped, cleared
 every time the tile is armed, and holds raw frames from your own car. It is a
 window that happens to be persisted so two processes can share it, not a log.
 
@@ -69,14 +69,14 @@ would lose exactly the thing the person was watching for.
 ## How it is wired
 
 ```
- transports ──tap──▶ Ring (bounded, in the reader) ──flush──▶ web/console.jsonl
+ transports ──tap──▶ Ring (bounded, in the reader) ──flush──▶ <data>/console.jsonl
                                                                     │
                                              GET /api/console ◀──────┘
                                                      │
                                              web/static/console.js
 ```
 
-- **Arming.** The reader reads `web/tiles.json` (the same mtime path the cell
+- **Arming.** The reader reads `<data>/tiles.json` (the same mtime path the cell
   log uses) and builds a `console.Console` only when the tile is enabled. No
   tile, no object, no tap, no file — and turning the tile off drops all three.
 - **The taps.** Native CAN, MQTT and the simulated bus all reach the reader
@@ -175,11 +175,11 @@ Open the ⋯ / Tiles panel, enable **Raw output**. The reader picks the change u
 on its next cycle and says so:
 
 ```
-  [reader] raw output console armed: 12 polled id(s), 10/s per id -> web/console.jsonl
+  [reader] raw output console armed: 12 polled id(s), 10/s per id -> <data>/console.jsonl
 ```
 
 The tile's ⋯ menu carries the two options that change what the reader keeps
-(every id, and the rate cap). Both are written into `web/tiles.json`, the reader
+(every id, and the rate cap). Both are written into `<data>/tiles.json`, the reader
 re-arms on them, and the drop counts on screen then belong to the rules on
 screen.
 

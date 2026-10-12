@@ -11,7 +11,7 @@ decodes far more than the OBD-II standard carries — battery state of health,
 **the method used to find all of that is documented in full**, so you can do
 the same on a car nobody has touched yet.
 
-![status](https://img.shields.io/badge/tests-1199%20passing-brightgreen) ![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/davidkarnowski/Ha-Kake)
+![status](https://img.shields.io/badge/tests-1290%20passing-brightgreen) ![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/davidkarnowski/Ha-Kake)
 
 > ### ⚠️ Active development
 >
@@ -65,6 +65,8 @@ project, and it will not clear your check-engine light. Read-only describes
 what it asks for, not whether it is on the bus: it transmits requests like any
 scan tool, and the Safety section says what follows from that. Do not operate the laptop while driving.
 See [`SECURITY.md`](SECURITY.md).
+
+> **Where your data lives:** Ha-Kake keeps its database and settings in a data folder outside the source tree, created on first run (`docs/DATA.md`). **Monitoring a car from your house** over wifi with a Pi and a broker: `docs/REMOTE_MQTT.md`.
 
 ## Any vehicle
 
@@ -271,7 +273,7 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-pytest -q                          # 1199 offline tests, no car needed
+pytest -q                          # 1290 offline tests, no car needed
 
 # Dashboard (car IGN-ON or READY)
 python web/app.py --adapter ble    # → http://127.0.0.1:5000
@@ -299,7 +301,7 @@ python calibrate_input.py lights            # walk parking / headlights / high b
 python door_watch.py                        # live: print body-CAN bytes as you open/lock things
 python record_session.py --seconds 60       # record a replayable session fixture
 python vehicles/__init__.py                 # lint every vehicle profile against the contract
-touch web/reader.pause                                # hand the adapter to a tool; rm to resume
+touch "${HAKAKE_DATA_DIR:-$HOME/Library/Application Support/Ha-Kake}"/reader.pause                                # hand the adapter to a tool; rm to resume
 ```
 
 ## Hardware
@@ -409,12 +411,12 @@ stays the one-adapter shorthand. `docs/ARCHITECTURE.md` "Several adapters".
 | `GET/PUT /api/tiles` | tile order, enabled, span, type, options (including each tile's `opts.alerts` rules), user tiles (drives what the reader polls) |
 | `GET /api/signals` | signal registry, colour scales, tile types, items (each with the `can_id` it puts on the wire), tile defaults, which signals each built-in tile shows (`tile_signals`) |
 | `GET /api/console?since=&kind=&ids=&limit=` | the raw output console's entries after an opaque cursor, with what was dropped and why — a window on the transport, never a capture ([`docs/CONSOLE.md`](docs/CONSOLE.md)) |
-| `GET /api/bookmarks?from&to`, `PUT /api/bookmarks {t?, label?}`, `DELETE /api/bookmarks?t=` | timeline flags in `web/bookmarks.json` (gitignored); `t` defaults to now |
+| `GET /api/bookmarks?from&to`, `PUT /api/bookmarks {t?, label?}`, `DELETE /api/bookmarks?t=` | timeline flags in `<data>/bookmarks.json` (gitignored); `t` defaults to now |
 | `GET /api/bookmarks/auto?from&to&amps=40` | discharge pulls found in the readings (runs below −amps A), as candidate flags |
-| `GET /api/layouts`, `PUT/DELETE /api/layouts/<name>`, `POST /api/layouts/<name>/load` | named layouts saved in `web/layouts.json` (gitignored); names are trimmed to 60 characters, the same way for save, load and delete |
-| `GET/PUT/DELETE /api/calibration` | per-car offsets (`zero_current`) in `web/calibration.json` (gitignored); an offset must be a finite number within ±50 A |
+| `GET /api/layouts`, `PUT/DELETE /api/layouts/<name>`, `POST /api/layouts/<name>/load` | named layouts saved in `<data>/layouts.json` (gitignored); names are trimmed to 60 characters, the same way for save, load and delete |
+| `GET/PUT/DELETE /api/calibration` | per-car offsets (`zero_current`) in `<data>/calibration.json` (gitignored); an offset must be a finite number within ±50 A |
 | `GET /sim` | the simulator cockpit page (always renders; shows the launch commands when nothing is simulated) |
-| `GET/PUT /api/sim/tiles` | the cockpit's own card layout in `web/sim_tiles.json` (gitignored) |
+| `GET/PUT /api/sim/tiles` | the cockpit's own card layout in `<data>/sim_tiles.json` (gitignored) |
 
 The simulator's own control API (`127.0.0.1:8099` by default, loopback only, no
 authentication) is documented in [`docs/SIMULATOR.md`](docs/SIMULATOR.md).
@@ -559,7 +561,7 @@ Being on the bus at all has consequences worth knowing:
 - **Timeline flags** (2026-09-08): `⚑ Flag` marks a moment — live, *now*, so a
   passenger can mark "pull from the light" as it happens; in playback, the
   playhead — and the strip shows auto-detected discharge pulls as hollow
-  flags to jump to. `web/bookmarks.json`, `/api/bookmarks`.
+  flags to jump to. `<data>/bookmarks.json`, `/api/bookmarks`.
 - **Playback** (2026-09-08): a Live / Playback switch in the header. Playback
   replays what the database recorded — pick a session, scrub, play at ½× to
   60×, drag on the strip to zoom into a stretch — and every tile, the 3D pack

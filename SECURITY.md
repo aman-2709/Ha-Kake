@@ -87,9 +87,9 @@ broker, Pi or car.
 - The writing APIs (`PUT /api/tiles`, `PUT /api/sim/tiles`,
   `PUT/DELETE /api/calibration`, `PUT/DELETE/POST /api/layouts/…`,
   `PUT/DELETE /api/bookmarks`) touching
-  anything other than their own JSON files (`web/tiles.json`,
-  `web/sim_tiles.json`, `web/calibration.json`, `web/layouts.json`,
-  `web/bookmarks.json`).
+  anything other than their own JSON files (`<data>/tiles.json`,
+  `<data>/sim_tiles.json`, `<data>/calibration.json`, `<data>/layouts.json`,
+  `<data>/bookmarks.json`).
 - A request reaching the API from a page on another origin, or naming a host
   other than a loopback one: the server checks `Host` on every request, and
   `Origin` (or a JSON content type) on every change.

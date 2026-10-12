@@ -37,7 +37,7 @@ harnesses (replay, simulator) came later; see §5.
   `DATA ERROR` (this cost a whole session in February).
 - **Never share a sqlite3 connection across threads** — it segfaults. Flask
   uses a thread-local `Store`; the reader is a separate process.
-- **`web/reader.pause`** hands the adapter to a calibration tool; remove it to resume.
+- **`<data>/reader.pause`** hands the adapter to a calibration tool; remove it to resume.
 - Tests run without hardware: `pytest -q` (venv active). Fixtures are
   real captures; add one when you add a decoder.
 - Python 3.12 (tested; ≥3.10 required — pyobjc 12). The venv is gitignored.
@@ -155,7 +155,7 @@ never in code.
   not a capture: `record_session.py` and the bridge are the capture tools.
   `docs/CONSOLE.md`.
 - The simulator is a fixture, not a verifier: `--adapter sim` is never
-  auto-detected, its rows never reach `web/leaf_battery.db`, every load in
+  auto-detected, its rows never reach `<data>/leaf_battery.db`, every load in
   `simulator/model.py` `LOADS_W` carries a MEASURED / OWNER REPORT / ASSERTED
   label, and `current_a` is *extra* current on top of the modelled loads
   (default 0; `load_kw` is the absolute override). The cockpit (`/sim`)

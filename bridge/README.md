@@ -11,10 +11,10 @@ its behalf. The wire protocol is `docs/MQTT.md` in the main repository; a
 Ha-Kake reader ingests it with `--adapter mqtt`, and any MQTT client can build
 a gauge on the same stream.
 
-**Status (2026-09-09): written and tested against python-can's `virtual` bus
-and a fake broker. It has not yet run on a Pi, against a real broker, or on a
-car.** Hardware selection and firmware notes are pending the owner's bench
-check; see `docs/CAN_TRANSPORT.md` when it lands.
+**Status (2026-10):** tested against python-can's `virtual` bus and a fake broker, and run for real on a Raspberry Pi 4
+with a CAN adapter on a Nissan Leaf's diagnostic connector against a real Mosquitto broker: frames flowing at about 230
+per second, read requests answered, reconnects after network drops. Hardware notes are in `docs/CAN_TRANSPORT.md`. For
+a step-by-step set-up for monitoring a car from your house, see `docs/REMOTE_MQTT.md`.
 
 ## What it does, in one screen
 

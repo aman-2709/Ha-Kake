@@ -46,8 +46,8 @@ python web/reader.py --adapter replay --vehicle lancer_2009
 
 | | live | replay |
 |---|---|---|
-| database | `web/leaf_battery.db` | `web/replay_<profile>.db` (gitignored, disposable) |
-| state file | `web/battery_state.json` | `web/replay_<profile>_state.json` |
+| database | `<data>/leaf_battery.db` | `<data>/replay_<profile>.db` (gitignored, disposable) |
+| state file | `<data>/battery_state.json` | `<data>/replay_<profile>_state.json` |
 
 Delete either replay file whenever you like. Nothing in replay mode writes to
 the real store, so a playback session can never be mistaken for — or mixed
