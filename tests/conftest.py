@@ -90,6 +90,15 @@ def _no_real_files(tmp_path_factory, monkeypatch):
     yield
 
 
+@pytest.fixture(autouse=True)
+def _no_git_hook_environment(monkeypatch):
+    """git exports GIT_DIR (and friends) to a pre-push hook. In a linked worktree that value is absolute, and every
+    throwaway repo a test makes would then silently operate on the real one (committing into it, flipping its
+    core.bare, setting its user). Tests never want it."""
+    for k in [k for k in os.environ if k.startswith("GIT_")]:
+        monkeypatch.delenv(k)
+
+
 @pytest.fixture(scope="session")
 def fixtures_dir():
     return FIXTURES
