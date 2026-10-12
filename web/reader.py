@@ -7,7 +7,7 @@ Reader Daemon — vehicle-agnostic (profiles in vehicles/).
 Polls the car over BLE or USB, decodes with the active vehicle profile
 (default: the 2012 Leaf, vehicles/leaf_ze0.py), writes the latest
 merged record to battery_state.json (for the dashboard) and periodic rows to
-the SQLite store (web/leaf_battery.db — never pruned).
+the SQLite store (<data>/leaf_battery.db — never pruned).
 
 Scheduling
 ----------
@@ -15,7 +15,7 @@ Every signal source is an *item* (an LBC/HVAC UDS group or a passive Car-CAN
 capture) with a period. Items with period 0 form the **fast lane** and run
 every cycle; the rest are **round-robin by overdue ratio** inside a small
 per-cycle time budget. Only items needed by tiles that are enabled in
-web/tiles.json are polled at all — disabling a tile hands its bandwidth to
+<data>/tiles.json are polled at all — disabling a tile hands its bandwidth to
 the others. The file is re-read whenever its mtime changes.
 
 Resilience
@@ -23,7 +23,7 @@ Resilience
   * Supervisor loop: any transport error → status "reconnecting", exponential
     back-off (2 s → 30 s), re-detect adapter, re-run the profile's configure().
   * Car asleep (LBC silent) → status "asleep", 60 s heartbeat.
-  * web/reader.pause → exit cleanly (status "paused"); app.py relaunches
+  * <data>/reader.pause → exit cleanly (status "paused"); app.py relaunches
     when the file is removed. Calibration tools borrow the adapter this way.
   * battery_state.json always keeps the last good reading plus `last_ok`.
 
@@ -55,6 +55,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 from elm327 import detect_adapter, set_uds_target, passive_capture, load_local_config  # noqa: E402
 from store import Store, utc_now_iso, ev_norm                       # noqa: E402
+import datadir               # where Ha-Kake keeps its own data (docs/DATA.md)  # noqa: E402
 import mqttsource            # <prefix>/state + signal/<key> for gauges; no-op without mqtt.host  # noqa: E402
 from vehicles import (get_vehicle, peak_keys, buses, item_bus, primary_bus, source_specs,  # noqa: E402
                       tiles as vehicle_tiles, default_span, default_tiles)
@@ -62,42 +63,42 @@ import signals                                                      # noqa: E402
 import console as consolelog        # the raw output console's ring and file (docs/CONSOLE.md)  # noqa: E402
 
 DIR = os.path.dirname(os.path.abspath(__file__))
-STATE_FILE = os.path.join(DIR, "battery_state.json")
-PAUSE_FILE = os.path.join(DIR, "reader.pause")
-TILES_FILE = os.path.join(DIR, "tiles.json")
-CALIB_FILE = os.path.join(DIR, "calibration.json")   # per-car offsets (gitignored)
-CONSOLE_FILE = os.path.join(DIR, "console.jsonl")    # the raw output console's window (gitignored)
+STATE_FILE = datadir.path("battery_state.json")
+PAUSE_FILE = datadir.path("reader.pause")
+TILES_FILE = datadir.path("tiles.json")
+CALIB_FILE = datadir.path("calibration.json")   # per-car offsets (gitignored)
+CONSOLE_FILE = datadir.path("console.jsonl")    # the raw output console's window (gitignored)
 # Replay writes to its own files, per profile: it must never touch the real
 # database (years of irreplaceable readings) or the last real state, and two
 # profiles have different `readings` columns, so they get different files.
 
 
 def replay_db(vehicle=None):
-    return os.path.join(DIR, f"replay_{vehicle or VEHICLE.NAME}.db")
+    return datadir.path(f"replay_{vehicle or VEHICLE.NAME}.db")
 
 
 def replay_state(vehicle=None):
-    return os.path.join(DIR, f"replay_{vehicle or VEHICLE.NAME}_state.json")
+    return datadir.path(f"replay_{vehicle or VEHICLE.NAME}_state.json")
 
 
 # Simulator mode is under the same rule, for the same reason: generated rows
-# are not readings, and mixing them into web/leaf_battery.db would poison
+# are not readings, and mixing them into <data>/leaf_battery.db would poison
 # 12,000+ irreplaceable ones from two real cars.
 
 def sim_db(vehicle=None):
-    return os.path.join(DIR, f"sim_{vehicle or VEHICLE.NAME}.db")
+    return datadir.path(f"sim_{vehicle or VEHICLE.NAME}.db")
 
 
 def sim_state(vehicle=None):
-    return os.path.join(DIR, f"sim_{vehicle or VEHICLE.NAME}_state.json")
-LAYOUTS_FILE = os.path.join(DIR, "layouts.json")     # named tile layouts (gitignored)
-BOOKMARKS_FILE = os.path.join(DIR, "bookmarks.json") # timeline flags (gitignored)
+    return datadir.path(f"sim_{vehicle or VEHICLE.NAME}_state.json")
+LAYOUTS_FILE = datadir.path("layouts.json")     # named tile layouts (gitignored)
+BOOKMARKS_FILE = datadir.path("bookmarks.json") # timeline flags (gitignored)
 BOOKMARK_LABEL_MAX = 80
 # The simulator cockpit (/sim) keeps its own arrangement here (gitignored).
-# It is not web/tiles.json because that store is vehicle-shaped: _clean_tile()
+# It is not <data>/tiles.json because that store is vehicle-shaped: _clean_tile()
 # drops any id the active profile's TILES does not declare, and the cockpit's
 # cards (cluster, knob categories, time, state) are the page's, not a car's.
-SIM_TILES_FILE = os.path.join(DIR, "sim_tiles.json")
+SIM_TILES_FILE = datadir.path("sim_tiles.json")
 
 ASLEEP_INTERVAL = 60
 # The minimum cycle period for a transport that does not set MIN_INTERVAL.
@@ -168,7 +169,7 @@ def set_vehicle(name=None):
 
 set_vehicle()
 
-# tile-config fields persisted to web/tiles.json (vehicle-independent)
+# tile-config fields persisted to <data>/tiles.json (vehicle-independent)
 TILE_FIELDS = ("id", "enabled", "span", "kind", "signal", "type", "opts", "title", "x", "y", "h")
 
 
@@ -322,7 +323,7 @@ def _clean_tile(t):
 
 
 def load_tiles():
-    """web/tiles.json (v2: order, enabled, span, type, opts, user signal tiles)
+    """<data>/tiles.json (v2: order, enabled, span, type, opts, user signal tiles)
     merged over the defaults; unknown built-in ids ignored, missing ones appended."""
     raw = []
     try:
@@ -371,7 +372,7 @@ def save_tiles(cfg):
 def _clean_sim_tile(t):
     """One cockpit tile entry with its types enforced, or None if unusable.
 
-    Keeps the same field set web/tiles.json uses so the one Tile Studio
+    Keeps the same field set <data>/tiles.json uses so the one Tile Studio
     engine reads both stores; the difference is that no id is rejected.
     """
     if not isinstance(t, dict) or not isinstance(t.get("id"), str) or not t["id"]:
@@ -404,7 +405,7 @@ def _sim_tiles_from(raw):
 
 
 def load_sim_tiles():
-    """web/sim_tiles.json, or an empty layout — the page then auto-places."""
+    """<data>/sim_tiles.json, or an empty layout — the page then auto-places."""
     try:
         with open(SIM_TILES_FILE) as f:
             raw = json.load(f).get("tiles", [])
@@ -443,7 +444,7 @@ def list_layouts():
 
 @_locked
 def save_layout(name, cfg=None):
-    """Store a layout under `name` (current web/tiles.json when cfg is None)."""
+    """Store a layout under `name` (current <data>/tiles.json when cfg is None)."""
     name = layout_name(name)
     tiles = save_tiles(cfg)["tiles"] if cfg is not None else load_tiles()["tiles"]
     d = _read_layouts()
@@ -454,7 +455,7 @@ def save_layout(name, cfg=None):
 
 @_locked
 def load_layout(name):
-    """Make a saved layout the active one (writes web/tiles.json)."""
+    """Make a saved layout the active one (writes <data>/tiles.json)."""
     try:
         name = layout_name(name)
     except ValueError:
@@ -521,7 +522,7 @@ def period_overrides(tiles_cfg):
 
 # ── the raw output console (docs/CONSOLE.md) ──────────────────────────────
 # A framework tile (vehicles/__init__.py FRAMEWORK_TILES), off by default. The
-# reader learns from web/tiles.json that it is on — the same mtime path
+# reader learns from <data>/tiles.json that it is on — the same mtime path
 # period_overrides() uses — and only then taps the transports. No tile, no
 # object, no tap, no file: enabling it is the only thing that costs anything.
 #
@@ -577,7 +578,7 @@ def console_ids(items):
 
 # ── timeline bookmarks ────────────────────────────────────────────────────
 # A flag the owner drops on a moment — "start of the pull" — kept in
-# web/bookmarks.json like the other per-machine files, so playback can jump
+# <data>/bookmarks.json like the other per-machine files, so playback can jump
 # to it. Each is {t: epoch seconds, label, kind: "user", vehicle}.
 
 def _clean_bookmark(b):
@@ -1180,7 +1181,7 @@ class Reader:
 
     def apply_policy(self):
         """Per-vehicle sensor policy (e.g. the Leaf's current fusion + zero
-        calibration). web/calibration.json is generic; what it means is not."""
+        calibration). <data>/calibration.json is generic; what it means is not."""
         self.refresh_calibration()
         fn = getattr(VEHICLE, "apply_policy", None)
         if fn:
@@ -1663,6 +1664,7 @@ class Reader:
 
 async def main(interval, adapter_pref, fast=False, budget=1.5, db=None):
     print(f"Reader — {VEHICLE.TITLE}")
+    print("  " + datadir.startup_note().replace("\n", "\n  "))
     if adapter_pref == "replay":
         print("  REPLAY MODE — recorded fixture, not a car. Nothing here is a live reading.")
     if adapter_pref == "sim":

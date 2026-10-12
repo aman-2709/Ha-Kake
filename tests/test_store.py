@@ -383,7 +383,7 @@ def test_db_file_is_opt_in(tmp_path, monkeypatch):
     assert st.DEFAULT_DB.endswith("leaf_battery.db")
     prof = types.SimpleNamespace(NAME="fake_1999", HISTORY_COLS={"x": {"kind": "real"}})
     assert Store.__init__.__defaults__ == (None, None, False)   # Store() still takes no args
-    monkeypatch.setattr(st, "DIR", str(tmp_path))
+    monkeypatch.setattr(st, "DEFAULT_DB", str(tmp_path / "leaf_battery.db"))
     s = Store(vehicle=prof)
     assert s.path == st.DEFAULT_DB                          # unset -> shared file
     s.close()

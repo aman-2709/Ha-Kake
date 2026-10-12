@@ -20,7 +20,9 @@ sys.path.insert(0, ROOT)
 from elm327 import detect_adapter, passive_capture          # noqa: E402
 from leaf_decoders import last_complete_frame               # noqa: E402
 
-PAUSE_FILE = os.path.join(ROOT, "web", "reader.pause")
+sys.path.insert(0, ROOT)
+import datadir  # noqa: E402
+PAUSE_FILE = datadir.path("reader.pause")
 
 
 def ts():

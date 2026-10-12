@@ -381,7 +381,7 @@
   }
 
   // ── persistence ─────────────────────────────────────────────────────
-  // web/tiles.json is the real store; localStorage is only the fallback for a
+  // <data>/tiles.json is the real store; localStorage is only the fallback for a
   // backend that did not answer. The key was renamed off 'leaf-' when the
   // project went multi-vehicle; the old key is read once so nobody's cached
   // layout disappears the first time they load after the rename.
@@ -432,7 +432,7 @@
     apply(); save();
   }
 
-  // ── named layouts (web/layouts.json on the backend) ─────────────────
+  // ── named layouts (<data>/layouts.json on the backend) ─────────────────
   async function refreshLayouts() {
     const sel = document.getElementById('layout-sel'); if (!sel) return;
     let names = [];

@@ -16,7 +16,7 @@ API:
   /api/sessions                  recorded sessions (gaps in the data), newest first
   /api/playback/frames?from=&to= stored readings in an epoch range as playback frames
                                  (&max=3600 thins to the last row per bucket; &cells=1 joins cells)
-  /api/bookmarks                 GET ?from&to / PUT {t,label} / DELETE ?t — timeline flags (web/bookmarks.json)
+  /api/bookmarks                 GET ?from&to / PUT {t,label} / DELETE ?t — timeline flags (<data>/bookmarks.json)
   /api/bookmarks/auto?from=&to=  discharge pulls found in the readings, as candidate flags
   /api/console?since=&kind=&ids=&limit=
                                  the raw output console's entries after an opaque
@@ -64,6 +64,7 @@ import time
 from flask import Flask, Response, abort, jsonify, render_template, request, stream_with_context
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+import datadir                           # noqa: E402  (where the data lives, docs/DATA.md)
 from store import Store                 # noqa: E402
 import console as consolelog           # the raw output console's file reader  # noqa: E402
 import dtc                               # noqa: E402  (trouble-code dictionary; absent is normal)
@@ -76,7 +77,7 @@ from signals import COLOR_SCALES, TILE_TYPES              # noqa: E402
 from util import env                                     # noqa: E402
 
 DIR = os.path.dirname(os.path.abspath(__file__))
-STATE_FILE = os.path.join(DIR, "battery_state.json")
+STATE_FILE = datadir.path("battery_state.json")
 DEMO_DIR = os.path.join(os.path.dirname(DIR), "docs", "demo")
 DEMO = env("HAKAKE_DEMO", "LEAF_DEMO")   # dir with state.json / history.json for docs screenshots
 DB_PATH = None                           # None → the profile's own file; replay overrides it
@@ -99,7 +100,7 @@ DEFAULT_SIM_CONTROL_PORT = 8099
 #             runs the *entire* stack (reader, scheduler, elm327, profile
 #             decode, store, API) against a recorded session fixture. This is
 #             the one to use to see a vehicle profile work. It writes to its
-#             own throwaway database, never web/leaf_battery.db.
+#             own throwaway database, never <data>/leaf_battery.db.
 #
 #   --adapter sim
 #             runs the entire stack against a *generated* vehicle (simulator/,
@@ -232,7 +233,7 @@ def sim_page():
 
 @app.route("/api/sim/tiles", methods=["GET", "PUT"])
 def api_sim_tiles():
-    """The cockpit's arrangement (web/sim_tiles.json). Shape-only validation:
+    """The cockpit's arrangement (<data>/sim_tiles.json). Shape-only validation:
     the page owns its card ids, the server owns the types."""
     if DEMO:
         if request.method == "PUT":
@@ -366,7 +367,7 @@ def api_health():
 
 @app.route("/api/tiles", methods=["GET", "PUT"])
 def api_tiles():
-    """Tile order + enabled flags. PUT persists to web/tiles.json; the reader
+    """Tile order + enabled flags. PUT persists to <data>/tiles.json; the reader
     picks the change up on its next cycle and stops polling what nothing shows."""
     if DEMO:                                    # demo → default layout, read-only
         cfg = {"tiles": [dict(t, span=t.get("span", reader.DEFAULT_SPAN.get(t["id"], 3)))
@@ -399,7 +400,7 @@ def api_calibration():
     if request.method == "DELETE":
         return jsonify(save_calibration({}))
     if request.method == "PUT":
-        with reader.SETTINGS_LOCK:                # read-modify-write of web/calibration.json
+        with reader.SETTINGS_LOCK:                # read-modify-write of <data>/calibration.json
             return _put_calibration(request.get_json(silent=True) or {})
     return jsonify(load_calibration())
 
@@ -503,7 +504,7 @@ def api_console():
     millisecond. `kind` and `ids` are comma-separated filters; `limit` caps the
     answer to the newest matches, so a pane that fell behind gets the end of the
     stream rather than the start of a backlog. The reader writes the file
-    (web/console.jsonl, gitignored, size-capped) only while the tile is on; when
+    (<data>/console.jsonl, gitignored, size-capped) only while the tile is on; when
     it is off the file is absent and this answers an empty window, which is the
     honest thing rather than a 404.
 
@@ -549,7 +550,7 @@ def _mine(items):
 @app.route("/api/bookmarks", methods=["GET", "PUT", "DELETE"])
 def api_bookmarks():
     """GET ?from&to lists flags (epoch seconds); PUT {t?, label?} adds one (t defaults
-    to now); DELETE ?t= removes one. Kept in web/bookmarks.json, gitignored."""
+    to now); DELETE ?t= removes one. Kept in <data>/bookmarks.json, gitignored."""
     if DEMO:
         if request.method != "GET":
             return jsonify({"error": "demo mode is read-only"}), 403
@@ -622,7 +623,7 @@ def api_playback_frames():
 
 
 READER = os.path.join(DIR, "reader.py")
-PAUSE_FILE = os.path.join(DIR, "reader.pause")
+PAUSE_FILE = datadir.path("reader.pause")
 _child = {"proc": None}
 
 
@@ -674,7 +675,7 @@ def run_reader_supervised(interval, adapter_pref, fast, budget=1.5, vehicle=None
         rc = proc.wait()
         _child["proc"] = None
         if os.path.exists(PAUSE_FILE):
-            print("[reader] paused (web/reader.pause) — will relaunch when the file is removed", flush=True)
+            print("[reader] paused (<data>/reader.pause) — will relaunch when the file is removed", flush=True)
             continue
         if time.time() - started > 60:
             backoff = 2                         # ran fine for a while → reset
@@ -709,6 +710,7 @@ if __name__ == "__main__":
         sys.stdout.reconfigure(line_buffering=True)  # reader thread prints show up promptly in logs
     except AttributeError:
         pass
+    print(datadir.startup_note())
     ap = argparse.ArgumentParser(description="Ha-Kake — read-only OBD-II telemetry dashboard")
     ap.add_argument("--interval", type=float, default=None,
                     help="Minimum seconds per reader cycle (default: the adapter's own — 0.5 for an ELM327, 0 for native CAN)")
@@ -789,7 +791,7 @@ if __name__ == "__main__":
         db = args.db
         if pref == "replay":
             # Replay rows are not readings from a car and must never land in
-            # web/leaf_battery.db. Both the reader and this process read/write
+            # <data>/leaf_battery.db. Both the reader and this process read/write
             # the throwaway file instead.
             db = DB_PATH = reader.replay_db()
             STATE_FILE = reader.replay_state()

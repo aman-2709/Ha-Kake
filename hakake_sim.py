@@ -920,7 +920,7 @@ def main(argv=None):
                         "for iterating on the UI and on report output")
     g.add_argument("--days", type=float, default=180.0, help="Days of history to generate (default 180)")
     g.add_argument("--out", default=None, metavar="PATH",
-                   help="Database to write (default web/sim_history.db; the real "
+                   help="Database to write (default sim_history.db in the data folder; the real "
                         "database is refused)")
     g.add_argument("--sample", type=float, default=120.0,
                    help="Seconds between rows while the car is doing something (default 120)")
@@ -933,7 +933,7 @@ def main(argv=None):
                    help="Run the acceleration pull offline through the simulated CAN rig and write "
                         "a sim database (cell log armed), the raw frame stream of both channels "
                         "(research/sim_pull_<date>.jsonl) and a replay fixture; --scenario/--seed/"
-                        "--out apply (defaults: pull, 1, web/sim_<vehicle>.db)")
+                        "--out apply (defaults: pull, 1, sim_<vehicle>.db in the data folder)")
     q.add_argument("--jsonl", default=None, metavar="PATH", help="--pull: where the frame stream goes")
     q.add_argument("--fixture", default=None, metavar="PATH",
                    help="--pull: the replay fixture (default tests/fixtures/session_<vehicle>_pull_sim.json)")

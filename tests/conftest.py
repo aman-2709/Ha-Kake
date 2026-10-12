@@ -30,6 +30,12 @@ import sys
 
 import pytest
 
+import tempfile
+
+# The data folder (datadir.py) is a throwaway one for the whole session, set before any module is imported, so no
+# test can read or write a real install's database or settings.
+os.environ["HAKAKE_DATA_DIR"] = tempfile.mkdtemp(prefix="hakake-test-data-")
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIXTURES = os.path.join(ROOT, "tests", "fixtures")
 for p in (ROOT, os.path.join(ROOT, "web")):

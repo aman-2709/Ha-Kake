@@ -4,7 +4,7 @@
 """
 Input walk — capture ECU bytes while you step a control through its settings.
 
-Pauses the dashboard reader (web/reader.pause), connects to the adapter, then
+Pauses the dashboard reader (<data>/reader.pause), connects to the adapter, then
 for every step prints an instruction, waits for Enter (or --auto seconds),
 captures a few samples of the target's UDS groups, and moves on. At the end
 it ranks the bytes that changed with the input — constant within a step,
@@ -41,8 +41,10 @@ sys.path.insert(0, ROOT)
 from elm327 import detect_adapter, configure_leaf_bms, set_uds_target, passive_capture   # noqa: E402
 from leaf_decoders import parse_isotp, is_no_data, last_complete_frame                    # noqa: E402
 
-PAUSE_FILE = os.path.join(ROOT, "web", "reader.pause")
-STATE_FILE = os.path.join(ROOT, "web", "battery_state.json")
+sys.path.insert(0, ROOT)
+import datadir  # noqa: E402
+PAUSE_FILE = datadir.path("reader.pause")
+STATE_FILE = datadir.path("battery_state.json")
 
 TARGETS = {
     "hvac":  {"kind": "uds", "tx": "744", "rx": "764", "groups": ["2110", "2100", "2111", "2101"]},

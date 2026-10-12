@@ -6,9 +6,11 @@ READ-ONLY on the database (opened with ?immutable=1). Prints aggregates only.
 Not part of the package; run manually:
     python tools/analyse_drive_20260903.py [db_path]
 """
-import json, math, sqlite3, sys
+import json, math, os, sqlite3, sys
 
-DB = sys.argv[1] if len(sys.argv) > 1 else "web/leaf_battery.db"
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+import datadir  # noqa: E402
+DB = sys.argv[1] if len(sys.argv) > 1 else datadir.path("leaf_battery.db")
 T0, T1 = "2026-09-03T21:40:00Z", "2026-09-03T22:05:00Z"
 
 con = sqlite3.connect(f"file:{DB}?immutable=1", uri=True)
