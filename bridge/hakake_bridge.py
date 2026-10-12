@@ -678,7 +678,10 @@ class Bridge:
                  ", LISTEN-ONLY" if self.listen_only else "",
                  "all" if self._filters is None else [id_hex(i) for i in self._filters], self.batch_ms)
         client = self.attach_client(self.make_client())
-        client.connect_async(self.cfg["host"], self.cfg["port"], keepalive=30)
+        # recover fast after an outage: retry 1 s doubling to at most 10 s (paho's default caps
+        # at 120 s), and a 15 s keepalive so a dead link is noticed within ~22 s
+        client.reconnect_delay_set(min_delay=1, max_delay=10)
+        client.connect_async(self.cfg["host"], self.cfg["port"], keepalive=15)
         client.loop_start()
         self.start()
         stop = threading.Event()

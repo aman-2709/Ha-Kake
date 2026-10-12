@@ -312,7 +312,8 @@ class MqttSource:
         c.on_subscribe = self._on_subscribe
         _configure_client(c, self.cfg)
         self.client = c
-        c.connect_async(self.host, self.tcp_port, keepalive=30)
+        c.reconnect_delay_set(min_delay=1, max_delay=10)   # paho's default caps at 120 s
+        c.connect_async(self.host, self.tcp_port, keepalive=15)
         c.loop_start()
         try:
             await asyncio.wait_for(self._connected_evt.wait(), connect_timeout)
@@ -644,7 +645,8 @@ class StatePublisher:
     def connect(self):
         c = self._factory(f"hakake-state-{secrets.token_hex(3)}")
         _configure_client(c, self.cfg)
-        c.connect_async(self.cfg["host"], self.cfg["port"], keepalive=30)
+        c.reconnect_delay_set(min_delay=1, max_delay=10)
+        c.connect_async(self.cfg["host"], self.cfg["port"], keepalive=15)
         c.loop_start()
         self.client = c
         return self

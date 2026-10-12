@@ -59,6 +59,8 @@ class FakeClient:
         self.connected = False
         self.loop_running = False
         self.host = None
+        self.keepalive = None
+        self.reconnect_delay = None
 
     # configuration
     def username_pw_set(self, username, password=None):
@@ -70,9 +72,13 @@ class FakeClient:
     def will_set(self, topic, payload=None, qos=0, retain=False):
         self.will = (topic, payload, qos, retain)
 
+    def reconnect_delay_set(self, min_delay=1, max_delay=120):
+        self.reconnect_delay = (min_delay, max_delay)
+
     # lifecycle
     def connect_async(self, host, port=1883, keepalive=60):
         self.host = (host, port)
+        self.keepalive = keepalive
 
     def connect(self, host, port=1883, keepalive=60):
         self.host = (host, port)
@@ -268,6 +274,13 @@ def test_start_connects_and_subscribes_the_control_topics():
     assert (f"{ROOT_T}/status", 1) in client.subscriptions
     assert (f"{ROOT_T}/tx/uds/+", 1) in client.subscriptions
     assert any(c.isdigit() for c in src.name)
+
+
+def test_start_recovers_fast_after_an_outage():
+    # paho's default back-off grows to 120 s; a reader across a flaky network must not wait that long
+    src, client, sink = run(started())
+    assert client.reconnect_delay == (1, 10)
+    assert client.keepalive == 15
 
 
 def test_start_times_out_without_a_broker():
