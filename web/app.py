@@ -88,6 +88,19 @@ DB_PATH = None                           # None → the profile's own file; repl
 SIM_CONTROL_URL = None
 DEFAULT_SIM_CONTROL_PORT = 8099
 
+def loopback_url(text):
+    """`http://127.0.0.1:PORT` (or localhost) normalised, else ValueError.
+
+    The simulator control API has no authentication, so the page is only ever
+    pointed at this machine."""
+    from urllib.parse import urlsplit
+    u = urlsplit(text.strip())
+    if u.scheme != "http" or u.hostname not in ("127.0.0.1", "localhost", "::1") or not u.port \
+            or u.path not in ("", "/") or u.query or u.fragment:
+        raise ValueError(f"{text!r} is not http://127.0.0.1:PORT (loopback only, the API has no authentication)")
+    return f"http://{'[::1]' if u.hostname == '::1' else u.hostname}:{u.port}"
+
+
 # Two ways to run without a car, and they are not the same thing:
 #
 #   --demo    serves frozen JSON from docs/demo/. No reader, no transport, no
@@ -650,6 +663,10 @@ if __name__ == "__main__":
                          f"changed mid-run (--adapter sim). Default in sim mode: "
                          f"{DEFAULT_SIM_CONTROL_PORT}; 0 = a free port. With --sim-serial "
                          "it names the port the external rig already serves on")
+    ap.add_argument("--sim-control-url", default=None, metavar="URL",
+                    help="Name a simulator that runs in another process, so /sim finds it without "
+                         "?control=: http://127.0.0.1:PORT, loopback only. For --adapter can reading "
+                         "tools/sim_to_can.py (its API is on 8099 by default); not needed with --adapter sim")
     ap.add_argument("--no-sim-control", action="store_true",
                     help="Do not serve the simulator control API (--adapter sim)")
     ap.add_argument("--sim-serial", default=None, metavar="DEV",
@@ -676,6 +693,15 @@ if __name__ == "__main__":
         os.environ["HAKAKE_CAN_CHANNEL"] = args.can_channel     # the reader child inherits it
 
     pref = None if args.adapter == "auto" else args.adapter
+    if args.sim_control_url:
+        try:
+            args.sim_control_url = loopback_url(args.sim_control_url)
+        except ValueError as e:
+            ap.error(f"--sim-control-url: {e}")
+        if pref == "sim":
+            ap.error("--sim-control-url names an external simulator; --adapter sim brings its own "
+                     "(use --sim-control PORT to move it)")
+        SIM_CONTROL_URL = args.sim_control_url
     if args.no_sim_control:
         args.sim_control = None
     elif pref == "sim" and args.sim_control is None and not args.sim_serial:

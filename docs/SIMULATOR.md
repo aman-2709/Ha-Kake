@@ -143,7 +143,7 @@ dashboard shows. Its JavaScript talks to the control API cross-origin
 started on a real adapter, or with `--no-sim-control` — the page shows the
 two launch commands instead of cards. It finds the control API in this
 order: `?control=http://127.0.0.1:PORT` in the URL (what the `--pty` rig's
-printed cockpit link carries), then the URL `web/app.py` knew at startup,
+printed cockpit link carries), then the URL `web/app.py` knew at startup (`--sim-control-url` sets it for a simulator in another process),
 then `sim_control_url` from `/api/status` (how `--sim-control 0` is found;
 the page keeps asking while the reader says it is simulated and has not
 published a port yet).
@@ -697,6 +697,7 @@ also want to override the power.
 | `--vehicle NAME` | both | the profile (`leaf_ze0`, `lancer_2009`) |
 | `--sim-control PORT` | `app.py`, `reader.py` | control API port; **default 8099 in sim mode**, `0` = a free port. With `--sim-serial` it names the port the external rig already serves on, so the pages can link to it |
 | `--no-sim-control` | `app.py` | no control API |
+| `--sim-control-url URL` | `app.py` | name a simulator in *another process* (`http://127.0.0.1:PORT`, loopback only) so `/sim` finds it without `?control=`; for `--adapter can` beside `tools/sim_to_can.py`; refused with `--adapter sim` |
 | `--sim-serial DEV` | `app.py`, `reader.py` | talk to a `--pty` rig over real serial |
 | `--pty` | `hakake_sim.py` | publish a pseudo-terminal |
 | `--launch-dashboard [PORT]` | `hakake_sim.py` | with `--pty`: also start `web/app.py` against it (default port 5055), stopped when the rig stops |
@@ -1203,8 +1204,11 @@ path, so it must not write to `web/leaf_battery.db`.
 busy port falls back to a free one and says so). The `/sim` page of any
 dashboard can drive it: open
 `http://127.0.0.1:PORT/sim?control=http://127.0.0.1:8099`, where PORT is the
-dashboard's. A dashboard on `--adapter can` has no simulator of its own, so
-without `?control=` its `/sim` shows "No simulator behind this page". Gear,
+dashboard's, or start the dashboard with
+`--sim-control-url http://127.0.0.1:8099` and open its plain `/sim`. A dashboard
+on `--adapter can` has no simulator of its own, so with neither, its `/sim`
+shows "No simulator behind this page". The flag takes loopback URLs only and is
+refused with `--adapter sim`; nothing probes for a simulator on its own. Gear,
 speed, lights and faults then change the frames on the bus, and
 `curl -X POST localhost:8099/sim/knobs -d '{"gear":"R"}'` does the same. A
 running `--scenario` writes the same knobs on its own timeline, so start without

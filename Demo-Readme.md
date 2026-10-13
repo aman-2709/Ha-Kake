@@ -161,7 +161,15 @@ Which scenario to run with `sim_to_can.py` (the same names work in demo 2, and t
 | The charging taper | `--scenario charge --speed 120` | about 2.5 min (about 5 h at real time) |
 | A fault on the dashboard | `--scenario degraded_pack` | about 1.5 min |
 
-The simulator starts its clock when `sim_to_can.py` starts, not when the dashboard connects. If you start the dashboard late you join the scenario part-way through, and when it ends (`drive` parks at 135 s) the values stop changing. To run a scenario again, restart `sim_to_can.py`. For live controls, start it **without** `--scenario` and open the cockpit on the dashboard with `?control=`: `http://127.0.0.1:5000/sim?control=http://127.0.0.1:8099` (use your dashboard's port). The gear selector and sliders then change what is on vcan0. The tool prints this URL when it starts; `--control PORT` moves it and `--no-control` turns it off.
+The simulator starts its clock when `sim_to_can.py` starts, not when the dashboard connects. If you start the dashboard late you join the scenario part-way through, and when it ends (`drive` parks at 135 s) the values stop changing. To run a scenario again, restart `sim_to_can.py`. For live controls, start it **without** `--scenario` start the dashboard with `--sim-control-url http://127.0.0.1:8099` and open its `/sim`:
+
+```bash
+venv/bin/python -u tools/sim_to_can.py --channel vcan0                      # terminal 1: no --scenario
+venv/bin/python web/app.py --adapter can --can-channel vcan0 --sim-control-url http://127.0.0.1:8099 --db /tmp/vcan.db   # terminal 2
+# browser: http://127.0.0.1:5000/sim   (the gear selector and sliders now change what is on vcan0)
+```
+
+Without the flag, name the simulator in the URL instead: `http://127.0.0.1:5000/sim?control=http://127.0.0.1:8099` (your dashboard's port). `--control PORT` moves the tool's API and `--no-control` turns it off.
 
 **Driving in reverse (this demo).** No shipped scenario reverses, so set the car's state with knobs and leave `--scenario` out:
 
@@ -245,6 +253,7 @@ If `sent` stalls near 24 frames with `No buffer space available`, nothing is ack
 | `--demo [PATH]` | Canned JSON, no reader. |
 | `--port` | The dashboard's port (default 5000). |
 | `--sim-control PORT` / `--no-sim-control` | The simulator's control API port (default 8099), or switch it off. |
+| `--sim-control-url URL` | Name a simulator running in another process (`http://127.0.0.1:PORT`, loopback only), so `/sim` finds it. For `--adapter can` with `sim_to_can.py`; refused with `--adapter sim`. |
 
 The full list is in `docs/SIMULATOR.md` ("Flags") and `python web/app.py --help`.
 

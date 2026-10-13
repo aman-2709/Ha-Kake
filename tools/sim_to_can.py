@@ -20,7 +20,8 @@ them.
 
 The simulator's control API runs beside it (127.0.0.1:8099, `--control PORT`,
 `--no-control`), so the cockpit can drive this very process: open
-`http://127.0.0.1:5000/sim?control=http://127.0.0.1:8099` on any dashboard. Gear,
+`<dashboard>/sim?control=http://127.0.0.1:8099`, or start the dashboard with
+`--sim-control-url http://127.0.0.1:8099` and open its `/sim`. Gear,
 speed, lights and faults then change the frames on the bus. A running
 `--scenario` writes the same knobs on its own timeline, so leave it off for the cockpit.
 
@@ -152,9 +153,10 @@ def main():
     httpd = None
     if not args.no_control:
         httpd, port = start_control(sim, args.control, ecu.lock)
-        print(f"  control API  http://127.0.0.1:{port}/sim/schema\n"
-              f"  cockpit      http://127.0.0.1:5000/sim?control=http://127.0.0.1:{port}"
-              "   (any running dashboard's /sim page)")
+        url = f"http://127.0.0.1:{port}"
+        print(f"  control API  {url}/sim/schema\n"
+              f"  cockpit      open  <your dashboard>/sim?control={url}\n"
+              f"               or start the dashboard with  --sim-control-url {url}  and open its /sim")
     print(f"simulated {args.bus}-CAN on {args.channel}, ~{ecu.expected_fps():.0f} frames/s expected; Ctrl-C stops")
     try:
         while True:

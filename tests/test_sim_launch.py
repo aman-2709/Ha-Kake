@@ -270,3 +270,27 @@ def test_a_wedged_dashboard_is_killed_after_the_grace():
     child.GRACE_S = 0.01
     assert child.stop() == -9
     assert child.proc.terminated and child.proc.killed
+
+
+def test_sim_control_url_accepts_only_loopback():
+    import app as webapp
+    assert webapp.loopback_url("http://127.0.0.1:8099") == "http://127.0.0.1:8099"
+    assert webapp.loopback_url("http://localhost:8099/") == "http://localhost:8099"
+    for bad in ("http://192.168.1.5:8099", "https://127.0.0.1:8099", "http://127.0.0.1",
+                "http://127.0.0.1:8099/sim", "127.0.0.1:8099", "http://example.com:80"):
+        with pytest.raises(ValueError):
+            webapp.loopback_url(bad)
+
+
+def test_sim_control_url_flag_is_refused_when_wrong_and_documented():
+    bad = subprocess.run([sys.executable, APP, "--sim-control-url",
+                          "http://10.0.0.5:8099", "--no-reader"], capture_output=True, text=True,
+                         timeout=60)
+    assert bad.returncode == 2 and "loopback only" in bad.stderr
+    both = subprocess.run([sys.executable, APP, "--adapter", "sim",
+                           "--sim-control-url", "http://127.0.0.1:8099", "--no-reader"],
+                          capture_output=True, text=True, timeout=60)
+    assert both.returncode == 2 and "brings its own" in both.stderr
+    helped = subprocess.run([sys.executable, APP, "--help"],
+                            capture_output=True, text=True, timeout=60)
+    assert "--sim-control-url" in helped.stdout and "sim_to_can.py" in helped.stdout
