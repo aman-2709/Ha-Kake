@@ -25,6 +25,14 @@
 .gear-big.r { color: var(--orange); }
 .kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin-top: 14px; }
 .kv { display: flex; flex-direction: column; }
+/* Vehicle tile: a larger shifter centred above boxed readings that sit at the bottom of the tile */
+.grid-stack-item-content[data-tile="vehicle"] { display: flex; flex-direction: column; }
+[data-tile="vehicle"] .veh-top { flex: 1 1 auto; }
+[data-tile="vehicle"] .shifter { width: 190px; }
+[data-tile="vehicle"] .kv-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 16px; }
+[data-tile="vehicle"] .kv { padding: 8px 12px; background: var(--card2); border: 1px solid var(--border); border-radius: 8px; }
+[data-tile="vehicle"] .kv:last-child { grid-column: 1 / -1; }
+[data-tile="vehicle"] .kv-val { font-size: 1.15em; }
 .kv-label { font-size: 0.68em; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
 .kv-val { font-size: 1.05em; font-weight: 600; margin-top: 2px; }
 .kv-val small { font-size: 0.7em; color: var(--dim); font-weight: 400; margin-left: 4px; }

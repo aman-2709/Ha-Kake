@@ -527,6 +527,11 @@ scales to the tile's height (capped at 640 px) and the six status readouts
 (doors, hatch, lights, turn, brake, lock) sit as boxes along the bottom, so a
 resized tile never scrolls or leaves a gap.
 
+The Vehicle tile does the same: a large shifter and gear letter sit centred in the
+space above, and the readings (odometer, range, SOH, parking brake, doors, headlights,
+turn signal) are boxes pinned to the bottom, the last one spanning the full width.
+The rules are scoped to that tile, so the Climate tile that shares `.kv-grid` is unchanged.
+
 Every tile that depends on a slow item shows its age. Power sign comes from
 the BMS, not from an SOC-delta guess. Temperatures are °F with °C beside them.
 
