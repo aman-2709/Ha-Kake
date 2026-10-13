@@ -550,13 +550,23 @@ ENDPOINTS = ["/", "/panel", "/sim/schema", "/sim/state", "/sim/record",
              "POST /sim/power {brake} (501 if the core has no power switch)"]
 
 
+class _QuietServer(ThreadingHTTPServer):
+    """A browser drops its idle keep-alive sockets whenever it likes; the stdlib
+    server answers each with a traceback on stderr. A peer that hung up is not an error."""
+
+    def handle_error(self, request, client_address):
+        if isinstance(sys.exc_info()[1], (ConnectionResetError, BrokenPipeError)):
+            return
+        super().handle_error(request, client_address)
+
+
 def serve_control(sim, port=DEFAULT_CONTROL_PORT, lock=None, log=print, host="127.0.0.1"):
     """Start the control API in a daemon thread. Returns the HTTPServer.
 
     Loopback only, always: this thing can put a car into a fault state on a
     dashboard someone might be reading, and it has no authentication.
     """
-    httpd = ThreadingHTTPServer((host, int(port)), make_handler(sim, lock, log))
+    httpd = _QuietServer((host, int(port)), make_handler(sim, lock, log))
     httpd.daemon_threads = True
     t = threading.Thread(target=httpd.serve_forever, name="sim-control", daemon=True)
     t.start()

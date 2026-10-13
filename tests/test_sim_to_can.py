@@ -84,3 +84,21 @@ def test_a_busy_control_port_falls_back_to_a_free_one():
         assert p2 != p1 and any("busy" in m for m in log)
     finally:
         first.shutdown()
+
+
+def test_a_peer_that_hangs_up_prints_no_traceback(capsys):
+    """A browser resets its idle keep-alive socket; the control server must not shout about it."""
+    import socket
+    import struct
+    import threading
+    import time
+    from simulator import make_sim
+    httpd, port = sim_to_can.start_control(make_sim(seed=1), 0, threading.RLock(), log=lambda *_: None)
+    try:
+        s = socket.create_connection(("127.0.0.1", port))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))   # close sends RST
+        s.close()
+        time.sleep(0.5)
+    finally:
+        httpd.shutdown()
+    assert "Traceback" not in capsys.readouterr().err
