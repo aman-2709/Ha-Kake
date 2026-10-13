@@ -52,3 +52,35 @@ def test_speed_flag_scales_the_simulated_clock():
     from simulator import make_sim
     assert make_sim(scenario="drive", seed=1, speed=None).time_scale() == 1.0
     assert make_sim(scenario="drive", seed=1, speed=10).time_scale() == 10.0
+
+
+def test_the_control_api_drives_the_model_the_bus_is_sending():
+    """POST /sim/knobs on the tool's control port changes the sim the ECUs read, under their lock."""
+    import json
+    import threading
+    import urllib.request
+    from simulator import make_sim
+    sim = make_sim(seed=1)
+    httpd, port = sim_to_can.start_control(sim, 0, threading.RLock(), log=lambda *_: None)
+    try:
+        base = f"http://127.0.0.1:{port}"
+        assert "knobs" in json.load(urllib.request.urlopen(base + "/sim/schema"))
+        req = urllib.request.Request(base + "/sim/knobs", data=json.dumps({"gear": "R"}).encode(),
+                                     headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req)
+        assert sim.get_knobs()["gear"] == "R"
+    finally:
+        httpd.shutdown()
+
+
+def test_a_busy_control_port_falls_back_to_a_free_one():
+    import threading
+    from simulator import make_sim
+    sim, lock, log = make_sim(seed=1), threading.RLock(), []
+    first, p1 = sim_to_can.start_control(sim, 0, lock, log=lambda *_: None)
+    try:
+        second, p2 = sim_to_can.start_control(sim, p1, lock, log=log.append)
+        second.shutdown()
+        assert p2 != p1 and any("busy" in m for m in log)
+    finally:
+        first.shutdown()

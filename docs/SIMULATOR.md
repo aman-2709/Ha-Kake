@@ -1198,6 +1198,20 @@ Flags: `--channel` (default `vcan0`), `--bus car|ev`, `--vehicle`, `--scenario`,
 dashboard with a scratch `--db`: the reader reports `simulated: false` on this
 path, so it must not write to `web/leaf_battery.db`.
 
+**The cockpit on this path.** The tool also serves the simulator's control API
+(`--control PORT`, default 8099, 127.0.0.1 only; `--no-control` turns it off; a
+busy port falls back to a free one and says so). The `/sim` page of any
+dashboard can drive it: open
+`http://127.0.0.1:PORT/sim?control=http://127.0.0.1:8099`, where PORT is the
+dashboard's. A dashboard on `--adapter can` has no simulator of its own, so
+without `?control=` its `/sim` shows "No simulator behind this page". Gear,
+speed, lights and faults then change the frames on the bus, and
+`curl -X POST localhost:8099/sim/knobs -d '{"gear":"R"}'` does the same. A
+running `--scenario` writes the same knobs on its own timeline, so start without
+one when you want the cockpit to drive. The API is unauthenticated, which is why
+it is loopback only. Tested in `tests/test_sim_to_can.py`; verified live on
+`vcan0` (gear R then D from the cockpit reached the dashboard).
+
 **A physical adapter (`--bench`).** This tool *transmits*. A channel that is not
 `vcan*` is refused unless `--bench` is given and the link is up, in normal
 (not listen-only) mode, at `--bitrate` (500000): the kernel only reports that

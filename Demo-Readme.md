@@ -161,7 +161,7 @@ Which scenario to run with `sim_to_can.py` (the same names work in demo 2, and t
 | The charging taper | `--scenario charge --speed 120` | about 2.5 min (about 5 h at real time) |
 | A fault on the dashboard | `--scenario degraded_pack` | about 1.5 min |
 
-The simulator starts its clock when `sim_to_can.py` starts, not when the dashboard connects. If you start the dashboard late you join the scenario part-way through, and when it ends (`drive` parks at 135 s) the values stop changing. `sim_to_can.py` has no control panel, so restart it to run a scenario again. For live controls use demo 1.
+The simulator starts its clock when `sim_to_can.py` starts, not when the dashboard connects. If you start the dashboard late you join the scenario part-way through, and when it ends (`drive` parks at 135 s) the values stop changing. To run a scenario again, restart `sim_to_can.py`. For live controls, start it **without** `--scenario` and open the cockpit on the dashboard with `?control=`: `http://127.0.0.1:5000/sim?control=http://127.0.0.1:8099` (use your dashboard's port). The gear selector and sliders then change what is on vcan0. The tool prints this URL when it starts; `--control PORT` moves it and `--no-control` turns it off.
 
 **Driving in reverse (this demo).** No shipped scenario reverses, so set the car's state with knobs and leave `--scenario` out:
 

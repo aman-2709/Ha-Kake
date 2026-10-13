@@ -18,6 +18,12 @@ CAN device instead, so `candump`, the dashboard's `--adapter can` path
 (`can_interface: socketcan`, `can_channel: vcan0`) or any other tool can read
 them.
 
+The simulator's control API runs beside it (127.0.0.1:8099, `--control PORT`,
+`--no-control`), so the cockpit can drive this very process: open
+`http://127.0.0.1:5000/sim?control=http://127.0.0.1:8099` on any dashboard. Gear,
+speed, lights and faults then change the frames on the bus. A running
+`--scenario` writes the same knobs on its own timeline, so leave it off for the cockpit.
+
 Every frame is ASSERTED / simulated (see `simulator/canbus.py`).
 
 A physical channel needs `--bench` (or the controller in loopback mode, where
@@ -82,6 +88,23 @@ def check_channel(channel, bench=False, bitrate=500000, info=link_info):
     return None
 
 
+def start_control(sim, port, lock, log=print):
+    """Serve the simulator's control API on 127.0.0.1:port. Returns (server, bound_port).
+
+    A busy port falls back to a free one, and says so, rather than failing a run
+    that is otherwise fine (a dashboard's own simulator may already hold 8099)."""
+    from hakake_sim import serve_control      # lazy: utility, not a dependency
+    try:
+        httpd = serve_control(sim, port, lock=lock, log=log)
+    except OSError as e:
+        if port == 0:
+            raise
+        httpd = serve_control(sim, 0, lock=lock, log=log)
+        log(f"  *** control port {port} is busy ({e.strerror or e}); serving on "
+            f"{httpd.server_address[1]} instead ***")
+    return httpd, httpd.server_address[1]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--channel", default="vcan0", help="SocketCAN device (default vcan0)")
@@ -96,6 +119,9 @@ def main():
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--speed", type=float, default=None,
                     help="time scaling for the scenario (10 = ten times real time)")
+    ap.add_argument("--control", type=int, default=8099, metavar="PORT",
+                    help="simulator control API port on 127.0.0.1 (default 8099; 0 = any free port)")
+    ap.add_argument("--no-control", action="store_true", help="do not serve the control API")
     ap.add_argument("--knob", action="append", default=[], metavar="NAME=VALUE")
     args = ap.parse_args()
 
@@ -123,6 +149,12 @@ def main():
                     bus_factory=lambda: can.Bus(interface="socketcan", channel=args.channel,
                                                 receive_own_messages=False))
     ecu.start()
+    httpd = None
+    if not args.no_control:
+        httpd, port = start_control(sim, args.control, ecu.lock)
+        print(f"  control API  http://127.0.0.1:{port}/sim/schema\n"
+              f"  cockpit      http://127.0.0.1:5000/sim?control=http://127.0.0.1:{port}"
+              "   (any running dashboard's /sim page)")
     print(f"simulated {args.bus}-CAN on {args.channel}, ~{ecu.expected_fps():.0f} frames/s expected; Ctrl-C stops")
     try:
         while True:
@@ -131,6 +163,8 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        if httpd:
+            httpd.shutdown()
         ecu.stop()
 
 
