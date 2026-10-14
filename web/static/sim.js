@@ -930,6 +930,23 @@
     if (raw.closest('details').open) { const slim = {}; for (const k of Object.keys(r)) if (!HIDE.has(k) || k === 'lamps' || k === 'loads_w' || k === 'power' || k === 'messages') slim[k] = r[k]; raw.textContent = JSON.stringify(slim, null, 1); }
   }
 
+  // The first-run arrangement. A saved layout (the ⋯ menu, drag) wins over this; it only decides
+  // spans and order for cards the layout has never seen. Three 4-wide cards make a tidy second row
+  // (vehicle, body, tires) and the head unit sits beside the 8-wide cluster, so the packer leaves no holes.
+  const DEFAULT_SPAN = { cluster: 8, 'climate-head': 4, vehicle: 4, body: 4, tires: 4, climate: 4, time: 4, state: 8 };
+  const DEFAULT_ORDER = ['cluster', 'climate-head', 'vehicle', 'body', 'tires', 'climate', 'time', 'state'];
+  function arrangeDefaults() {
+    const grid = $('#simtiles');
+    for (const id of DEFAULT_ORDER) {
+      const card = grid.querySelector(`.card[data-tile="${id}"]`);
+      if (!card) continue;
+      card.dataset.span = DEFAULT_SPAN[id];
+    }
+    // reorder: the named cards first, in order, then everything else (the knob cards) as they were
+    const first = DEFAULT_ORDER.map(id => grid.querySelector(`.card[data-tile="${id}"]`)).filter(Boolean);
+    for (const card of first.reverse()) grid.prepend(card);
+  }
+
   // ── boot ──
   async function boot() {
     CONTROL = await resolveControl();
@@ -951,6 +968,7 @@
     buildTimeCard();
     paintCluster(); paintHead(); paintTime(); paintState(); paintPower();
     syncControls(); syncHooks();
+    arrangeDefaults();
     $('#simtiles').hidden = false;
     await TileStudio.init({
       gridId: 'simtiles',

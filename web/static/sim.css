@@ -135,6 +135,10 @@ header.top h1 small { display: block; font-weight: 400; font-size: .66em; color:
 .faults .sw input:checked + span::after { background: var(--fault); }
 
 /* ── the reused tiles, made interactive ── */
+/* the cockpit adds a slider and a number box under each wheel; rows that can shrink to 0 hid them from the
+   first auto-measure, so the tile was sized for the drawing alone and the text overlapped */
+.card[data-tile="tires"] .wheels { grid-template-rows: repeat(2, auto); flex: none; max-height: none; }
+.card[data-tile="tires"] .wheel svg { flex: none; height: 84px; height: clamp(64px, 24cqw, 200px); }
 .wheel .wheel-ctl { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 4px; width: 100%; }
 .wheel .wheel-ctl input[type=range] { width: 100%; max-width: 110px; }
 .wheel .wheel-ctl input[type=number] { width: 64px; padding: 2px 4px; font-size: .8em; text-align: right; }

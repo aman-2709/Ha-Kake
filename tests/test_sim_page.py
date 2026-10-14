@@ -332,3 +332,20 @@ def test_the_record_carries_what_the_cluster_and_head_unit_read():
     lancer = make_sim(vehicle="lancer_2009", seed=1)
     can = getattr(lancer, "can_record", None)
     assert not callable(getattr(lancer, "record", None)) or (callable(can) and not can())
+
+
+def test_a_fresh_cockpit_arranges_its_cards_before_the_grid_measures_them():
+    """First run only: named spans and order, so the packer leaves no holes. A saved layout still wins."""
+    js = read(SIM_JS)
+    assert js.index("arrangeDefaults();") < js.index("await TileStudio.init("), "arranged before the grid measures"
+    for card in ("cluster", "climate-head", "vehicle", "body", "tires", "climate", "time", "state"):
+        assert f"'{card}'" in js or f"{card}:" in js
+
+
+def test_the_cards_that_measure_themselves_keep_a_floor_so_a_fresh_layout_cannot_collapse_them():
+    """Regressions seen on a fresh layout: the body car measured as a 10 px speck (no floor on the
+    car), and the cockpit's tyre controls were invisible to the auto-measure (rows that shrink to 0)."""
+    tiles_css = read(os.path.join(ROOT, "web", "static", "tiles.css"))
+    assert re.search(r'\[data-tile="body"\] \.car-wrap \{[^}]*min-height: 400px', tiles_css)
+    sim_css = read(os.path.join(ROOT, "web", "static", "sim.css"))
+    assert re.search(r'\[data-tile="tires"\] \.wheels \{[^}]*repeat\(2, auto\)[^}]*flex: none', sim_css)

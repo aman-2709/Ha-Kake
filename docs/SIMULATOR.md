@@ -139,6 +139,15 @@ dashboard shows. Its JavaScript talks to the control API cross-origin
 (the API sends `Access-Control-Allow-Origin: *` on JSON and answers
 `OPTIONS` with 204).
 
+**First-run layout.** With no saved arrangement (`web/sim_tiles.json`, gitignored,
+or the browser's copy) `sim.js` `arrangeDefaults()` sets the spans and order before
+the grid measures: the cluster beside the head unit, then vehicle / body / tires as one
+row of three, then climate and time, then the live state. A saved layout always wins.
+Two cards size themselves from their content on that first run, so each keeps a floor:
+the Body car (`min-height: 400px`, or the first measure sees no car and the drawing
+collapses to a speck) and the Tires card, whose per-wheel slider and number box
+are in the measure because its rows are `auto`, not `minmax(0, 1fr)` as on the dashboard.
+
 **It always renders.** With no simulator behind it — the dashboard was
 started on a real adapter, or with `--no-sim-control` — the page shows the
 two launch commands instead of cards. It finds the control API in this
