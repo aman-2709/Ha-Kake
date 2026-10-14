@@ -522,7 +522,15 @@ a scale: the pitch is stretched so 3 mph is a slow roll and 50 mph a fast one,
 capped at 0.12 s per tread step to avoid strobing. It stops under
 `prefers-reduced-motion` and in the `html.shot` screenshot mode. In gear R the
 two reverse lamps light white with a glow and a beam behind each that fades out with distance, drawn
-large enough to read at a glance on a small tile.
+large enough to read at a glance on a small tile. In the tile grid the car
+scales to the tile's height (capped at 640 px) and the six status readouts
+(doors, hatch, lights, turn, brake, lock) sit as boxes along the bottom, so a
+resized tile never scrolls or leaves a gap.
+
+The Vehicle tile does the same: a large shifter and gear letter sit centred in the
+space above, and the readings (odometer, range, SOH, parking brake, doors, headlights,
+turn signal) are boxes pinned to the bottom, the last one spanning the full width.
+The rules are scoped to that tile, so the Climate tile that shares `.kv-grid` is unchanged.
 
 Every tile that depends on a slow item shows its age. Power sign comes from
 the BMS, not from an SOC-delta guess. Temperatures are °F with °C beside them.
