@@ -88,6 +88,13 @@
 .body-legend span { display: flex; flex-direction: column; gap: 3px; padding: 7px 10px; background: var(--card2); border: 1px solid var(--border); border-radius: 8px; }
 .body-legend b { color: var(--text); font-weight: 600; font-size: 1.3em; letter-spacing: 0; text-transform: none; line-height: 1.2; }
 .lock-shackle, .lock-body { transition: all .2s; }
+/* climate (HVAC amp): the cabin reading and the fan share the top row, the readings are boxed like the
+   vehicle tile's, temperatures first and then the system state */
+.hvac-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+[data-tile="climate"] .fan-wrap { margin-top: 0; }
+[data-tile="climate"] .kv-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 16px; }
+[data-tile="climate"] .kv { padding: 8px 12px; background: var(--card2); border: 1px solid var(--border); border-radius: 8px; }
+[data-tile="climate"] .kv-val { font-size: 1.15em; }
 .hvac-big { font-size: 2.6em; font-weight: 700; line-height: 1; }
 .fan-wrap { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
 .fan-wrap svg { width: 64px; height: 64px; flex: none; }
