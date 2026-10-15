@@ -102,7 +102,7 @@ header.top h1 small { display: block; font-weight: 400; font-size: .66em; color:
 .knob .un { font-size: .72em; color: var(--dim); }
 .knob .ctl { display: flex; align-items: center; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
 .knob .ctl input[type=range] { flex: 1 1 auto; min-width: 70px; }
-.knob .ctl input[type=number] { width: 84px; text-align: right; padding: 4px 6px; }
+.knob .ctl input[type=number] { width: 92px; text-align: right; padding: 4px 6px; }
 .knob .ctl input[type=text] { flex: 1 1 auto; min-width: 80px; padding: 4px 6px; }
 .knob .ctl select { flex: 1 1 auto; padding: 4px 6px; }
 .knob .ctl .tu { font-size: .72em; color: var(--dim); margin-left: -4px; }

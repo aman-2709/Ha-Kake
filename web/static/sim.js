@@ -345,7 +345,9 @@
         num.oninput = () => { range.value = num.value; touched.set(name, Date.now()); };
       }
       num.onchange = () => setKnob(name, num.value === '' ? spec.default : parseFloat(num.value));
-      wrap._sync = v => { num.value = v; if (range) range.value = v; };
+      // show what the step can express: a raw 84.98385 clipped the box and said nothing a slider could set
+      const dp = t === 'int' ? 0 : (typeof stepv === 'number' && stepv < 0.01 ? 4 : 2);
+      wrap._sync = v => { num.value = typeof v === 'number' ? +v.toFixed(dp) : v; if (range) range.value = v; };
       wrap._focus = () => num === document.activeElement || range === document.activeElement;
     } else {
       const inp = el('input'); inp.type = 'text';

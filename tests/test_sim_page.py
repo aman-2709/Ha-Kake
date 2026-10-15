@@ -370,3 +370,10 @@ def test_knob_panels_fold_and_group_switches_by_type_not_by_name():
     assert "makeCollapsible" in js and "knob-switches" in js and "TileStudio.fit" in js
     assert "sp.type === 'bool'" in js                    # grouped by the schema's type, so no knob is named
     assert "door_driver" not in js                       # the schema is the only list of knobs
+
+
+def test_a_numeric_knob_shows_a_rounded_value_and_both_pages_carry_a_favicon():
+    js = read(SIM_JS)
+    assert "toFixed(dp)" in js                          # 84.98385 no longer clips the number box
+    for page in ("sim.html", "index.html"):
+        assert 'rel="icon" type="image/svg+xml" href="/static/favicon.svg"' in read(os.path.join(ROOT, "web", "templates", page))
