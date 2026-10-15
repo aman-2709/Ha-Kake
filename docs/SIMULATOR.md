@@ -509,8 +509,8 @@ The rules are the 2012 Owner's Manual's, cited in the source (pp. 5-7..5-13):
 | OFF / ACC / ON, gear R / D / Eco | brake held | refused, *"Shift to P or N"* (5-11: the EV will not operate unless the selector is in P or N; wording ASSERTED) |
 | any, charge connector latched | brake held | refused, *"Remove charge connector"* (p. 2-19; wording ASSERTED). ACC and ON are still available |
 | READY, stopped | either | OFF, **and the gear becomes P by itself** (5-11 step 4; the 5-13 NOTE: the vehicle automatically applies P when the power switch is OFF) |
-| READY, moving | either | refused, *"Stop vehicle"* (ASSERTED, from 5-14) |
-| READY, moving | `hold: true` | OFF — the emergency shut-off (ASSERTED, from 5-9), the only way OFF is reached while rolling |
+| READY, moving | either | refused, *"Stop vehicle"* (ASSERTED, from 5-14). The reply also carries a `hint` (what to do: zero the speed, stop any `--scenario`, or hold the button), which the cockpit shows after the message; `message` stays the car's wording |
+| READY, moving | `hold: true` | OFF — the emergency shut-off (ASSERTED, from 5-9), the only way OFF is reached while rolling. In the cockpit, hold the power button for 2 s |
 | OFF / ACC / ON, moving | `hold: true` | the ordinary no-brake cycle — the 5-9 procedure stops the EV system *while driving*, so it presupposes READY. `speed_mph` is an independent knob, so an API caller can present a car that is OFF and "moving"; it does not get an emergency stop it is in no state to perform |
 
 `brake` defaults to reading the `brake_pct` knob, so a cockpit that drives the

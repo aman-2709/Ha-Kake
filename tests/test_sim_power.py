@@ -95,6 +95,7 @@ def test_the_refusals_say_what_to_do():
     assert "connector" in leaf(plugged_in=True).press_power(brake=True)["message"].lower()
     moving = leaf(start_state="ready", gear="D", speed_mph=30.0).press_power()
     assert moving["message"] == "Stop vehicle" and moving["accepted"] is False
+    assert "speed_mph" in moving["hint"] and "emergency" in moving["hint"]   # says what to do about it
 
 
 def test_a_held_press_is_the_emergency_shut_off():

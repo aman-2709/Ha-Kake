@@ -358,3 +358,8 @@ def test_the_live_state_card_filters_and_flashes_what_changed():
     assert "STATE_CHANGED" in js and "animationDelay" in js         # changed values flash and fade by age
     assert "STATE_TICKS" in js                                      # the clock is exempt, or it flashes forever
     assert "@keyframes state-flash" in css and "prefers-reduced-motion" in css
+
+
+def test_the_cockpit_power_button_held_two_seconds_sends_the_emergency_shut_off():
+    js = read(SIM_JS)
+    assert "HOLD_MS = 2000" in js and "hold: true" in js and "out.hint" in js

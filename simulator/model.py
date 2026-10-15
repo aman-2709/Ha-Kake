@@ -1334,16 +1334,21 @@ class LeafModel:
         moving = k["speed_mph"] > 1.0
         plugged = bool(k["charging"] or k["plugged_in"])
 
-        def done(msg, accepted=True):
-            return {"start_state": k["start_state"], "gear": k["gear"],
-                    "message": msg, "accepted": bool(accepted)}
+        def done(msg, accepted=True, hint=None):
+            out = {"start_state": k["start_state"], "gear": k["gear"],
+                   "message": msg, "accepted": bool(accepted)}
+            if hint:
+                out["hint"] = hint     # what to do about a refusal; the message stays the car's wording
+            return out
 
         if ss == "ready":
             if hold and moving:
                 k["start_state"] = "off"
                 return done("Emergency shut off")
             if moving:
-                return done("Stop vehicle", False)
+                return done("Stop vehicle", False,
+                            f"speed_mph is {k['speed_mph']:.0f}; set it to 0 (and stop any "
+                            f"running --scenario), or hold the button for the emergency shut-off")
             k["start_state"] = "off"
             k["gear"] = "P"              # the car parks itself at OFF (5-13)
             return done("Power off")

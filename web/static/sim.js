@@ -767,7 +767,16 @@
       'width:86px;height:86px;border-radius:50%;cursor:pointer;display:flex;flex-direction:column;' +
       'align-items:center;justify-content:center;gap:2px;font:600 11px/1.1 system-ui,sans-serif;' +
       'letter-spacing:.08em;background:#141a26;color:#8892a6;border:4px solid #2a3142');
-    btn.onclick = pressPower;
+    // a push is a click; held past two seconds it is the emergency shut-off (the only OFF while rolling)
+    let heldTimer = null, heldFired = false;
+    btn.addEventListener('pointerdown', () => {
+      heldFired = false;
+      heldTimer = setTimeout(() => { heldFired = true; pressPower(true); }, HOLD_MS);
+    });
+    const release = () => { clearTimeout(heldTimer); heldTimer = null; };
+    btn.addEventListener('pointerup', release); btn.addEventListener('pointerleave', release); btn.addEventListener('pointercancel', release);
+    btn.addEventListener('click', e => { if (heldFired) { heldFired = false; return; } pressPower(false); });
+    btn.title = 'Push for the switch; hold 2 s for the emergency shut-off while moving';
     root.appendChild(btn);
     const side = el('div');
     side.setAttribute('style', 'display:flex;flex-direction:column;gap:4px;font-size:12px');
@@ -785,12 +794,13 @@
     side.appendChild(msg);
     root.appendChild(side);
   }
-  async function pressPower() {
+  const HOLD_MS = 2000;
+  async function pressPower(hold = false) {
     const btn = document.getElementById('pw-btn'); if (btn) btn.disabled = true;
     try {
-      const out = await api('/sim/power', 'POST', { brake: BRAKE_HELD });
+      const out = await api('/sim/power', 'POST', hold ? { brake: BRAKE_HELD, hold: true } : { brake: BRAKE_HELD });
       const m = document.getElementById('pw-msg');
-      if (m) { m.textContent = (out.accepted ? '' : 'refused — ') + (out.message || ''); }
+      if (m) { m.textContent = (out.accepted ? '' : 'refused — ') + (out.message || '') + (out.hint ? ' · ' + out.hint : ''); }
       await tick();
     } catch (e) {
       if (e.status === 501) {           // a core with no power switch: take the button away
