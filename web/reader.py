@@ -94,6 +94,20 @@ BOOKMARK_LABEL_MAX = 80
 # drops any id the active profile's TILES does not declare, and the cockpit's
 # cards (cluster, knob categories, time, state) are the page's, not a car's.
 SIM_TILES_FILE = os.path.join(DIR, "sim_tiles.json")
+# The arrangements the project ships, used until someone saves their own (which goes
+# to the gitignored files above). The dashboard's is per vehicle, because its tile ids
+# and sizes are the profile's; the cockpit's is one file, as its cards are the page's.
+LAYOUTS_DIR = os.path.join(DIR, "layouts")
+
+
+def _shipped(name):
+    """The shipped tile list in web/layouts/<name>, or [] when there is none."""
+    try:
+        with open(os.path.join(LAYOUTS_DIR, name)) as f:
+            raw = json.load(f).get("tiles", [])
+        return raw if isinstance(raw, list) else []
+    except (FileNotFoundError, json.JSONDecodeError, AttributeError):
+        return []
 
 ASLEEP_INTERVAL = 60
 # The minimum cycle period for a transport that does not set MIN_INTERVAL.
@@ -260,6 +274,8 @@ def load_tiles():
             raw = json.load(f).get("tiles", [])
     except (FileNotFoundError, json.JSONDecodeError, AttributeError):
         pass
+    if not raw and VEHICLE is not None:        # nothing saved yet: the arrangement this project ships
+        raw = _shipped(f"tiles.{VEHICLE.NAME}.json")
     ordered, seen = [], set()
     for t in raw:
         c = _clean_tile(t)
@@ -275,7 +291,17 @@ def load_tiles():
     return {"tiles": ordered}
 
 
+def _forget(path):
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
+
+
 def save_tiles(cfg):
+    if not (cfg or {}).get("tiles"):           # "reset": drop the saved file, so the shipped layout shows
+        _forget(TILES_FILE)
+        return load_tiles()
     ordered, seen = [], set()
     for t in (cfg or {}).get("tiles", []):
         c = _clean_tile(t)
@@ -342,10 +368,13 @@ def load_sim_tiles():
             raw = json.load(f).get("tiles", [])
     except (FileNotFoundError, json.JSONDecodeError, AttributeError):
         raw = []
-    return _sim_tiles_from(raw)
+    return _sim_tiles_from(raw or _shipped("sim_tiles.json"))
 
 
 def save_sim_tiles(cfg):
+    if not (cfg.get("tiles") if isinstance(cfg, dict) else None):    # "reset": the shipped layout shows again
+        _forget(SIM_TILES_FILE)
+        return load_sim_tiles()
     out = _sim_tiles_from((cfg or {}).get("tiles", []) if isinstance(cfg, dict) else [])
     tmp = SIM_TILES_FILE + ".tmp"
     with open(tmp, "w") as f:

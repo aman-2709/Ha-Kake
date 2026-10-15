@@ -52,6 +52,17 @@ def tmp_store(tmp_path):
     s.close()
 
 
+@pytest.fixture(autouse=True)
+def no_shipped_layouts(tmp_path_factory, monkeypatch):
+    """The arrangements web/layouts/ ships must not leak into tests that expect an empty store;
+    the tests of the shipped layouts put the real directory back themselves."""
+    try:
+        import reader as rd
+    except Exception:                       # a test that never touches the web package
+        return
+    monkeypatch.setattr(rd, "LAYOUTS_DIR", str(tmp_path_factory.mktemp("no_layouts")), raising=False)
+
+
 @pytest.fixture
 def isolated_reader(tmp_path, monkeypatch):
     """reader's on-disk state (state / tiles / calibration / layouts) in tmp_path."""

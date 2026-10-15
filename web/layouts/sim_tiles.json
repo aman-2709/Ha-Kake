@@ -1,0 +1,130 @@
+{
+ "tiles": [
+  {
+   "id": "cluster",
+   "enabled": true,
+   "span": 8,
+   "kind": "builtin",
+   "x": 0,
+   "y": 0,
+   "h": 21
+  },
+  {
+   "id": "climate-head",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 8,
+   "y": 0,
+   "h": 21
+  },
+  {
+   "id": "vehicle",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 0,
+   "y": 21,
+   "h": 18
+  },
+  {
+   "id": "body",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 4,
+   "y": 21,
+   "h": 18
+  },
+  {
+   "id": "tires",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 0,
+   "y": 71,
+   "h": 16
+  },
+  {
+   "id": "climate",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 0,
+   "y": 39,
+   "h": 11
+  },
+  {
+   "id": "time",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 4,
+   "y": 39,
+   "h": 11
+  },
+  {
+   "id": "state",
+   "enabled": true,
+   "span": 12,
+   "kind": "builtin",
+   "x": 0,
+   "y": 87,
+   "h": 14
+  },
+  {
+   "id": "knobs-battery",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 4,
+   "y": 50,
+   "h": 21
+  },
+  {
+   "id": "knobs-load",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 8,
+   "y": 50,
+   "h": 28
+  },
+  {
+   "id": "knobs-climate",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 0,
+   "y": 50,
+   "h": 21
+  },
+  {
+   "id": "knobs-body",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 8,
+   "y": 21,
+   "h": 29
+  },
+  {
+   "id": "knobs-rig",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 8,
+   "y": 78,
+   "h": 9
+  },
+  {
+   "id": "knobs-faults",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 4,
+   "y": 71,
+   "h": 16
+  }
+ ]
+}

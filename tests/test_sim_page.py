@@ -377,3 +377,45 @@ def test_a_numeric_knob_shows_a_rounded_value_and_both_pages_carry_a_favicon():
     assert "toFixed(dp)" in js                          # 84.98385 no longer clips the number box
     for page in ("sim.html", "index.html"):
         assert 'rel="icon" type="image/svg+xml" href="/static/favicon.svg"' in read(os.path.join(ROOT, "web", "templates", page))
+
+
+# ── the arrangements the project ships (web/layouts/) ──────────────────────
+
+SHIPPED = os.path.join(ROOT, "web", "layouts")
+
+
+@pytest.fixture
+def shipped(tmp_path, monkeypatch):
+    """The real shipped layouts, with the user's own files redirected to tmp_path."""
+    import reader as rd
+    rd.set_vehicle("leaf_ze0")
+    monkeypatch.setattr(rd, "LAYOUTS_DIR", SHIPPED)
+    monkeypatch.setattr(rd, "SIM_TILES_FILE", str(tmp_path / "sim_tiles.json"))
+    monkeypatch.setattr(rd, "TILES_FILE", str(tmp_path / "tiles.json"))
+    return rd
+
+
+def test_the_cockpit_ships_its_arrangement_and_a_save_wins_until_reset(shipped):
+    rd = shipped
+    first = rd.load_sim_tiles()["tiles"]
+    assert {t["id"] for t in first} >= {"cluster", "climate-head", "state", "knobs-body"}
+    assert all("x" in t and "y" in t and "h" in t for t in first)           # positions, not just spans
+    rd.save_sim_tiles({"tiles": [{"id": "cluster", "x": 0, "y": 0, "span": 12, "h": 5}]})
+    assert [t["id"] for t in rd.load_sim_tiles()["tiles"]] == ["cluster"]      # what someone saved wins
+    assert rd.save_sim_tiles({"tiles": []})["tiles"] == first                  # reset: back to the shipped layout
+    assert not os.path.exists(rd.SIM_TILES_FILE)
+
+
+def test_the_dashboard_ships_its_arrangement_per_vehicle_and_reset_returns_to_it(shipped):
+    rd = shipped
+    first = rd.load_tiles()["tiles"]
+    by = {t["id"]: t for t in first}
+    assert by["pack3d"]["span"] == 12 and by["soc"]["x"] == 0 and by["soc"]["y"] == 0
+    rd.save_tiles({"tiles": [dict(by["soc"], span=6)]})
+    assert {t["id"]: t for t in rd.load_tiles()["tiles"]}["soc"]["span"] == 6
+    assert rd.save_tiles({"tiles": []})["tiles"] == first
+    assert not os.path.exists(rd.TILES_FILE)
+
+
+def test_the_cockpit_panels_all_start_open():
+    assert "FOLDED_BY_DEFAULT = new Set();" in read(SIM_JS)

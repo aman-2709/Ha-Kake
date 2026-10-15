@@ -490,6 +490,7 @@ every layout change so the tile can re-read its opts and re-measure. See
   lamp. Values are colour-encoded through the chosen scale as they change.
 - **Calibration:** per-car offsets (current zero) live in gitignored
   `web/calibration.json` via `GET/PUT/DELETE /api/calibration`.
+- **Shipped layout:** until `web/tiles.json` exists the dashboard serves `web/layouts/tiles.<vehicle>.json`, and an empty save (reset) deletes `tiles.json` so that layout returns; `/sim` does the same with `web/layouts/sim_tiles.json` and `web/sim_tiles.json` (`docs/SIMULATOR.md`).
 - **Persistence:** `web/tiles.json` via `GET/PUT /api/tiles` (order, enabled,
   x/y/span/h, type, opts, signal) is the *active* layout. Alert rules travel
   inside `opts.alerts`, one `{signal, min, max, when, tone, repeat, enabled}`

@@ -1,0 +1,123 @@
+{
+ "tiles": [
+  {
+   "id": "soc",
+   "enabled": true,
+   "span": 3,
+   "kind": "builtin",
+   "x": 0,
+   "y": 0,
+   "h": 10
+  },
+  {
+   "id": "health",
+   "enabled": true,
+   "span": 6,
+   "kind": "builtin",
+   "x": 3,
+   "y": 0,
+   "h": 10
+  },
+  {
+   "id": "temps",
+   "enabled": true,
+   "span": 3,
+   "kind": "builtin",
+   "x": 9,
+   "y": 0,
+   "h": 10
+  },
+  {
+   "id": "vehicle",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 0,
+   "y": 10,
+   "h": 19
+  },
+  {
+   "id": "tires",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 8,
+   "y": 10,
+   "h": 9
+  },
+  {
+   "id": "body",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "opts": {},
+   "x": 4,
+   "y": 10,
+   "h": 19
+  },
+  {
+   "id": "climate",
+   "enabled": true,
+   "span": 4,
+   "kind": "builtin",
+   "x": 8,
+   "y": 19,
+   "h": 10
+  },
+  {
+   "id": "power",
+   "enabled": true,
+   "span": 12,
+   "kind": "builtin",
+   "x": 0,
+   "y": 29,
+   "h": 12
+  },
+  {
+   "id": "history",
+   "enabled": true,
+   "span": 12,
+   "kind": "builtin",
+   "x": 0,
+   "y": 41,
+   "h": 6
+  },
+  {
+   "id": "degradation",
+   "enabled": true,
+   "span": 12,
+   "kind": "builtin",
+   "x": 0,
+   "y": 47,
+   "h": 6
+  },
+  {
+   "id": "cells",
+   "enabled": true,
+   "span": 12,
+   "kind": "builtin",
+   "x": 0,
+   "y": 53,
+   "h": 13
+  },
+  {
+   "id": "pack3d",
+   "enabled": true,
+   "span": 12,
+   "kind": "builtin",
+   "opts": {
+    "spin": true
+   },
+   "x": 0,
+   "y": 66,
+   "h": 24
+  },
+  {
+   "id": "console",
+   "enabled": false,
+   "span": 12,
+   "kind": "builtin",
+   "h": 12
+  }
+ ]
+}

@@ -277,9 +277,9 @@
   }
 
   // A panel folds to its title. Remembered per category in this browser only (a convenience, never state
-  // the page depends on); the less-used panels start folded. The tile re-fits when it folds or opens.
+  // the page depends on); every panel starts open. The tile re-fits when it folds or opens.
   const FOLD_KEY = 'hakake-sim-folded-v1';
-  const FOLDED_BY_DEFAULT = new Set(['rig', 'battery', 'faults']);
+  const FOLDED_BY_DEFAULT = new Set();                  // every panel starts open; a fold is the viewer's own choice
   function loadFolds() { try { return JSON.parse(localStorage.getItem(FOLD_KEY)) || {}; } catch (e) { return {}; } }
   function makeCollapsible(card, cat) {
     const title = $('.card-title', card);

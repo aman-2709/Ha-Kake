@@ -139,7 +139,16 @@ dashboard shows. Its JavaScript talks to the control API cross-origin
 (the API sends `Access-Control-Allow-Origin: *` on JSON and answers
 `OPTIONS` with 204).
 
-**First-run layout.** With no saved arrangement (`web/sim_tiles.json`, gitignored,
+**Shipped layout.** The project ships its own arrangement: `web/layouts/sim_tiles.json`
+for `/sim`, and for the dashboard `web/layouts/tiles.<vehicle>.json` (today
+`tiles.leaf_ze0.json`; a vehicle with no file keeps its profile's defaults). They are
+positions and sizes for every tile, used until someone saves their own. Saving writes
+the gitignored `web/sim_tiles.json` (cockpit) or `web/tiles.json` (dashboard), which
+then wins. "Reset arrangement" deletes that file, so the shipped layout shows again
+rather than an empty one. To change what ships, arrange the page, then copy the
+saved file over the one in `web/layouts/` and commit it.
+
+**First-run layout.** With no saved arrangement and no shipped one (`web/sim_tiles.json`, gitignored,
 or the browser's copy) `sim.js` `arrangeDefaults()` sets the spans and order before
 the grid measures: the cluster beside the head unit, then vehicle / body / tires as one
 row of three, then climate and time, then the live state. A saved layout always wins.
