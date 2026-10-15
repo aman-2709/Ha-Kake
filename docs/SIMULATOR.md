@@ -195,7 +195,14 @@ puts it back.
   setpoint, cabin, evaporator and ambient read °F / °C; the blower bars and
   the HVAC draw in watts from `loads_w`, and — while a charge is running —
   what that draw leaves for the pack. The inert buttons are the ones the
-  car does not let this project read (above).
+  car does not let this project read (above); they sit in their own row under
+  "Not readable on this car", dashed and with a readable label, and the
+  read-only boxes (heater, compressor, sunload, blower, draw, pack) sit below
+  a rule so they are not mistaken for buttons. The card is the only frame, the
+  button columns follow the tile's own width, and the long note is a
+  disclosure. A tile's **Auto** height now measures what its content needs, so
+  it can shrink a tile as well as grow it (`measureRows` in `tilestudio.js`,
+  shared with the dashboard).
 * **The dashboard's four tiles, made interactive** — present only for a
   profile that declares them (`TILES`), and only while the record can drive
   them:

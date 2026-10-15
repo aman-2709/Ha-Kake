@@ -281,7 +281,12 @@
   function cardOf(t) { const w = wrapperOf(t); return w ? w.querySelector('.card') : grid.querySelector(`.card[data-tile="${t.id}"]`); }
   function measureRows(t, card) {
     // content height at the tile's current width → rows (used when a tile has no h yet, or "auto")
-    const px = card.scrollHeight + 2;
+    // scrollHeight is never below the box's own height, so a tile already taller than its content could
+    // never shrink; release the height for the read and measure what the content really needs
+    const keepH = card.style.height, keepB = card.style.bottom;
+    card.style.height = 'auto'; card.style.bottom = 'auto';
+    const px = Math.max(card.scrollHeight, card.offsetHeight) + 2;
+    card.style.height = keepH; card.style.bottom = keepB;
     return Math.max(MIN_H, Math.ceil((px + MARGIN) / CELL));
   }
 

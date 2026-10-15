@@ -211,21 +211,33 @@ header.top h1 small { display: block; font-weight: 400; font-size: .66em; color:
 .cluster-note { font-size: .7em; color: var(--dim); line-height: 1.5; margin-top: 10px; }
 
 /* ── the emulated climate head unit ── */
-.hvac { background: linear-gradient(180deg, #161b23, #10141b); border: 1px solid #232c39; border-radius: 14px; padding: 12px; }
+/* the card is the frame; a second border and padding inside it made a box in a box */
+.hvac { padding: 0; container-type: inline-size; }
+/* a gap and a rule set the read-only boxes apart from the buttons above */
+.hvac .ro-sep { border-top: 1px solid var(--border); margin-top: 22px; padding-top: 16px; }
+.hvac .kv-grid { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+.hvac .kv { padding: 8px 12px; background: var(--card2); border: 1px solid var(--border); border-radius: 8px; }
+.hvac .kv-val { font-size: 1.1em; }
+.hvac details.note summary { cursor: pointer; color: var(--accent); }
+.hvac details.note p { margin: 6px 0 0; }
 .hvac .disp {
   background: var(--lcd); border: 1px solid var(--lcd-line); border-radius: 8px;
-  padding: 8px 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap;
+  padding: 8px 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap;
 }
 .hvac .disp .set { font: 800 1.9em/1 ui-monospace, Menlo, monospace; color: var(--lcd-on);
                    text-shadow: 0 0 12px rgba(143,230,255,.4); font-variant-numeric: tabular-nums; }
 .hvac .disp .set small { font-size: .42em; color: #5e93a6; margin-left: 3px; }
 .hvac .disp .set.off { color: #2b4b58; text-shadow: none; }
 .hvac .disp .k { font-size: .66em; color: var(--dim); text-transform: uppercase; letter-spacing: .07em; }
-.hvac .disp .v { font-weight: 600; font-size: .85em; }
+.hvac .disp .v { font-weight: 700; font-size: 1.05em; white-space: nowrap; }
+/* the four readings sit in a 2x2 block beside the big setpoint instead of one cramped row */
+.hvac .disp .reads { display: grid; grid-template-columns: repeat(2, auto); gap: 6px 18px; }
 .hvac .disp .fanbars { display: flex; gap: 3px; align-items: flex-end; height: 26px; margin-left: auto; }
 .hvac .disp .fanbars i { width: 6px; background: #15303c; border-radius: 1px; }
 .hvac .disp .fanbars i.on { background: var(--lcd-on); box-shadow: 0 0 6px rgba(143,230,255,.5); }
-.hvac .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+.hvac .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.hvac .inert-head { font-size: .66em; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); margin: 12px 0 6px; }
+.hvac .inert-grid { grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); }
 .hbtn {
   background: #1b212b; border: 1px solid #2b3543; border-radius: 8px; color: #aab6c8;
   padding: 8px 4px; font-size: .66em; letter-spacing: .06em; text-transform: uppercase;
@@ -235,11 +247,14 @@ header.top h1 small { display: block; font-weight: 400; font-size: .66em; color:
 .hbtn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .hbtn:hover { border-color: var(--accent); }
 .hbtn.on { background: #12303f; border-color: var(--accent); color: #cfeeff; box-shadow: 0 0 12px rgba(79,195,247,.22); }
-.hbtn.inert { opacity: .34; cursor: not-allowed; border-style: dashed; color: #7b8798; }
-.hbtn.inert:hover { border-color: #2b3543; }
+/* inert, but readable: fade the icon and drop the fill, never the label (a whole-button opacity made the text unreadable) */
+.hbtn.inert { cursor: not-allowed; border: 1px dashed #6b788d; background: rgba(255,255,255,.03); color: #a3afc2; }
+.hbtn.inert svg { opacity: .5; }
+.hbtn.inert:hover { border-color: #6b788d; }
 .hbtn .blindmark { font-size: .9em; color: var(--yellow); line-height: 1; }
 .hvac .note { font-size: .7em; color: var(--dim); line-height: 1.5; margin-top: 9px; }
-@media (max-width: 520px) { .hvac .grid { grid-template-columns: repeat(3, 1fr); } }
+/* by the tile's own width, not the window's: a narrow tile on a wide screen needs this too */
+@container (max-width: 300px) { .hvac .grid { grid-template-columns: repeat(2, 1fr); } }
 
 /* ── time card ── */
 .time-big { font: 700 1.6em/1 ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }

@@ -662,15 +662,19 @@
     c.innerHTML = `
       <div class="disp">
         <div class="set" id="hd-set">--<small>°F</small></div>
-        <div><div class="k">setpoint</div><div class="v" id="hd-setc">--</div></div>
-        <div><div class="k">cabin</div><div class="v" id="hd-cabin">--</div></div>
-        <div><div class="k">evap</div><div class="v" id="hd-evap">--</div></div>
-        <div><div class="k">outside</div><div class="v" id="hd-amb">--</div></div>
+        <div class="reads">
+          <div><div class="k">setpoint</div><div class="v" id="hd-setc">--</div></div>
+          <div><div class="k">cabin</div><div class="v" id="hd-cabin">--</div></div>
+          <div><div class="k">evap</div><div class="v" id="hd-evap">--</div></div>
+          <div><div class="k">outside</div><div class="v" id="hd-amb">--</div></div>
+        </div>
         <div class="fanbars" id="hd-fan"></div>
       </div>
       <div class="grid" id="hd-grid"></div>
-      <div class="kv-grid" id="hd-ro" style="margin-top:10px"></div>
-      <div class="note" id="hd-note"></div>`;
+      <div class="inert-head">Not readable on this car</div>
+      <div class="grid inert-grid" id="hd-inert"></div>
+      <div class="kv-grid ro-sep" id="hd-ro"></div>
+      <details class="note"><summary>Why are some buttons dimmed?</summary><p id="hd-note"></p></details>`;
     const grid = $('#hd-grid', c);
     const btn = (label, icon, fn, title, id) => { const b = el('button', 'hbtn'); b.insertAdjacentHTML('beforeend', icon); b.appendChild(el('span', null, label)); b.onclick = fn; b.title = title; if (id) b.id = id; grid.appendChild(b); return b; };
     btn('OFF', HI.off, () => setKnob('hvac_on', false), 'System off — hvac_on', 'hd-off');
@@ -681,8 +685,8 @@
     btn('FAN ▼', HI.fan, () => bump('hvac_fan_speed', -1), 'Blower down — hvac_fan_speed');
     for (const [label, key, why] of INERT_HVAC) {
       const b = el('button', 'hbtn inert'); b.insertAdjacentHTML('beforeend', HI[key]);
-      b.appendChild(el('span', null, label)); b.appendChild(el('span', 'blindmark', '⌀ not readable'));
-      b.disabled = true; b.title = why; grid.appendChild(b);
+      b.appendChild(el('span', null, label)); b.appendChild(el('span', 'blindmark', '⌀'));
+      b.disabled = true; b.title = why; $('#hd-inert', c).appendChild(b);
     }
     $('#hd-note', c).textContent =
       'Dashed, dimmed buttons are real controls on the car that this project has walked and cannot read: AUTO, vent MODE and fresh/recirc moved nothing in HVAC groups 00/01/10/11 on 2026-08-24 (group 00 stayed 80 01 80 00), and the defrost/defog encodings are unresolved. They are drawn inert on purpose — hover for the entry, and see docs/SIGNALS.md. OVMS reads vent mode and intake from EV-CAN 0x54B, which needs the re-pinned cable.';
@@ -694,7 +698,8 @@
     const on = !!r.hvac_on;
     set.classList.toggle('off', !on);
     set.innerHTML = (typeof r.hvac_target_f === 'number' ? Math.round(r.hvac_target_f) : '--') + '<small>°F</small>';
-    $('#hd-setc').textContent = typeof r.hvac_target_f === 'number' ? fmtTemp(r.hvac_target_c, r.hvac_target_f, { cDec: 0 }) : '--';
+    // the big number is the °F; this reading is the same setpoint in °C, not a second copy of it
+    $('#hd-setc').textContent = typeof r.hvac_target_c === 'number' ? Math.round(r.hvac_target_c) + ' °C' : '--';
     $('#hd-cabin').textContent = typeof r.cabin_temp_c === 'number' ? fmtTemp(r.cabin_temp_c, r.cabin_temp_f, { cDec: 0 }) : '--';
     $('#hd-evap').textContent = typeof r.hvac_evap_c === 'number' ? fmtTemp(r.hvac_evap_c, r.hvac_evap_f, { cDec: 0 }) : '--';
     $('#hd-amb').textContent = typeof r.hvac_ambient_c === 'number' ? fmtTemp(r.hvac_ambient_c, r.hvac_ambient_f, { cDec: 0 }) : '--';
