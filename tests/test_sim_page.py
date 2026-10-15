@@ -363,3 +363,10 @@ def test_the_live_state_card_filters_and_flashes_what_changed():
 def test_a_refused_power_push_shows_what_to_do_and_the_cockpit_has_no_hold_gesture():
     js = read(SIM_JS)
     assert "out.hint" in js and "HOLD_MS" not in js          # hold stays an API-only emergency shut-off
+
+
+def test_knob_panels_fold_and_group_switches_by_type_not_by_name():
+    js = read(SIM_JS)
+    assert "makeCollapsible" in js and "knob-switches" in js and "TileStudio.fit" in js
+    assert "sp.type === 'bool'" in js                    # grouped by the schema's type, so no knob is named
+    assert "door_driver" not in js                       # the schema is the only list of knobs

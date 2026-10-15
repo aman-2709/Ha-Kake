@@ -190,6 +190,10 @@ puts it back.
   tooltip. The dot-matrix line shows `record.messages` ("Battery level is
   low", "Motor power is limited", "Check tire pressure", …). Outside
   temperature and every gauge readout are °F with °C alongside.
+* **Knob panels** fold to their title (click or Enter; remembered per category in this browser, with
+  rig, battery and faults folded to begin with) and the tile re-fits when they do. A panel with three or
+  more on/off knobs shows them as a grid of compact switch tiles above its sliders and selectors. The
+  grouping is by the schema's own `type`, never by knob name.
 * **Climate head unit — emulated.** OFF, TEMP ▲/▼ (the setpoint, 1 °F a
   press), A/C, FAN ▲/▼ are live and name the knob they move on hover;
   setpoint, cabin, evaporator and ambient read °F / °C; the blower bars and

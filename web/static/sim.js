@@ -259,9 +259,47 @@
       $('.ttl', card).textContent = CATEGORY_TITLE[cat] || cat;
       if (CATEGORY_HELP[cat]) { const h = $('.knob-help', card); h.textContent = CATEGORY_HELP[cat]; h.hidden = false; }
       const box = $('.knobs', card);
-      for (const [name, spec] of groups.get(cat)) box.appendChild(buildKnob(name, spec));
+      // switches and values are different shapes: a row of on/off tiles reads at a glance where a
+      // stack of full-width rows does not. Grouped by the schema's own type, never by knob name.
+      const sw = groups.get(cat).filter(([, sp]) => sp.type === 'bool');
+      const rest = groups.get(cat).filter(([, sp]) => sp.type !== 'bool');
+      if (sw.length >= 3) {
+        const swBox = el('div', 'knob-switches');
+        for (const [name, spec] of sw) swBox.appendChild(buildKnob(name, spec));
+        box.appendChild(swBox);
+        for (const [name, spec] of rest) box.appendChild(buildKnob(name, spec));
+      } else {
+        for (const [name, spec] of groups.get(cat)) box.appendChild(buildKnob(name, spec));
+      }
+      makeCollapsible(card, cat);
       grid().appendChild(card);
     }
+  }
+
+  // A panel folds to its title. Remembered per category in this browser only (a convenience, never state
+  // the page depends on); the less-used panels start folded. The tile re-fits when it folds or opens.
+  const FOLD_KEY = 'hakake-sim-folded-v1';
+  const FOLDED_BY_DEFAULT = new Set(['rig', 'battery', 'faults']);
+  function loadFolds() { try { return JSON.parse(localStorage.getItem(FOLD_KEY)) || {}; } catch (e) { return {}; } }
+  function makeCollapsible(card, cat) {
+    const title = $('.card-title', card);
+    const folds = loadFolds();
+    const set = folded => {
+      card.classList.toggle('folded', folded);
+      title.setAttribute('aria-expanded', String(!folded));
+      title.dataset.fold = folded ? '▸' : '▾';
+    };
+    set(cat in folds ? !!folds[cat] : FOLDED_BY_DEFAULT.has(cat));
+    title.setAttribute('role', 'button'); title.tabIndex = 0; title.classList.add('foldable');
+    const flip = () => {
+      const now = !card.classList.contains('folded');
+      set(now);
+      const f = loadFolds(); f[cat] = now;
+      try { localStorage.setItem(FOLD_KEY, JSON.stringify(f)); } catch (e) { /* private window: just do not remember */ }
+      if (window.TileStudio) TileStudio.fit('knobs-' + cat);
+    };
+    title.addEventListener('click', flip);
+    title.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
   }
 
   function buildKnob(name, spec) {
