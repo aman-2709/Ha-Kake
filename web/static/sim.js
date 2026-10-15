@@ -886,12 +886,20 @@
 
   // ── live state ──
   const HIDE = new Set(['cells', 'temps', 'temps_c', 'temps_f', 'lamps', 'lamps_unmodelled', 'messages', 'loads_w', 'power', 'simulated', 'cell_groups', 'segment_deltas', 'balancing']);
+  let STATE_FILTER = '';
+  // the clock ticks on every paint; flashing it would hide the values that really moved
+  const STATE_TICKS = new Set(['sim_t', 't']);
+  const STATE_PREV = new Map(), STATE_CHANGED = new Map(), STATE_FLASH_MS = 1500;
   function paintState() {
     const root = $('#state-body'); if (!root) return;
     let kv = $('.kv-live', root), loads = $('.loads', root), raw = $('details.raw pre', root);
     if (!kv) {
       root.appendChild(el('div', 'kv-label', HAVE_RECORD ? 'record — what the dashboard decodes from this car' : 'state — this core has no record(); raw model state'));
       loads = el('div', 'loads'); root.appendChild(loads);
+      const bar = el('div', 'state-bar');
+      const filt = el('input'); filt.type = 'search'; filt.placeholder = 'filter values…'; filt.id = 'state-filter'; filt.setAttribute('aria-label', 'Filter the live model values');
+      filt.addEventListener('input', () => { STATE_FILTER = filt.value.trim().toLowerCase(); paintState(); });
+      bar.appendChild(filt); bar.appendChild(el('span', 'state-count')); root.appendChild(bar);
       kv = el('div', 'kv-live'); root.appendChild(kv);
       const det = el('details', 'raw'); det.appendChild(el('summary', null, 'raw JSON'));
       raw = el('pre'); det.appendChild(raw); root.appendChild(det);
@@ -901,6 +909,8 @@
     const keys = Object.keys(r).filter(k => !HIDE.has(k)).sort();
     const shown = new Set();
     const frag = document.createDocumentFragment();
+    const now = performance.now();
+    let total = 0, nShown = 0;
     for (const k of keys) {
       if (shown.has(k)) continue;
       let label = k, val;
@@ -908,10 +918,19 @@
       if (/_c$/.test(k) && typeof r[k] === 'number' && (k.slice(0, -2) + '_f') in r) { label = k.slice(0, -2); val = fmtTemp(r[k], r[k.slice(0, -2) + '_f'], { cDec: 1 }); shown.add(k.slice(0, -2) + '_f'); }
       else if (/_f$/.test(k) && (k.slice(0, -2) + '_c') in r) continue;
       else val = fmtVal(r[k]);
+      total++;
+      // remember when each value last changed, so the box it sits in can flash and fade
+      if (!STATE_TICKS.has(k) && STATE_PREV.has(k) && STATE_PREV.get(k) !== val) STATE_CHANGED.set(k, now);
+      STATE_PREV.set(k, val);
+      if (STATE_FILTER && !(label + ' ' + k + ' ' + val).toLowerCase().includes(STATE_FILTER)) continue;
       const d = el('div'); d.appendChild(el('div', 'k', label.replace(/_/g, ' '))); d.appendChild(el('div', 'v', val)); d.title = k + ' = ' + fmtVal(r[k]);
+      const age = now - (STATE_CHANGED.get(k) ?? -1e9);
+      if (age < STATE_FLASH_MS) { d.className = 'chg'; d.style.animationDelay = (-age) + 'ms'; }
       frag.appendChild(d);
+      nShown++;
     }
     kv.textContent = ''; kv.appendChild(frag);
+    const cnt = $('.state-count', root); if (cnt) cnt.textContent = STATE_FILTER ? `${nShown} of ${total}` : `${total} values`;
     loads.textContent = '';
     // The budget, left to right, before the per-consumer chips: what the wall
     // meter sees, what the on-board unit puts out, what the car is spending,

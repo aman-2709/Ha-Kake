@@ -300,3 +300,12 @@ details.raw pre {
 
 /* the tiles panel on this page has no saved-layouts UI */
 .tiles-panel .foot { justify-content: flex-end; }
+
+/* ── live model state: a filter, and a flash on whatever just changed ── */
+.state-bar { display: flex; align-items: center; gap: 10px; margin: 8px 0 10px; }
+.state-bar input { flex: 0 1 260px; padding: 6px 10px; background: var(--card2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font: inherit; font-size: .8em; }
+.state-bar input:focus { outline: none; border-color: var(--accent); }
+.state-count { font-size: .7em; color: var(--dim); }
+.kv-live > .chg { animation: state-flash 1.5s ease-out both; border-radius: 6px; }
+@keyframes state-flash { from { background: rgba(79,195,247,.32); box-shadow: 0 0 0 4px rgba(79,195,247,.32); } to { background: transparent; box-shadow: 0 0 0 4px transparent; } }
+@media (prefers-reduced-motion: reduce) { .kv-live > .chg { animation: none; background: rgba(79,195,247,.18); } }

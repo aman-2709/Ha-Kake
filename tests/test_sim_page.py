@@ -349,3 +349,12 @@ def test_the_cards_that_measure_themselves_keep_a_floor_so_a_fresh_layout_cannot
     assert re.search(r'\[data-tile="body"\] \.car-wrap \{[^}]*min-height: 400px', tiles_css)
     sim_css = read(os.path.join(ROOT, "web", "static", "sim.css"))
     assert re.search(r'\[data-tile="tires"\] \.wheels \{[^}]*repeat\(2, auto\)[^}]*flex: none', sim_css)
+
+
+def test_the_live_state_card_filters_and_flashes_what_changed():
+    js = read(SIM_JS)
+    css = read(os.path.join(STATIC, "sim.css"))
+    assert "STATE_FILTER" in js and "state-filter" in js          # a filter box, kept across repaints
+    assert "STATE_CHANGED" in js and "animationDelay" in js         # changed values flash and fade by age
+    assert "STATE_TICKS" in js                                      # the clock is exempt, or it flashes forever
+    assert "@keyframes state-flash" in css and "prefers-reduced-motion" in css
