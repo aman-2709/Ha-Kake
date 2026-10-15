@@ -360,6 +360,6 @@ def test_the_live_state_card_filters_and_flashes_what_changed():
     assert "@keyframes state-flash" in css and "prefers-reduced-motion" in css
 
 
-def test_the_cockpit_power_button_held_two_seconds_sends_the_emergency_shut_off():
+def test_a_refused_power_push_shows_what_to_do_and_the_cockpit_has_no_hold_gesture():
     js = read(SIM_JS)
-    assert "HOLD_MS = 2000" in js and "hold: true" in js and "out.hint" in js
+    assert "out.hint" in js and "HOLD_MS" not in js          # hold stays an API-only emergency shut-off

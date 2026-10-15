@@ -582,10 +582,17 @@ def test_ocv_curve_is_monotonic_and_in_range():
 
 
 def test_odometer_integrates_from_speed():
-    sim = leaf(odometer_mi=1000.0, speed_mph=60.0)
+    sim = leaf(odometer_mi=1000.0, speed_mph=60.0, start_state="ready")
     for _ in range(3600):
         sim.step(1.0)
     assert sim.state()["odometer_mi"] == 1060
+
+
+def test_odometer_does_not_count_while_the_car_is_off():
+    sim = leaf(odometer_mi=1000.0, speed_mph=60.0, start_state="off")     # speed is an independent knob
+    for _ in range(3600):
+        sim.step(1.0)
+    assert sim.state()["odometer_mi"] == 1000
 
 
 # ── faults ───────────────────────────────────────────────────────────────

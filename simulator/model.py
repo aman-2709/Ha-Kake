@@ -1104,7 +1104,10 @@ class LeafModel:
         # there is no forced 14 V bus here.
         self._integrate_lv(dt)
 
-        k["odometer_mi"] = min(999999.0, k["odometer_mi"] + k["speed_mph"] * dt / 3600.0)
+        # distance only accrues while the car is READY: speed_mph is an independent knob, and an OFF car
+        # that still shows a speed must not keep adding miles
+        if self.is_ready():
+            k["odometer_mi"] = min(999999.0, k["odometer_mi"] + k["speed_mph"] * dt / 3600.0)
         self.t += dt
 
     # ── derived values ───────────────────────────────────────────────────
