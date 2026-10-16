@@ -1,10 +1,10 @@
 # Python >= 3.10 (tested on 3.12). Rebuild the venv with: python3.12 -m venv venv
-# Runtime
+# Runtime. The pyobjc packages are the macOS Bluetooth backend; other platforms skip them.
 bleak==1.1.1
-pyobjc-core==12.0
-pyobjc-framework-Cocoa==12.0
-pyobjc-framework-CoreBluetooth==12.0
-pyobjc-framework-libdispatch==12.0
+pyobjc-core==12.0; sys_platform == "darwin"
+pyobjc-framework-Cocoa==12.0; sys_platform == "darwin"
+pyobjc-framework-CoreBluetooth==12.0; sys_platform == "darwin"
+pyobjc-framework-libdispatch==12.0; sys_platform == "darwin"
 async-timeout==5.0.1
 typing_extensions==4.15.0
 pyserial==3.5
