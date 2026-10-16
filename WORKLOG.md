@@ -33,3 +33,8 @@ privately by the maintainer and are not part of this repository.
   amplifier; listen-only mode no longer reads as a sleeping car). The live page is
   pushed over Server-Sent Events with millisecond read timings — every cell read
   drawn, ~2.8 per second. CI runs locally before each push; no hosted workflows.
+
+- **2026-10-12** — The CAN-to-MQTT bridge has run on a Raspberry Pi in a car against a real broker; an unattended
+  MQTT session recorder was added and MQTT clients reconnect within seconds. A guide for monitoring a car from the house
+  over wifi (`docs/REMOTE_MQTT.md`) was written. Ha-Kake's data (database and settings) now lives in a documented data
+  folder created on first run (`docs/DATA.md`), no longer next to the source.

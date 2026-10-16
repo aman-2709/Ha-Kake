@@ -117,7 +117,7 @@ Do the sums before you set `period: 0`. Three fast items is about a second of ev
 
 ### Nothing is polled unless a tile wants it
 
-This is the part that makes the cost model livable. The reader reads `web/tiles.json` (re-reading it when its mtime changes) and computes the set of items that **enabled** tiles actually need. Built-in tiles declare their items directly in `TILES`; user signal tiles resolve theirs through the registry's `item` field.
+This is the part that makes the cost model livable. The reader reads `<data>/tiles.json` (re-reading it when its mtime changes) and computes the set of items that **enabled** tiles actually need. Built-in tiles declare their items directly in `TILES`; user signal tiles resolve theirs through the registry's `item` field.
 
 Anything nobody is looking at is not asked for. WORKLOG entry 56 records the verification: all built-in tiles off plus a single cabin-temperature arc tile, and only `hvac10` got polled.
 

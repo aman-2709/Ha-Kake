@@ -25,7 +25,7 @@ python calibrate_input.py custom --steps "off,1,2,3,2,1,off" --target lbc
 ```
 
 For continuous or passive signals, pause the dashboard (`touch
-web/reader.pause`), run `probe_hvac_carcan.py` / `gear_hvac_live.py` while
+<data>/reader.pause`), run `probe_hvac_carcan.py` / `gear_hvac_live.py` while
 you change the thing, and save the raw lines. A capture where nothing
 changed proves nothing. Remove the pause file when done.
 

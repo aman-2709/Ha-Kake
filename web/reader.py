@@ -7,7 +7,7 @@ Reader Daemon — vehicle-agnostic (profiles in vehicles/).
 Polls the car over BLE or USB, decodes with the active vehicle profile
 (default: the 2012 Leaf, vehicles/leaf_ze0.py), writes the latest
 merged record to battery_state.json (for the dashboard) and periodic rows to
-the SQLite store (web/leaf_battery.db — never pruned).
+the SQLite store (<data>/leaf_battery.db — never pruned).
 
 Scheduling
 ----------
@@ -15,7 +15,7 @@ Every signal source is an *item* (an LBC/HVAC UDS group or a passive Car-CAN
 capture) with a period. Items with period 0 form the **fast lane** and run
 every cycle; the rest are **round-robin by overdue ratio** inside a small
 per-cycle time budget. Only items needed by tiles that are enabled in
-web/tiles.json are polled at all — disabling a tile hands its bandwidth to
+<data>/tiles.json are polled at all — disabling a tile hands its bandwidth to
 the others. The file is re-read whenever its mtime changes.
 
 Resilience
@@ -23,7 +23,7 @@ Resilience
   * Supervisor loop: any transport error → status "reconnecting", exponential
     back-off (2 s → 30 s), re-detect adapter, re-run the profile's configure().
   * Car asleep (LBC silent) → status "asleep", 60 s heartbeat.
-  * web/reader.pause → exit cleanly (status "paused"); app.py relaunches
+  * <data>/reader.pause → exit cleanly (status "paused"); app.py relaunches
     when the file is removed. Calibration tools borrow the adapter this way.
   * battery_state.json always keeps the last good reading plus `last_ok`.
 
@@ -43,14 +43,19 @@ import argparse
 import asyncio
 import datetime as dt
 import json
+import functools
 import os
+import re
 import sys
+import tempfile
+import threading
 import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 from elm327 import detect_adapter, set_uds_target, passive_capture, load_local_config  # noqa: E402
 from store import Store, utc_now_iso, ev_norm                       # noqa: E402
+import datadir               # where Ha-Kake keeps its own data (docs/DATA.md)  # noqa: E402
 import mqttsource            # <prefix>/state + signal/<key> for gauges; no-op without mqtt.host  # noqa: E402
 from vehicles import (get_vehicle, peak_keys, buses, item_bus, primary_bus, source_specs,  # noqa: E402
                       tiles as vehicle_tiles, default_span, default_tiles)
@@ -58,45 +63,46 @@ import signals                                                      # noqa: E402
 import console as consolelog        # the raw output console's ring and file (docs/CONSOLE.md)  # noqa: E402
 
 DIR = os.path.dirname(os.path.abspath(__file__))
-STATE_FILE = os.path.join(DIR, "battery_state.json")
-PAUSE_FILE = os.path.join(DIR, "reader.pause")
-TILES_FILE = os.path.join(DIR, "tiles.json")
-CALIB_FILE = os.path.join(DIR, "calibration.json")   # per-car offsets (gitignored)
-CONSOLE_FILE = os.path.join(DIR, "console.jsonl")    # the raw output console's window (gitignored)
+STATE_FILE = datadir.path("battery_state.json")
+PAUSE_FILE = datadir.path("reader.pause")
+TILES_FILE = datadir.path("tiles.json")
+CALIB_FILE = datadir.path("calibration.json")   # per-car offsets (gitignored)
+CONSOLE_FILE = datadir.path("console.jsonl")    # the raw output console's window (gitignored)
 # Replay writes to its own files, per profile: it must never touch the real
 # database (years of irreplaceable readings) or the last real state, and two
 # profiles have different `readings` columns, so they get different files.
 
 
 def replay_db(vehicle=None):
-    return os.path.join(DIR, f"replay_{vehicle or VEHICLE.NAME}.db")
+    return datadir.path(f"replay_{vehicle or VEHICLE.NAME}.db")
 
 
 def replay_state(vehicle=None):
-    return os.path.join(DIR, f"replay_{vehicle or VEHICLE.NAME}_state.json")
+    return datadir.path(f"replay_{vehicle or VEHICLE.NAME}_state.json")
 
 
 # Simulator mode is under the same rule, for the same reason: generated rows
-# are not readings, and mixing them into web/leaf_battery.db would poison
+# are not readings, and mixing them into <data>/leaf_battery.db would poison
 # 12,000+ irreplaceable ones from two real cars.
 
 def sim_db(vehicle=None):
-    return os.path.join(DIR, f"sim_{vehicle or VEHICLE.NAME}.db")
+    return datadir.path(f"sim_{vehicle or VEHICLE.NAME}.db")
 
 
 def sim_state(vehicle=None):
-    return os.path.join(DIR, f"sim_{vehicle or VEHICLE.NAME}_state.json")
-LAYOUTS_FILE = os.path.join(DIR, "layouts.json")     # named tile layouts (gitignored)
-BOOKMARKS_FILE = os.path.join(DIR, "bookmarks.json") # timeline flags (gitignored)
+    return datadir.path(f"sim_{vehicle or VEHICLE.NAME}_state.json")
+LAYOUTS_FILE = datadir.path("layouts.json")     # named tile layouts (gitignored)
+BOOKMARKS_FILE = datadir.path("bookmarks.json") # timeline flags (gitignored)
 BOOKMARK_LABEL_MAX = 80
 # The simulator cockpit (/sim) keeps its own arrangement here (gitignored).
-# It is not web/tiles.json because that store is vehicle-shaped: _clean_tile()
+# It is not <data>/tiles.json because that store is vehicle-shaped: _clean_tile()
 # drops any id the active profile's TILES does not declare, and the cockpit's
 # cards (cluster, knob categories, time, state) are the page's, not a car's.
-SIM_TILES_FILE = os.path.join(DIR, "sim_tiles.json")
+SIM_TILES_FILE = datadir.path("sim_tiles.json")
 # The arrangements the project ships, used until someone saves their own (which goes
-# to the gitignored files above). The dashboard's is per vehicle, because its tile ids
-# and sizes are the profile's; the cockpit's is one file, as its cards are the page's.
+# to the data-folder files above). They live in the repository, next to the code, not in
+# the data folder. The dashboard's is per vehicle, because its tile ids and sizes are the
+# profile's; the cockpit's is one file, as its cards are the page's.
 LAYOUTS_DIR = os.path.join(DIR, "layouts")
 
 
@@ -178,7 +184,7 @@ def set_vehicle(name=None):
 
 set_vehicle()
 
-# tile-config fields persisted to web/tiles.json (vehicle-independent)
+# tile-config fields persisted to <data>/tiles.json (vehicle-independent)
 TILE_FIELDS = ("id", "enabled", "span", "kind", "signal", "type", "opts", "title", "x", "y", "h")
 
 
@@ -231,6 +237,68 @@ def _clean_opts(out):
         out["opts"] = opts
 
 
+# ── settings files: one writer at a time, never a half-written file ──────
+# Flask serves requests on several threads, and the tile menu can save on
+# every change; two saves must not interleave. Each write goes to its own
+# temporary file in the same directory and replaces the target in one step,
+# and every read-modify-write of a settings file holds SETTINGS_LOCK (an RLock:
+# save_layout calls save_tiles). The reader process only reads these files.
+SETTINGS_LOCK = threading.RLock()
+
+
+def _locked(fn):
+    @functools.wraps(fn)
+    def wrapper(*a, **kw):
+        with SETTINGS_LOCK:
+            return fn(*a, **kw)
+    return wrapper
+
+
+def _atomic_write_json(path, obj, indent=1, fsync=True):
+    folder, base = os.path.split(path)
+    fd, tmp = tempfile.mkstemp(dir=folder or ".", prefix=base + ".", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w") as f:
+            json.dump(obj, f, indent=indent)
+            if fsync:
+                f.flush()
+                os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
+# Text people type (tile titles, layout names, flag labels) is stored cleaned:
+# control characters, zero-width and joiner characters, and bidirectional
+# controls are dropped — they change how text displays without being visible —
+# runs of spaces collapse, and the result is cut to a length. Markup characters
+# are kept: "pull <40 A" is a fine label, and escaping on output is what makes
+# any label safe to show (web/static/html.js).
+_INVISIBLE = re.compile("[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e"
+                        "\u2060-\u2064\u2066-\u2069\ufeff]")
+
+
+def clean_label(s, max_len):
+    """One line of user text, cleaned for storage (see above); '' for None."""
+    if s is None:
+        return ""
+    s = re.sub(r"[\t\n\r\v\f]+", " ", str(s))          # line breaks become spaces, not glue
+    s = _INVISIBLE.sub("", s)
+    return re.sub(r"\s+", " ", s).strip()[:max_len].strip()
+
+
+def layout_name(name):
+    """The stored form of a layout name; the same rule for save, load and delete."""
+    name = clean_label(name, 60)
+    if not name:
+        raise ValueError("layout name required")
+    return name
+
+
 def _clean_tile(t):
     """Validate one tile entry; returns None if it is not usable."""
     if not isinstance(t, dict) or not isinstance(t.get("id"), str):
@@ -253,6 +321,10 @@ def _clean_tile(t):
     except (TypeError, ValueError):
         out["span"] = 3
     out["span"] = min(12, max(2, out["span"]))
+    if "title" in out:
+        out["title"] = clean_label(out["title"], 80)
+        if not out["title"]:
+            del out["title"]
     for k, lo, hi in (("x", 0, 10), ("y", 0, 10000), ("h", 2, 200)):
         if k in out:
             try:
@@ -266,7 +338,7 @@ def _clean_tile(t):
 
 
 def load_tiles():
-    """web/tiles.json (v2: order, enabled, span, type, opts, user signal tiles)
+    """<data>/tiles.json (v2: order, enabled, span, type, opts, user signal tiles)
     merged over the defaults; unknown built-in ids ignored, missing ones appended."""
     raw = []
     try:
@@ -298,6 +370,7 @@ def _forget(path):
         pass
 
 
+@_locked
 def save_tiles(cfg):
     if not (cfg or {}).get("tiles"):           # "reset": drop the saved file, so the shipped layout shows
         _forget(TILES_FILE)
@@ -314,10 +387,7 @@ def save_tiles(cfg):
         c = _clean_tile(dict(t))
         if c:
             ordered.append(c)
-    tmp = TILES_FILE + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump({"tiles": ordered}, f, indent=1)
-    os.replace(tmp, TILES_FILE)
+    _atomic_write_json(TILES_FILE, {"tiles": ordered})
     return {"tiles": ordered}
 
 
@@ -329,7 +399,7 @@ def save_tiles(cfg):
 def _clean_sim_tile(t):
     """One cockpit tile entry with its types enforced, or None if unusable.
 
-    Keeps the same field set web/tiles.json uses so the one Tile Studio
+    Keeps the same field set <data>/tiles.json uses so the one Tile Studio
     engine reads both stores; the difference is that no id is rejected.
     """
     if not isinstance(t, dict) or not isinstance(t.get("id"), str) or not t["id"]:
@@ -362,7 +432,7 @@ def _sim_tiles_from(raw):
 
 
 def load_sim_tiles():
-    """web/sim_tiles.json, or an empty layout — the page then auto-places."""
+    """<data>/sim_tiles.json, or an empty layout — the page then auto-places."""
     try:
         with open(SIM_TILES_FILE) as f:
             raw = json.load(f).get("tiles", [])
@@ -371,15 +441,13 @@ def load_sim_tiles():
     return _sim_tiles_from(raw or _shipped("sim_tiles.json"))
 
 
+@_locked
 def save_sim_tiles(cfg):
     if not (cfg.get("tiles") if isinstance(cfg, dict) else None):    # "reset": the shipped layout shows again
         _forget(SIM_TILES_FILE)
         return load_sim_tiles()
     out = _sim_tiles_from((cfg or {}).get("tiles", []) if isinstance(cfg, dict) else [])
-    tmp = SIM_TILES_FILE + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump(out, f, indent=1)
-    os.replace(tmp, SIM_TILES_FILE)
+    _atomic_write_json(SIM_TILES_FILE, out)
     return out
 
 
@@ -395,10 +463,7 @@ def _read_layouts():
 
 
 def _write_layouts(d):
-    tmp = LAYOUTS_FILE + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump(d, f, indent=1)
-    os.replace(tmp, LAYOUTS_FILE)
+    _atomic_write_json(LAYOUTS_FILE, d)
 
 
 def list_layouts():
@@ -407,11 +472,10 @@ def list_layouts():
                   key=lambda x: x["name"].lower())
 
 
+@_locked
 def save_layout(name, cfg=None):
-    """Store a layout under `name` (current web/tiles.json when cfg is None)."""
-    name = (name or "").strip()[:60]
-    if not name:
-        raise ValueError("layout name required")
+    """Store a layout under `name` (current <data>/tiles.json when cfg is None)."""
+    name = layout_name(name)
     tiles = save_tiles(cfg)["tiles"] if cfg is not None else load_tiles()["tiles"]
     d = _read_layouts()
     d[name] = {"saved": utc_now_iso(), "tiles": tiles}
@@ -419,15 +483,25 @@ def save_layout(name, cfg=None):
     return d[name]
 
 
+@_locked
 def load_layout(name):
-    """Make a saved layout the active one (writes web/tiles.json)."""
+    """Make a saved layout the active one (writes <data>/tiles.json)."""
+    try:
+        name = layout_name(name)
+    except ValueError:
+        raise KeyError(name) from None
     d = _read_layouts()
     if name not in d:
         raise KeyError(name)
     return save_tiles({"tiles": d[name].get("tiles", [])})
 
 
+@_locked
 def delete_layout(name):
+    try:
+        name = layout_name(name)
+    except ValueError:
+        return False
     d = _read_layouts()
     if name in d:
         del d[name]
@@ -478,7 +552,7 @@ def period_overrides(tiles_cfg):
 
 # ── the raw output console (docs/CONSOLE.md) ──────────────────────────────
 # A framework tile (vehicles/__init__.py FRAMEWORK_TILES), off by default. The
-# reader learns from web/tiles.json that it is on — the same mtime path
+# reader learns from <data>/tiles.json that it is on — the same mtime path
 # period_overrides() uses — and only then taps the transports. No tile, no
 # object, no tap, no file: enabling it is the only thing that costs anything.
 #
@@ -534,7 +608,7 @@ def console_ids(items):
 
 # ── timeline bookmarks ────────────────────────────────────────────────────
 # A flag the owner drops on a moment — "start of the pull" — kept in
-# web/bookmarks.json like the other per-machine files, so playback can jump
+# <data>/bookmarks.json like the other per-machine files, so playback can jump
 # to it. Each is {t: epoch seconds, label, kind: "user", vehicle}.
 
 def _clean_bookmark(b):
@@ -562,21 +636,21 @@ def load_bookmarks():
     return sorted(out, key=lambda b: b["t"])
 
 
+@_locked
 def save_bookmarks(items):
     out = sorted([c for c in (_clean_bookmark(b) for b in items) if c], key=lambda b: b["t"])
-    tmp = BOOKMARKS_FILE + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump({"bookmarks": out}, f, indent=1)
-    os.replace(tmp, BOOKMARKS_FILE)
+    _atomic_write_json(BOOKMARKS_FILE, {"bookmarks": out})
     return out
 
 
+@_locked
 def add_bookmark(t, label=""):
     items = load_bookmarks()
-    items.append({"t": t, "label": label})
+    items.append({"t": t, "label": clean_label(label, 120)})
     return save_bookmarks(items)
 
 
+@_locked
 def delete_bookmark(t):
     items = load_bookmarks()
     keep = [b for b in items if abs(b["t"] - float(t)) > 0.0005]
@@ -592,11 +666,9 @@ def load_calibration():
         return {}
 
 
+@_locked
 def save_calibration(cal):
-    tmp = CALIB_FILE + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump(cal, f, indent=1)
-    os.replace(tmp, CALIB_FILE)
+    _atomic_write_json(CALIB_FILE, cal)
     return cal
 
 
@@ -608,10 +680,9 @@ def _iso_ms(epoch):
 
 
 def write_state(record):
-    tmp = STATE_FILE + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump(record, f)
-    os.replace(tmp, STATE_FILE)
+    # The reader's own file, rewritten every cycle by one process: a unique
+    # temporary name like the settings files, but no fsync on this hot path.
+    _atomic_write_json(STATE_FILE, record, indent=None, fsync=False)
 
 
 def load_state():
@@ -1140,7 +1211,7 @@ class Reader:
 
     def apply_policy(self):
         """Per-vehicle sensor policy (e.g. the Leaf's current fusion + zero
-        calibration). web/calibration.json is generic; what it means is not."""
+        calibration). <data>/calibration.json is generic; what it means is not."""
         self.refresh_calibration()
         fn = getattr(VEHICLE, "apply_policy", None)
         if fn:
@@ -1623,6 +1694,7 @@ class Reader:
 
 async def main(interval, adapter_pref, fast=False, budget=1.5, db=None):
     print(f"Reader — {VEHICLE.TITLE}")
+    print("  " + datadir.startup_note().replace("\n", "\n  "))
     if adapter_pref == "replay":
         print("  REPLAY MODE — recorded fixture, not a car. Nothing here is a live reading.")
     if adapter_pref == "sim":

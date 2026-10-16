@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Email **kn6irv@gmail.com** with "Leaf OBD security" in the subject. Expect an <!-- privacy-ok -->
+Email **kn6irv@gmail.com** with "Leaf OBD security" in the subject. Expect an <!-- privacy-ok:e-mail -->
 acknowledgment within a few days. Please do not open a public issue for
 anything you believe is exploitable before we have had a chance to respond.
 
@@ -40,9 +40,16 @@ ISO-TP flow-control frames — and nothing else; the façade refuses any request
 whose service byte is outside that set before it reaches a bus, and logs it.
 On EV-CAN — the battery, inverter and charger network — the adapter is opened
 in the controller's listen-only mode, in which it transmits nothing, not even
-the acknowledgement bit other nodes see; the transport refuses to open EV-CAN
-in any other mode (and refuses the bus outright when it cannot confirm the
-mode from the device), and answers every request on it with `NO DATA`. The
+the acknowledgement bit other nodes see. In software it is absolute on every
+path: nothing is ever sent on an EV bus, and every request on it answers
+`NO DATA`. How far the controller's silence can be checked depends on the
+firmware: on `socketcan` the kernel enforces it and the transport refuses an
+interface not up `listen-only on`; on candleLight (`gs_usb`) the transport
+refuses firmware that does not offer listen-only and starts the device once,
+silent; on the stock `slcan` firmware it sends `M1` before opening, which that
+firmware does not acknowledge — so there the silence is the firmware's word,
+and the startup log says so. candleLight is the choice when it must be
+checkable. The
 onboard termination resistor must be disabled: both of the Leaf's buses are
 already terminated, and a third terminator degrades the signal for every
 controller on that bus. Reviewed 2026-09-09 as a transport, not a new service.
@@ -55,9 +62,12 @@ for a reader elsewhere (`docs/MQTT.md`). "The reader must be the only process
 that talks to the car" therefore reads: *the reader, or a bridge that accepts
 only its read requests*. The bridge enforces the same whitelist as the reader
 — a `tx/uds` request whose service byte is not `0x21`, `0x01`, `0x03` or
-`0x07` is refused, logged and never transmitted; mode `0x04` never leaves;
-`--listen-only` refuses everything (and the kernel interface should be
-brought up `listen-only on` as well). The reader refuses the same set before
+`0x07` is refused, logged and never transmitted; mode `0x04` never leaves; a
+request is sent only on a request/response id pair listed in the bridge's
+`uds_targets` (by default the Leaf's battery controller and HVAC amp);
+`--listen-only` refuses everything, and on the EV bus it is always on (a
+`socketcan` interface must also be up `listen-only on`, or the bridge will not
+start). The reader refuses the same set before
 publishing. Neither end trusts the other. The whitelist does not make the
 broker safe to expose: anyone who can publish to `tx/uds` can keep ECUs awake
 by polling — so the broker is **LAN only, plain MQTT without credentials or
@@ -77,9 +87,12 @@ broker, Pi or car.
 - The writing APIs (`PUT /api/tiles`, `PUT /api/sim/tiles`,
   `PUT/DELETE /api/calibration`, `PUT/DELETE/POST /api/layouts/…`,
   `PUT/DELETE /api/bookmarks`) touching
-  anything other than their own JSON files (`web/tiles.json`,
-  `web/sim_tiles.json`, `web/calibration.json`, `web/layouts.json`,
-  `web/bookmarks.json`).
+  anything other than their own JSON files (`<data>/tiles.json`,
+  `<data>/sim_tiles.json`, `<data>/calibration.json`, `<data>/layouts.json`,
+  `<data>/bookmarks.json`).
+- A request reaching the API from a page on another origin, or naming a host
+  other than a loopback one: the server checks `Host` on every request, and
+  `Origin` (or a JSON content type) on every change.
 - The simulator's control API (`hakake_sim.py`, `127.0.0.1` only, no
   authentication) reaching anything but the in-memory model — it can put a
   fault on a dashboard someone is reading, and it must never be exposed.

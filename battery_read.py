@@ -14,7 +14,7 @@ Usage:
   ./venv/bin/python battery_read.py --adapter ble   # force BLE
   ./venv/bin/python battery_read.py --loop 30       # repeat every 30 s
   ./venv/bin/python battery_read.py --cells         # include the 96-cell table
-  ./venv/bin/python battery_read.py --store         # also write to web/leaf_battery.db
+  ./venv/bin/python battery_read.py --store         # also write to <data>/leaf_battery.db
   ./venv/bin/python battery_read.py --raw           # dump raw ELM327 lines too
 """
 
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     ap.add_argument("--adapter", choices=["auto", "usb", "ble"], default="auto")
     ap.add_argument("--loop", type=float, metavar="SECONDS", help="repeat every N seconds")
     ap.add_argument("--cells", action="store_true", help="print the 96-cell table")
-    ap.add_argument("--store", action="store_true", help="append readings to web/leaf_battery.db")
+    ap.add_argument("--store", action="store_true", help="append readings to <data>/leaf_battery.db")
     ap.add_argument("--raw", action="store_true", help="dump raw ELM327 response lines")
     a = ap.parse_args()
     a.adapter = None if a.adapter == "auto" else a.adapter

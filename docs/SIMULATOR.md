@@ -106,7 +106,7 @@ model produces is labelled — `simulated: true` in every state record, `sim`
 as the adapter type, a badge on the dashboard, a hazard bar on the cockpit,
 and a shout in the startup log — precisely so that no screenshot, database
 row, or API response can later be mistaken for a reading from a vehicle.
-Simulated rows go to `web/sim_<profile>.db`, never to `web/leaf_battery.db`.
+Simulated rows go to `<data>/sim_<profile>.db`, never to `<data>/leaf_battery.db`.
 
 The model's numbers are honest about their provenance, too. Every row of the
 load table (below) is labelled **MEASURED**, **OWNER REPORT** or
@@ -136,20 +136,20 @@ dashboard's own styled tiles (four of `web/templates/tiles/*.html` — vehicle,
 tires, body and climate; the fifth, the 3D pack, is not in the cockpit),
 `web/static/tiles.js`) — so what you drive here looks exactly like what the
 dashboard shows. Its JavaScript talks to the control API cross-origin
-(the API sends `Access-Control-Allow-Origin: *` on JSON and answers
-`OPTIONS` with 204).
+(the API names the cockpit's loopback origin in
+`Access-Control-Allow-Origin` and answers `OPTIONS` with 204).
 
 **Shipped layout.** The project ships its own arrangement: `web/layouts/sim_tiles.json`
 for `/sim`, and for the dashboard `web/layouts/tiles.<vehicle>.json` (today
 `tiles.leaf_ze0.json`; a vehicle with no file keeps its profile's defaults). They are
 positions and sizes for every tile, used until someone saves their own. Saving writes
-the gitignored `web/sim_tiles.json` (cockpit) or `web/tiles.json` (dashboard), which
-then wins. "Reset arrangement" deletes that file, so the shipped layout shows again
+`sim_tiles.json` (cockpit) or `tiles.json` (dashboard) in the data folder
+(`docs/DATA.md`), which then wins. "Reset arrangement" deletes that file, so the shipped layout shows again
 rather than an empty one. To change what ships, arrange the page, then copy the
-saved file over the one in `web/layouts/` and commit it.
+saved file from the data folder over the one in `web/layouts/` and commit it.
 
-**First-run layout.** With no saved arrangement and no shipped one (`web/sim_tiles.json`, gitignored,
-or the browser's copy) `sim.js` `arrangeDefaults()` sets the spans and order before
+**First-run layout.** With no saved arrangement and no shipped one (`sim_tiles.json` in the data
+folder, or the browser's copy) `sim.js` `arrangeDefaults()` sets the spans and order before
 the grid measures: the cluster beside the head unit, then vehicle / body / tires as one
 row of three, then climate and time, then the live state. A saved layout always wins.
 Two cards size themselves from their content on that first run, so each keeps a floor:
@@ -164,11 +164,13 @@ order: `?control=http://127.0.0.1:PORT` in the URL (what the `--pty` rig's
 printed cockpit link carries), then the URL `web/app.py` knew at startup (`--sim-control-url` sets it for a simulator in another process),
 then `sim_control_url` from `/api/status` (how `--sim-control 0` is found;
 the page keeps asking while the reader says it is simulated and has not
-published a port yet).
+published a port yet). Whichever source it comes from, the URL must be `http://`
+on this machine (`127.0.0.1`, `localhost` or `[::1]`); anything else is ignored
+and the notice says so — the control API only ever runs locally.
 
 **What is on it**, top to bottom by default — every card can be dragged by
 its title, resized or hidden from its ⋯ menu, and the arrangement persists
-in `web/sim_tiles.json` (gitignored; `GET/PUT /api/sim/tiles`, with a
+in `<data>/sim_tiles.json` (gitignored; `GET/PUT /api/sim/tiles`, with a
 localStorage mirror `hakake-sim-tiles-v1`). *Cards ▾ → reset arrangement*
 puts it back.
 
@@ -614,7 +616,7 @@ carries a load lump of its own).
 |---|---|---|
 | `--generate` | — | do this instead of running a rig |
 | `--days N` | 180 | days of history, ending now |
-| `--out PATH` | `web/sim_history.db` | where to write (the real database is refused) |
+| `--out PATH` | `<data>/sim_history.db` | where to write (the real database is refused) |
 | `--seed N` | 1 | same seed, same code and the same day, same database, byte for byte. The window ends *now*, so tomorrow's run of the same command lands on a different calendar and produces different counts |
 | `--sample S` | 120 | seconds between rows while the car is doing something |
 | `--idle-sample S` | 1800 | seconds between rows while it is parked |
@@ -659,8 +661,11 @@ from now. So:
   `simulated: true, generated: true`;
 * `web/app.py --db` prints **SYNTHETIC DATABASE** on startup when it sees the
   meta flag, and the state file's `message` says the same;
-* the generator **refuses** to write to `web/leaf_battery.db`, or to any file
-  named like it, with an error rather than a warning.
+* the generator **refuses** to write to `<data>/leaf_battery.db`, or to any file
+  named like it in any letter case, reached through a link, or a profile's own
+  `DB_FILE` — and to any existing database that holds readings and is not
+  stamped synthetic (a backup or a renamed copy) — with an error rather than a
+  warning. The same guard covers `--pull`.
 
 If you ever have a database and cannot tell:
 
@@ -796,9 +801,12 @@ python web/app.py --adapter sim --sim-serial "$PTY" --sim-control 8099 --port 50
 ### 3. The control API
 
 Loopback only (`127.0.0.1`), stdlib `http.server`, no authentication, no new
-dependency. Every JSON response carries `"simulated": true` and
-`Access-Control-Allow-Origin: *` (the cockpit calls it from the dashboard's
-origin); `OPTIONS` answers 204 with the three CORS headers and **no body** — a
+dependency. Every request must name a loopback host (403 otherwise), and a
+`POST` must come from a page on a loopback origin or, from a tool with no
+`Origin` such as curl, be sent as `application/json`. Every JSON response
+carries `"simulated": true`; when the request comes from a loopback origin
+(the cockpit, on the dashboard's port) that origin is named in
+`Access-Control-Allow-Origin`, and no other is. `OPTIONS` answers 204 with the three CORS headers and **no body** — a
 204 that carries one may make a browser reject the preflight and with it the
 real request, which happened once and is now pinned by
 `tests/test_sim_control.py`.
@@ -815,7 +823,7 @@ real request, which happened once and is now pinned by
 | GET | `/health` (also `/sim/health`) | — | `{"ok": true, "simulated": true}` |
 | GET | `/`, `/panel`, `/sim/panel` | — | the **fallback panel** (HTML) |
 | POST | `/sim/knobs` | `{"soc": 20, "fault.cell_degraded": true}` | `{"applied": {...}}` |
-| POST | `/sim/scenario` | `{"name": "drive"}` or `{"path": "..."}` | the loaded scenario and its knobs |
+| POST | `/sim/scenario` | `{"name": "drive"}` — a shipped scenario by name (a file path is the CLI's `--scenario`, not this route's) | the loaded scenario and its knobs; 400 with the shipped list otherwise |
 | POST | `/sim/scenario` | `{"name": ""}` (or `null`) | **clears** the scenario: the timeline stops, every knob stays where it is, the model free-runs. 400 on a core with no `clear_scenario()` |
 | POST | `/sim/power` | `{"brake": true}` | one push of the car's power switch: `{"start_state", "gear", "message", "accepted"}` — **501** when the core has no `press_power()`. See [The power button](#the-power-button) |
 | POST | `/sim/reset` | `{}` | every knob back to its schema default |
@@ -1199,7 +1207,7 @@ the dashboard and the cockpit at `/sim` all run exactly as they would on the
 board, at the real frame rate, with no board and no car. The control API is
 in-process as before (`:8099`), and `bus_load` is a knob in its schema. It is
 still `--adapter sim`: never auto-detected, rows in the throwaway
-`web/sim_<profile>.db`, every record stamped `simulated: true` with the
+`<data>/sim_<profile>.db`, every record stamped `simulated: true` with the
 scenario, the seed and `sim_bus_load`. `can_interface: "sim"` through
 `--adapter can` is refused with that advice, because the reader chooses the
 database from `--adapter` and generated rows must never land next to real
@@ -1378,6 +1386,18 @@ python tools/compare_sessions.py tests/fixtures/session_leaf_ze0_pull_sim.json o
 
 Each side is a fixture, a readings database, or a captured `rx/#` stream
 (`mosquitto_sub -F '{"topic":"%t","payload":%p}'` on the bridge, or the rig's).
+A database is opened read-only (`Store(readonly=True)`) — comparing never
+changes it, whichever profile is decoding — and since it usually holds every
+drive, narrow it to the pull with `--obs-from/--obs-to` (or `--exp-from/--exp-to`
+for the expected side; epoch seconds or an ISO time, local unless `Z`):
+
+```bash
+python tools/compare_sessions.py tests/fixtures/session_leaf_ze0_pull_sim.json "${HAKAKE_DATA_DIR:-$HOME/Library/Application Support/Ha-Kake}"/leaf_battery.db \
+    --obs-from 2026-10-05T12:10:00 --obs-to 2026-10-05T12:12:00
+```
+
+Without a window, a database spanning more than two hours gets a warning:
+its figures would cover every drive in it.
 It prints, side by side with the difference: peak current and its time,
 speed and power; time to peak from the pull's start; the lowest cell pair
 and which; pack sag from rest; SOC drop over the pull and the whole run;
@@ -1430,10 +1450,11 @@ a Lancer.
 - Auto-detect **never** picks the simulator. `--adapter sim` must be asked
   for, the same rule replay follows, for the same reason: a dashboard with a
   dead adapter must show a dead adapter, not a healthy imaginary car.
-- Simulated rows go to `web/sim_<profile>.db` and `web/sim_<profile>_state.json`
-  (both gitignored). `web/leaf_battery.db` is never opened in this mode.
-- Generated history goes to `--out` (default `web/sim_history.db`, gitignored).
-  The generator refuses `web/leaf_battery.db` and anything named like it, and
+- Simulated rows go to `<data>/sim_<profile>.db` and `web/sim_<profile>_state.json`
+  (both gitignored). `<data>/leaf_battery.db` is never opened in this mode.
+- Generated history goes to `--out` (default `sim_history.db` in the data folder, `docs/DATA.md`).
+  The generator refuses `<data>/leaf_battery.db`, anything named like it (in any
+  case, or through a link) and any unstamped database with readings, and
   every generated database is stamped synthetic in its `meta` table. Generated
   data is **never** merged into the real database.
 - The simulator is **read-only about the car** in the only sense that applies:

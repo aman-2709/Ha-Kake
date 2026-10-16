@@ -8,20 +8,26 @@
  car ◄─ ELM327 clone ◄────┤  elm327.py  ◄─ reader.py ─┤
             USB (pyserial)┘   transport    scheduler  └─ leaf_battery.db ─────► /api/history, /api/health, /api/cells
                                                 ▲
-                                     web/tiles.json ◄── PUT /api/tiles ◄── Tiles menu
+                                     <data>/tiles.json ◄── PUT /api/tiles ◄── Tiles menu
 ```
 
 ## Processes
 
 **`web/app.py`** — Flask, bound to 127.0.0.1. Serves the single-page dashboard
-and a small JSON API. Spawns **`web/reader.py`** as a supervised subprocess and
+and a small JSON API. Every request must name a loopback host (`Host`), and one
+that changes something (POST/PUT/DELETE) must come from a page on one (`Origin`)
+or, from a tool with no Origin such as curl, be sent as `application/json`;
+anything else gets 403. Responses carry `X-Content-Type-Options: nosniff` and a
+Content-Security-Policy that allows only the server's own scripts and styles
+(the pages load nothing third-party). `HAKAKE_ALLOWED_HOSTS` (comma list) adds
+host names for someone who deliberately serves the page elsewhere. Spawns **`web/reader.py`** as a supervised subprocess and
 restarts it if it exits (a crash costs seconds, not the page). Each request
 thread gets its own SQLite connection — sharing one segfaulted (2026-08-24).
 
 **`web/reader.py`** — the only process that talks to the car. One asyncio
 loop; a supervisor around connect → configure → poll that reconnects with
 back-off on any transport error, detects "car asleep" (the primary ECU silent),
-and honours `web/reader.pause` so calibration tools can borrow the adapter. It
+and honours `<data>/reader.pause` so calibration tools can borrow the adapter. It
 imports no vehicle module — everything car-shaped arrives through the profile,
 with one exception worth knowing: the cell-log fast lane names the Leaf's cell
 item (`CELLLOG_ITEM = "lbc02"`), which belongs in a profile and has not moved yet —
@@ -88,7 +94,7 @@ default layout of user signal tiles, which work everywhere.
 ## The raw output console
 
 A framework tile and a tap, both off until someone asks for them
-(`docs/CONSOLE.md` is the authority). When `web/tiles.json` says the `console`
+(`docs/CONSOLE.md` is the authority). When `<data>/tiles.json` says the `console`
 tile is enabled — the same mtime path `period_overrides()` uses for the cell log
 — the reader builds a bounded ring (`web/console.py`) and points every
 transport's tap at it: `cantransport.CanFacade.tap` for native CAN, MQTT and the
@@ -97,7 +103,7 @@ answers grouped with their request, adapter replies, `text`-kind signal changes
 and reader events. Decimation happens there, in the reader — the ids the enabled
 tiles poll, a per-id rate cap, an explicit lossy "everything" mode — because at
 ~1,700 frames a second nothing useful reaches a browser; every drop is counted
-per id and published. The ring is flushed once a cycle to `web/console.jsonl`
+per id and published. The ring is flushed once a cycle to `<data>/console.jsonl`
 (gitignored, size-capped), which Flask serves through `GET /api/console` after an
 opaque cursor. No tile, no object, no tap, no file. It is a window, not a
 capture: `record_session.py` and the MQTT bridge are the capture tools.
@@ -116,7 +122,7 @@ switching; `elm327.configure_uds(elm, tx, rx)` sets up one such conversation
 
 **Only items needed by enabled tiles are polled.** The profile's `TILES`
 (bound onto `reader.TILES`) maps each built-in dashboard tile to its items and
-`signals.py` resolves a user tile's; `web/tiles.json` (written by the Tiles
+`signals.py` resolves a user tile's; `<data>/tiles.json` (written by the Tiles
 menu) says which tiles are on. Turning a tile off hands its bus time to the rest.
 
 **A tile option can also change how often.** `opts.celllog` on an enabled
@@ -326,7 +332,7 @@ dumps, lists already stored in columns).
 **Rows are stamped with the vehicle.** `readings`, `events` and `sessions`
 all carry a `vehicle` column set to the active profile's `NAME`, and every
 read filters `vehicle = <active> OR vehicle IS NULL`. Two cars can therefore
-share one database file — every profile writes `web/leaf_battery.db` unless
+share one database file — every profile writes `<data>/leaf_battery.db` unless
 it sets `DB_FILE` — without mixing new data. Rows written before the column
 existed are NULL and are deliberately *not* back-filled: attributing them
 after the fact would be a guess, so they stay visible to every profile.
@@ -403,7 +409,7 @@ shown only in that mode. Recorded frames carry `playback: true`: the status
 dot never calls them stale, the adapter badge says "recorded", and
 `TileStudio.runAlerts` ignores them unless the timeline's alerts box is
 ticked. The timeline docks to the window, carries the owner's flags
-(`web/bookmarks.json`, `/api/bookmarks`) and the auto-detected discharge
+(`<data>/bookmarks.json`, `/api/bookmarks`) and the auto-detected discharge
 pulls (`Store.pulls()`, `/api/bookmarks/auto`), and its playhead is grabbable.
 `docs/PLAYBACK.md`.
 
@@ -419,7 +425,10 @@ power, history, degradation, cells, and the 3D pack — five of which (vehicle,
 tires, body, climate, pack3d) are `{% include %}`d from
 `web/templates/tiles/*.html`; the first four are painted by
 `web/static/tiles.js`, so the cockpit can host the same markup from the same
-record. Those are Leaf assets: they belong to whichever profile lists them in
+record. Those renderers build markup from numbers only (a non-number shows
+`--`), and every other script that puts a string it did not write into markup —
+a tile title, a layout name, a flag label, a signal label or unit — passes it
+through `Html.esc` from `web/static/html.js`, loaded first on both pages. Those are Leaf assets: they belong to whichever profile lists them in
 `TILES`, and for a profile that lists none (the Lancer's `TILES = []`)
 `tilestudio.js` takes them out of the grid and hides the cards rather than
 leaving twelve that will never take a value.
@@ -489,15 +498,15 @@ every layout change so the tile can re-read its opts and re-measure. See
   thermometer, battery, line / area / bar graph (from `/api/history`), text,
   lamp. Values are colour-encoded through the chosen scale as they change.
 - **Calibration:** per-car offsets (current zero) live in gitignored
-  `web/calibration.json` via `GET/PUT/DELETE /api/calibration`.
-- **Shipped layout:** until `web/tiles.json` exists the dashboard serves `web/layouts/tiles.<vehicle>.json`, and an empty save (reset) deletes `tiles.json` so that layout returns; `/sim` does the same with `web/layouts/sim_tiles.json` and `web/sim_tiles.json` (`docs/SIMULATOR.md`).
-- **Persistence:** `web/tiles.json` via `GET/PUT /api/tiles` (order, enabled,
+  `<data>/calibration.json` via `GET/PUT/DELETE /api/calibration`.
+- **Shipped layout:** until `<data>/tiles.json` exists the dashboard serves `web/layouts/tiles.<vehicle>.json` (in the repository, not the data folder), and an empty save (reset) deletes `tiles.json` so that layout returns; `/sim` does the same with `web/layouts/sim_tiles.json` and `<data>/sim_tiles.json` (`docs/SIMULATOR.md`).
+- **Persistence:** `<data>/tiles.json` via `GET/PUT /api/tiles` (order, enabled,
   x/y/span/h, type, opts, signal) is the *active* layout. Alert rules travel
   inside `opts.alerts`, one `{signal, min, max, when, tone, repeat, enabled}`
   per value; `reader._clean_alerts()` keeps them well-formed on every write
   (unknown signals, unknown keys and rules with no threshold are dropped,
   numbers coerced), for the dashboard store and the cockpit's alike. **Named layouts**
-  live in `web/layouts.json` (`/api/layouts`): save the active one under a
+  live in `<data>/layouts.json` (`/api/layouts`): save the active one under a
   name, load one back (it overwrites `tiles.json`, so the reader follows),
   delete, or reset to defaults. Both files are gitignored — layouts are
   personal. Each tile's ⋯ menu has *reset tile* (default size, style,

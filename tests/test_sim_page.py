@@ -3,7 +3,7 @@
 """The simulator cockpit is a dashboard page: `GET /sim`.
 
 It is served by app.py, reuses the dashboard's tile engine and its four
-styled tiles, keeps its own arrangement in web/sim_tiles.json through
+styled tiles, keeps its own arrangement in <data>/sim_tiles.json through
 `GET/PUT /api/sim/tiles`, and drives the simulator's control API from the
 browser. These tests pin the Flask side and the seams the page depends on:
 
@@ -102,7 +102,7 @@ def test_sim_hosts_the_four_tiles_and_its_own_cards_once_each(client):
 def test_sim_loads_the_shared_engine_in_order_and_nothing_external(client):
     page = client.get("/sim").get_data(as_text=True)
     srcs = re.findall(r'<script src="([^"]+)"', page)
-    assert srcs == ["/static/alerts.js", "/static/vendor/gridstack-all.js", "/static/tilestudio.js",
+    assert srcs == ["/static/html.js", "/static/alerts.js", "/static/vendor/gridstack-all.js", "/static/tilestudio.js",
                     "/static/tiles.js", "/static/sim.js"]
     links = re.findall(r'<link rel="stylesheet" href="([^"]+)"', page)
     assert links[:4] == ["/static/vendor/gridstack.min.css", "/static/tilestudio.css",

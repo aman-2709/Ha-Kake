@@ -16,7 +16,7 @@ history and the daily aggregate from that declaration. Nothing here knows what
 a Leaf is. See the contract docstring in `vehicles/__init__.py`.
 
 Usage:
-    store = Store()                      # active profile, web/leaf_battery.db
+    store = Store()                      # active profile, <data>/leaf_battery.db
     store.insert_reading(record)         # record from the profile's decode()
     store.history(minutes=1440)          # downsampled list of dicts
     store.daily_health()                 # one row per day for degradation charts
@@ -32,9 +32,10 @@ import sys
 DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(DIR))            # repo root, for `vehicles`
 
+import datadir                                      # noqa: E402
 from vehicles import active_vehicle, history_cols   # noqa: E402
 
-DEFAULT_DB = os.path.join(DIR, "leaf_battery.db")
+DEFAULT_DB = datadir.path("leaf_battery.db")
 
 # record keys the store consumes or that are transport noise — never in `extra`.
 # A profile adds its own bulky/raw keys through EXTRA_SKIP.
@@ -136,13 +137,28 @@ def _iso_z(d):
 
 
 class Store:
-    def __init__(self, path=None, vehicle=None):
+    def __init__(self, path=None, vehicle=None, readonly=False):
         """`vehicle` is a profile module, a profile name, or None for the one
-        the process has bound (reader.set_vehicle → vehicles.active_vehicle)."""
+        the process has bound (reader.set_vehicle → vehicles.active_vehicle).
+
+        `readonly=True` is for tools that only look (compare_sessions, analysis):
+        the file is opened through a read-only URI, nothing is created, migrated
+        or switched to WAL, and the columns read are the profile's that the file
+        actually has — so looking at a database can never change it, whichever
+        profile is doing the looking."""
         self.vehicle = active_vehicle(vehicle)
         self.vname = self.vehicle.NAME
         self.cols = history_cols(self.vehicle)
         self.path = path or self._default_path()
+        self.readonly = bool(readonly)
+        if self.readonly:
+            import pathlib
+            uri = pathlib.Path(self.path).resolve().as_uri() + "?mode=ro"
+            self.conn = sqlite3.connect(uri, uri=True, check_same_thread=False)
+            self.conn.row_factory = sqlite3.Row
+            have = {r["name"] for r in self.conn.execute("PRAGMA table_info(readings)")}
+            self.cols = {c: spec for c, spec in self.cols.items() if c in have}
+            return
         self.conn = sqlite3.connect(self.path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA journal_mode=WAL")
@@ -152,10 +168,10 @@ class Store:
 
     def _default_path(self):
         """A profile may opt out of the shared file with DB_FILE; by default
-        every profile writes web/leaf_battery.db (rows are separated by the
+        every profile writes <data>/leaf_battery.db (rows are separated by the
         `vehicle` column, not by the filename)."""
         name = getattr(self.vehicle, "DB_FILE", None)
-        return os.path.join(DIR, name) if name else DEFAULT_DB
+        return os.path.join(os.path.dirname(DEFAULT_DB), name) if name else DEFAULT_DB
 
     # ── schema (generated from the profile's declaration) ─────────────────
 
@@ -753,7 +769,7 @@ if __name__ == "__main__":
         hj = os.path.join(DIR, "battery_history.json")
         jl = sorted(f for f in os.listdir(root) if f.startswith("battery_log_") and f.endswith(".jsonl"))
         n = s.migrate_legacy(hj, os.path.join(root, jl[0]) if jl else None,
-                             os.path.join(DIR, "battery_state.json"))
+                             datadir.path("battery_state.json"))
         print(f"migrated {n} legacy readings")
     print(f"{s.path}: {s.count()} readings ({s.vname})")
     for d in s.daily_health():

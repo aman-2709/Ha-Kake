@@ -28,7 +28,7 @@ both.
 
 ## 2. Keys in the record and where they go
 
-Every record the reader publishes (`web/battery_state.json`, `/api/status`,
+Every record the reader publishes (`<data>/battery_state.json`, `/api/status`,
 the MQTT `state` topic) carries, per item polled:
 
 | Key | Type | Meaning | Stored |

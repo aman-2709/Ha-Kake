@@ -16,7 +16,12 @@ Two jobs:
 Nothing here touches web/leaf_battery.db or web/battery_state.json. A test
 that writes to the real database would be corrupting years of irreplaceable
 readings, so `tmp_store` and `isolated_reader` exist to make the safe thing
-the easy thing.
+the easy thing — and since 2026-10-03 the safe thing is also the default:
+`_no_real_files` (autouse) points the store's default database and every
+reader *_FILE at a per-test temporary folder for every test, whether it asks
+or not, and `_real_files_untouched` fails the session if the real database or
+settings files changed while the suite ran. (Before that, a test that built
+`Store()` or ran the reader without the fixture reached the real web/ files.)
 """
 
 import json
@@ -24,6 +29,12 @@ import os
 import sys
 
 import pytest
+
+import tempfile
+
+# The data folder (datadir.py) is a throwaway one for the whole session, set before any module is imported, so no
+# test can read or write a real install's database or settings.
+os.environ["HAKAKE_DATA_DIR"] = tempfile.mkdtemp(prefix="hakake-test-data-")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIXTURES = os.path.join(ROOT, "tests", "fixtures")
@@ -36,6 +47,56 @@ def fixture(name):
     """Parsed JSON fixture by filename."""
     with open(os.path.join(FIXTURES, name)) as f:
         return json.load(f)
+
+
+WEB = os.path.join(ROOT, "web")
+REAL_FILES = ("leaf_battery.db", "tiles.json", "layouts.json", "bookmarks.json",
+              "calibration.json", "sim_tiles.json")
+
+
+def _stamp():
+    out = {}
+    for name in REAL_FILES:
+        try:
+            st = os.stat(os.path.join(WEB, name))
+            out[name] = (st.st_size, st.st_mtime_ns)
+        except FileNotFoundError:
+            out[name] = None
+    return out
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _real_files_untouched():
+    """Tripwire: the owner's real database and settings are the same after the
+    suite as before it (size and modification time)."""
+    before = _stamp()
+    yield
+    after = _stamp()
+    changed = [n for n in REAL_FILES if before[n] != after[n]]
+    assert not changed, f"the test suite modified real files in web/: {changed}"
+
+
+@pytest.fixture(autouse=True)
+def _no_real_files(tmp_path_factory, monkeypatch):
+    """Every test runs against temporary files: store.DEFAULT_DB / store.DIR and
+    every reader *_FILE path point into a fresh temporary folder."""
+    import reader as rd
+    import store as st
+    d = tmp_path_factory.mktemp("web")
+    monkeypatch.setattr(st, "DIR", str(d))
+    monkeypatch.setattr(st, "DEFAULT_DB", str(d / os.path.basename(st.DEFAULT_DB)))
+    for attr in [a for a in vars(rd) if a.endswith("_FILE") and isinstance(getattr(rd, a), str)]:
+        monkeypatch.setattr(rd, attr, str(d / os.path.basename(getattr(rd, attr))))
+    yield
+
+
+@pytest.fixture(autouse=True)
+def _no_git_hook_environment(monkeypatch):
+    """git exports GIT_DIR (and friends) to a pre-push hook. In a linked worktree that value is absolute, and every
+    throwaway repo a test makes would then silently operate on the real one (committing into it, flipping its
+    core.bare, setting its user). Tests never want it."""
+    for k in [k for k in os.environ if k.startswith("GIT_")]:
+        monkeypatch.delenv(k)
 
 
 @pytest.fixture(scope="session")
@@ -65,12 +126,19 @@ def no_shipped_layouts(tmp_path_factory, monkeypatch):
 
 @pytest.fixture
 def isolated_reader(tmp_path, monkeypatch):
-    """reader's on-disk state (state / tiles / calibration / layouts) in tmp_path."""
+    """Every file the reader module reads or writes, in tmp_path.
+
+    All of reader's *_FILE paths are redirected — not a hand-kept list, which
+    once missed BOOKMARKS_FILE and let a test write the owner's real
+    web/bookmarks.json (2026-10-03). A new *_FILE constant is covered by
+    construction, and the assertion below fails loudly if one is not."""
     import reader as rd
-    for attr, name in (("STATE_FILE", "state.json"), ("PAUSE_FILE", "reader.pause"),
-                       ("TILES_FILE", "tiles.json"), ("CALIB_FILE", "calibration.json"),
-                       ("LAYOUTS_FILE", "layouts.json")):
-        monkeypatch.setattr(rd, attr, str(tmp_path / name))
+    legacy = {"STATE_FILE": "state.json", "PAUSE_FILE": "reader.pause", "TILES_FILE": "tiles.json",
+              "CALIB_FILE": "calibration.json", "LAYOUTS_FILE": "layouts.json"}   # names tests rely on
+    names = sorted(a for a in vars(rd) if a.endswith("_FILE") and isinstance(getattr(rd, a), str))
+    for attr in names:
+        monkeypatch.setattr(rd, attr, str(tmp_path / legacy.get(attr, os.path.basename(getattr(rd, attr)))))
+    assert all(getattr(rd, a).startswith(str(tmp_path)) for a in names)
     yield rd
 
 

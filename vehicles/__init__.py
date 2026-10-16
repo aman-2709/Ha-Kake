@@ -94,7 +94,7 @@ History columns (optional, but needed for anything graphable)
                    (raw dumps, lists already stored in columns)
   DB_FILE          optional str — a database file of this profile's own, in
                    web/. Unset (the default) means the shared
-                   web/leaf_battery.db; rows are separated by the `vehicle`
+                   <data>/leaf_battery.db; rows are separated by the `vehicle`
                    column either way.
 
 The `cells` table is an optional profile-specific extra, not a general

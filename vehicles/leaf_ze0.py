@@ -355,7 +355,7 @@ def decode(responses):
 
 
 def apply_policy(cache, calib, state):
-    """Leaf current-sensor policy. Zero-offset calibration (web/calibration.json)
+    """Leaf current-sensor policy. Zero-offset calibration (<data>/calibration.json)
     is applied to the pack current. Direction comes from the BMS discharge flag
     (group 05, cached between polls); a positive reading while the BMS says
     discharging is sensor offset, not charging. Raw values are kept.
