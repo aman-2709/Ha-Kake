@@ -13,6 +13,16 @@ the same on a car nobody has touched yet.
 
 ![status](https://img.shields.io/badge/tests-1290%20passing-brightgreen) ![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/davidkarnowski/Ha-Kake)
 
+## About This Fork
+
+This project is a fork of [Ha-Kake](https://github.com/davidkarnowski/Ha-Kake), originally created and developed by **David Karnowski**.
+
+All credit for the original project goes to David. His work forms the foundation of this fork, which I am continuing to develop by making improvements, modifying existing functionality, and introducing new features.
+
+A sincere thank you to David for the time, effort, and dedication he has put into this project, and for sharing his work with the open-source community.
+
+**Thank you, David, for making this possible!**
+
 > ### ⚠️ Active development
 >
 > This is a working tool, not a finished product. It has been verified on
