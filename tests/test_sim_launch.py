@@ -276,7 +276,7 @@ def test_sim_control_url_accepts_only_loopback():
     import app as webapp
     assert webapp.loopback_url("http://127.0.0.1:8099") == "http://127.0.0.1:8099"
     assert webapp.loopback_url("http://localhost:8099/") == "http://localhost:8099"
-    for bad in ("http://192.168.1.5:8099", "https://127.0.0.1:8099", "http://127.0.0.1",
+    for bad in ("http://192.0.2.5:8099", "https://127.0.0.1:8099", "http://127.0.0.1",
                 "http://127.0.0.1:8099/sim", "127.0.0.1:8099", "http://example.com:80"):
         with pytest.raises(ValueError):
             webapp.loopback_url(bad)
@@ -284,7 +284,7 @@ def test_sim_control_url_accepts_only_loopback():
 
 def test_sim_control_url_flag_is_refused_when_wrong_and_documented():
     bad = subprocess.run([sys.executable, APP, "--sim-control-url",
-                          "http://10.0.0.5:8099", "--no-reader"], capture_output=True, text=True,
+                          "http://192.0.2.9:8099", "--no-reader"], capture_output=True, text=True,
                          timeout=60)
     assert bad.returncode == 2 and "loopback only" in bad.stderr
     both = subprocess.run([sys.executable, APP, "--adapter", "sim",
