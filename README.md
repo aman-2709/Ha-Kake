@@ -268,7 +268,8 @@ are saved with the tile, so they ride along in saved layouts.
 ## Quick start
 
 ```bash
-# One-time setup (Python 3.12; ≥3.10 required)
+# One-time setup (Python 3.12; ≥3.10 required). Ubuntu/Debian: sudo apt install python3-venv
+# (and nodejs, for the JavaScript tests). Ubuntu 24.04 is tested.
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt

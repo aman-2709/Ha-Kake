@@ -10,7 +10,7 @@ python3 -m venv venv
 venv/bin/pip install -r requirements.txt
 ```
 
-On Windows the interpreter is `venv\Scripts\python` instead of `venv/bin/python`.
+On Ubuntu or Debian, install the venv module first (`sudo apt install python3-venv`); a stock install lacks it and `python3 -m venv` fails. Ubuntu 24.04's Python 3.12 is the tested version. On Windows the interpreter is `venv\Scripts\python` instead of `venv/bin/python`.
 
 Stop a demo with `Ctrl-C` before starting the next one. The dashboard uses port 5000 in every demo, and the simulator demos also use port 8099 for the simulator's control API. If a port is busy, add `--port 5001` to the command.
 

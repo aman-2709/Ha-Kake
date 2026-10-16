@@ -774,6 +774,7 @@ def test_console_js_keeps_the_pane_read_only():
     assert js.count("fetch(") == 2, "one poll and one registry read, both GET"
 
 
+@needs_node
 def test_a_multi_row_selection_copies_one_line_per_row():
     """A row is laid out with flexbox, and a browser's clipboard serialiser puts
     every flex child on its own line — which turned a three-row selection into
