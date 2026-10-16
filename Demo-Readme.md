@@ -2,11 +2,15 @@
 
 There are several demos, not one. Each shows a different part of the project, and none of them needs a car.
 
-Run every command from the repo root with the project's virtual environment (`venv/bin/python`).
+Run every command from the repo root with the project's virtual environment (`venv/bin/python`). A fresh clone has no `venv` yet, so create it once (Python 3.10 or newer):
 
 ```bash
-cd ~/dev/personal-projects/Ha-Kake
+cd <wherever you cloned the repo>
+python3 -m venv venv
+venv/bin/pip install -r requirements.txt
 ```
+
+On Windows the interpreter is `venv\Scripts\python` instead of `venv/bin/python`.
 
 Stop a demo with `Ctrl-C` before starting the next one. The dashboard uses port 5000 in every demo, and the simulator demos also use port 8099 for the simulator's control API. If a port is busy, add `--port 5001` to the command.
 
