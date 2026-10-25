@@ -363,6 +363,7 @@ stays the one-adapter shorthand. `docs/ARCHITECTURE.md` "Several adapters".
 | `elm327.py` | BLE + USB transport, adapter detection, ECU targeting, passive capture; replay and simulator transports |
 | `cantransport.py` | native CAN: an ELM327-speaking façade over a frame source (a CANable on USB via python-can; MQTT via `mqttsource.py`) — `docs/CAN_TRANSPORT.md` |
 | `mqttsource.py`, `bridge/` | the MQTT frame source and the gauge-facing state publisher; the Raspberry Pi bridge (CAN → broker, read requests, systemd unit) — `docs/MQTT.md` |
+| `Containerfile`, `deploy/quadlet/` | the simulator as an OCI image and a Podman Quadlet unit for a board with no screen; viewed through an SSH tunnel — `docs/CONTAINER.md` |
 | `vehicles/` | one module per car — items, targets, tiles, signal registry, `decode()`; `__init__.py` is the contract and its validator |
 | `docs/ADDING_A_VEHICLE.md` | **the guide to adding your own car** |
 | `leaf_decoders.py` | the Leaf's decoders: LBC groups 01–06, HVAC amp, Car-CAN frames |

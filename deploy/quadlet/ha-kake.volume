@@ -1,0 +1,4 @@
+# The data folder (docs/DATA.md): tile layouts, bookmarks, the simulator's
+# database. Survives image updates; `podman volume rm ha-kake-data` resets it.
+[Volume]
+VolumeName=ha-kake-data

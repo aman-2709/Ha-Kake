@@ -1,0 +1,24 @@
+# Build context for the Containerfile under docker. podman and buildah read
+# .containerignore instead: the same rules (tests/test_container_files.py keeps
+# the two equal).
+#
+# An allowlist: ignore everything, bring back only what the image runs.
+*
+!requirements.txt
+!LICENSE
+!NOTICE
+!*.py
+!vehicles
+!simulator
+!web/*.py
+!web/templates
+!web/static
+!web/layouts
+
+# Last rules win: drop what must never ship, even inside an allowed directory.
+**/__pycache__
+**/*.pyc
+**/*.db
+**/*.db-*
+**/*_state.json
+**/config.local.json
