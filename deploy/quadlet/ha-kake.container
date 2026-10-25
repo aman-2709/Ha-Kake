@@ -1,0 +1,29 @@
+# Ha-Kake dashboard + simulator under systemd, as a Podman Quadlet unit.
+# Install and view it: docs/CONTAINER.md
+#   cp ha-kake.container ha-kake.volume /etc/containers/systemd/
+#   systemctl daemon-reload && systemctl start ha-kake
+[Unit]
+Description=Ha-Kake dashboard (simulator)
+
+[Container]
+Image=localhost/ha-kake:latest
+ContainerName=ha-kake
+# Host networking is required: the dashboard (127.0.0.1:5000) and the
+# simulator's control API (127.0.0.1:8099) bind loopback only, and a published
+# port cannot reach a container's own loopback. Nothing is exposed to the LAN.
+Network=host
+Volume=ha-kake.volume:/data
+Environment=HAKAKE_DATA_DIR=/data
+Exec=python web/app.py --adapter sim
+ReadOnly=true
+NoNewPrivileges=true
+DropCapability=ALL
+
+[Service]
+Restart=on-failure
+RestartSec=5
+# On SIGTERM the app exits 128+15 (web/app.py _shutdown): that is a clean stop.
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
