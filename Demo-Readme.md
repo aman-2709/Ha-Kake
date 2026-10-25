@@ -12,6 +12,8 @@ venv/bin/pip install -r requirements.txt
 
 On Ubuntu or Debian, install the venv module first (`sudo apt install python3-venv`); a stock install lacks it and `python3 -m venv` fails. Ubuntu 24.04's Python 3.12 is the tested version. On Windows the interpreter is `venv\Scripts\python` instead of `venv/bin/python`.
 
+Demos 1 and 2 can also run from a container with no Python setup; see the end of demo 1.
+
 Stop a demo with `Ctrl-C` before starting the next one. The dashboard uses port 5000 in every demo, and the simulator demos also use port 8099 for the simulator's control API. If a port is busy, add `--port 5001` to the command.
 
 | # | Demo | What it shows |
@@ -44,6 +46,39 @@ venv/bin/python web/app.py --adapter sim
 **What to show:** press the power button, put the car in gear and press the pedal. Turn the A/C on, open a door, plug it in to charge, and watch the dashboard follow. Fault injection is the strongest part: degrade a cell, trigger low insulation resistance, make the car go to sleep or return an ECU error.
 
 **Driving in reverse (demo 1).** In the cockpit (`/sim`) press the power button with the brake held (the car goes READY), release the handbrake, set the shifter to **R**, then raise the speed and the pedal. The Body tile shows R, the reversing lamps light and the wheels roll the other way. The car refuses a gear change while it is moving in the wrong direction and refuses READY unless the brake is held.
+
+**In a container (Docker).** The same demo runs from an image, so nothing needs installing but Docker (tested with Docker on Linux; `podman` takes the same flags). From the repo root, build once and run:
+
+```bash
+docker build -f Containerfile -t localhost/ha-kake .
+docker run --rm --name ha-kake --network=host --read-only --tmpfs /tmp \
+    --cap-drop ALL --security-opt no-new-privileges \
+    -v ha-kake-data:/data localhost/ha-kake
+```
+
+The URLs are the same as above. `Ctrl-C` stops it and `--rm` removes the container.
+
+| Part | Meaning |
+|---|---|
+| `docker build -f Containerfile -t localhost/ha-kake .` | Builds the image from the repo's `Containerfile` and names it `localhost/ha-kake`. Run it once, and again after a code change. |
+| `--network=host` | Shares the machine's network. This is required: the app listens on `127.0.0.1` only, and a published port (`-p`) cannot reach a service bound there. Nothing is exposed to the network. |
+| `--read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges` | Locks the container down. The app writes only to `/data`. |
+| `-v ha-kake-data:/data` | A named volume for the data folder, so tile layouts and the simulator's database survive between runs. `docker volume rm ha-kake-data` resets it. The simulator database is never pruned, so it grows (about 90 MB a day if left running; see `docs/CONTAINER.md`). |
+| `--rm` | Removes the container when it stops. |
+
+To pass flags, give the whole command after the image name. Arguments alone replace the default command and fail with `executable file not found`:
+
+```bash
+# demo 2, in the container
+docker run --rm --network=host --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
+    -v ha-kake-data:/data localhost/ha-kake \
+    python web/app.py --adapter sim --scenario commute --seed 1 --speed 10
+
+# a different port, when 5000 or 8099 is busy
+docker run ... localhost/ha-kake python web/app.py --adapter sim --port 5001 --sim-control 8101
+```
+
+Only demos 1 and 2 were run this way. Demo 3 and demo 5 read files the image does not carry (`tests/fixtures/`, `docs/demo/`), demos 6 and 7 need `vcan0` or `can0` on the host, and demo 4 was not tried. To run it on a board with no screen, with a systemd unit and an SSH tunnel, see `docs/CONTAINER.md`.
 
 ---
 
