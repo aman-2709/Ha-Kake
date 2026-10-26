@@ -36,7 +36,9 @@ CAN bus.
 3. **Leave the board as you found it.** Ask the user before rebooting, and
    before using credentials you were not given. Do not change the SELinux mode
    (`setenforce`), do not touch services other than `ha-kake`, do not use
-   `--privileged`, and do not publish ports beyond loopback.
+   `--privileged`, do not publish ports beyond loopback, and do not install
+   packages: a minimal board may lack `ss`, `ip`, `free` or `uptime`, so the
+   commands below fall back to `/proc` and `/sys`.
 4. **No CAN.** Phase 6 only *looks* at what is there (`ip link`, `/sys`). Do not
    bring an interface up, set a bitrate or send a frame.
 5. **A failure is a result.** Capture the exact command and its exact output.
@@ -62,6 +64,15 @@ Commands below say "on the board". Run them over `ssh` if you are not on it.
 Use root or `sudo` for Podman and systemd: the Quadlet unit is a system unit
 and uses root's image store, so an image loaded rootless is invisible to it.
 
+Paste this once in each shell on the board. It lists what is listening on the
+two ports, and falls back to `/proc` when `ss` is missing. In the `/proc`
+output the local address `0100007F` is 127.0.0.1 (what we want) and `00000000`
+is every interface (a failure):
+
+```bash
+listening() { ss -ltn 2>/dev/null | grep -E ':(5000|8099)\b' || grep -E ':(1388|1FA3) .* 0A ' /proc/net/tcp /proc/net/tcp6 2>/dev/null; }
+```
+
 ## The phases
 
 | # | Phase | Question it answers |
@@ -86,10 +97,11 @@ Record the answers; nothing here changes anything.
 uname -m; cat /etc/os-release | head -6; cat /proc/device-tree/model 2>/dev/null; echo
 podman --version; systemctl --version | head -1
 getenforce 2>/dev/null || echo "no selinux tools"
-nproc; free -m | head -2; df -h / /var /etc 2>/dev/null
+nproc; grep -E 'MemTotal|MemAvailable' /proc/meminfo; df -h / /var /etc 2>/dev/null
 touch /etc/.writetest && echo "/etc writable" && rm /etc/.writetest || echo "/etc NOT writable"
 ls -d /etc/containers/systemd /etc/qm 2>&1; systemctl list-units --all 2>/dev/null | grep -iE "qm|bluechi" || echo "no qm/bluechi units"
-ss -ltn | grep -E ':(5000|8099)\b' || echo "ports 5000 and 8099 are free"
+listening || echo "ports 5000 and 8099 are free"
+for t in ss ip curl sqlite3 ausearch journalctl; do command -v $t >/dev/null || echo "missing tool: $t"; done
 getent hosts registry.access.redhat.com pypi.org >/dev/null && echo "internet name resolution works" || echo "offline"
 ```
 
@@ -148,7 +160,7 @@ Then check each and record the output:
 sudo podman logs ha-kake | head -20                       # expect "SIMULATOR MODE" and "data folder: /data"
 for p in 5000/ 5000/sim 5000/api/status 8099/sim/schema; do
   sudo podman exec ha-kake python -c "import urllib.request as u;print('$p', u.urlopen('http://127.0.0.1:$p',timeout=5).status)"; done
-ss -ltn | grep -E ':(5000|8099)\b'                        # on the BOARD host: both must be 127.0.0.1 only
+listening                                                 # on the BOARD host: both must be 127.0.0.1 only
 sudo podman run --rm -v ha-kake-data:/data --entrypoint sh localhost/ha-kake:latest -c 'ls -ln /data'   # files owned by uid 1001, gid 0
 sudo podman exec ha-kake sh -c 'touch /app/x' 2>&1        # expect "Read-only file system"
 sudo podman exec ha-kake sh -c 'grep CapEff /proc/self/status'   # expect all zeros
@@ -157,7 +169,7 @@ sudo podman start ha-kake; sleep 12; sudo podman logs ha-kake 2>&1 | grep -E "st
 sudo podman rm -f ha-kake
 ```
 
-The line that matters most: `ss -ltn` **on the board host**. If it shows
+The line that matters most: `listening` **on the board host**. If it shows
 nothing while the container answers from inside, the container is in its own
 network namespace, and Phase 4 will fail for that reason.
 
@@ -182,7 +194,7 @@ systemctl status ha-kake --no-pager; journalctl -u ha-kake -n 40 --no-pager
 systemctl is-enabled ha-kake                              # a Quadlet unit with [Install] reports "generated"
 ```
 
-Re-run the Phase 2 endpoint, `ss -ltn`, volume and read-only checks against
+Re-run the Phase 2 endpoint, `listening`, volume and read-only checks against
 this container (it is also named `ha-kake`). Then the lifecycle, recording the
 exact states each time (`systemctl show ha-kake -p ActiveState -p SubState -p Result -p NRestarts`):
 
@@ -232,7 +244,8 @@ record that you had to.
 With the unit running, record at 1, 5 and 15 minutes:
 
 ```bash
-sudo podman stats --no-stream ha-kake; uptime
+sudo podman stats --no-stream ha-kake || sudo podman exec ha-kake sh -c 'grep -H VmRSS /proc/[0-9]*/status'
+cat /proc/loadavg
 sudo podman exec ha-kake python -c "
 import sqlite3, os
 c = sqlite3.connect('file:/data/sim_leaf_ze0.db?mode=ro', uri=True)
@@ -251,12 +264,17 @@ with a measured one.
 ### Phase 6: CAN, look only
 
 ```bash
-ip -br link | grep -i can || echo "no can interface"
-ls /sys/class/net
-for d in /sys/class/net/can*; do [ -e "$d" ] && echo "$d: $(cat $d/operstate)"; done
+# a CAN interface has link type 280 in sysfs, whatever it is named; no extra tools needed
+found=0
+for d in /sys/class/net/*; do
+  [ "$(cat $d/type 2>/dev/null)" = 280 ] && { echo "$(basename $d): CAN, state $(cat $d/operstate)"; found=1; }
+done
+[ $found = 1 ] || echo "no CAN interface"
+ls /sys/class/net                                         # everything else, for the record
 ```
 
-Record what exists and its state. Do nothing else.
+Record what exists and its state. A virtual `vcan` also has type 280; say
+whether each one is hardware. Do nothing else.
 
 ### Phase 7: clean up
 
@@ -268,7 +286,7 @@ sudo rm /etc/containers/systemd/ha-kake.container /etc/containers/systemd/ha-kak
 sudo systemctl daemon-reload
 sudo podman rm -f ha-kake; sudo podman volume rm ha-kake-data
 sudo podman rmi localhost/ha-kake                         # ask first if the other board will reuse it from here
-ss -ltn | grep -E ':(5000|8099)\b' || echo "ports free again"
+listening || echo "ports free again"
 ```
 
 Close any `ssh -N -L` tunnels you opened.
@@ -281,7 +299,7 @@ summary in the chat for the user to paste back. For each board:
 
 | Phase | Result | Evidence and notes |
 |---|---|---|
-| 0 Recon | | board model, OS and version, `uname -m`, Podman version, SELinux mode, `/etc` writable?, QM present?, free ports? |
+| 0 Recon | | board model, OS and version, `uname -m`, Podman version, SELinux mode, `/etc` writable?, QM present?, free ports?, missing tools |
 | 1 Image | | route A or B, time taken, image architecture and size |
 | 2 By hand | | ready-after seconds, host `ss` output, volume owner, read-only, CapEff, stop exit code, restart kept data |
 | 3 Quadlet | | `quadlet -dryrun` ok?, `is-enabled`, stop leaves inactive or failed?, SIGKILL restart, SIGTERM behaviour, reboot, AVC denials |
