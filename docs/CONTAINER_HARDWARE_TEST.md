@@ -123,15 +123,25 @@ with qemu binfmt (`docker buildx ls` lists `linux/arm64`):
 
 ```bash
 docker buildx build --platform linux/arm64 -f Containerfile -t localhost/ha-kake --load .
-docker save localhost/ha-kake | ssh <user>@<board> sudo podman load
+docker save -o /tmp/ha-kake.tar localhost/ha-kake
+scp /tmp/ha-kake.tar deploy/quadlet/ha-kake.container deploy/quadlet/ha-kake.volume <user>@<board>:
+# then, on the board (this lands in <user>'s home directory):
+sudo podman load -i ha-kake.tar
 ```
+
+Do not pipe the archive into `ssh ... sudo podman load`: `sudo` needs a terminal
+for its password and stdin is busy carrying the image, so it fails unless sudo is
+passwordless. The two unit files are copied in the same step because Phase 3
+installs them from the board. Save the archive under `/tmp`, not in the checkout
+(about 200 MB, and not git-ignored).
 
 Use `podman build --platform linux/arm64 -t localhost/ha-kake .` instead of
 docker if that is what you have. The `localhost/` prefix is required: it makes
 the image `localhost/ha-kake:latest`, the name `ha-kake.container` uses.
 
 **B. Build on the board** (needs the registry and PyPI):
-`sudo podman build -t localhost/ha-kake .` from a checkout.
+`sudo podman build -t localhost/ha-kake .` from a checkout (the unit files are
+then in that checkout, under `deploy/quadlet/`).
 
 Then, on the board:
 
@@ -182,10 +192,12 @@ sudo podman rm -f ha-kake; sudo podman volume rm ha-kake-data
 ```
 
 Find the units directory from Phase 0 (`/etc/containers/systemd/` unless QM
-says otherwise), then:
+says otherwise). Run the next block from the directory that holds the two unit
+files: your home directory after route A, `deploy/quadlet/` in the checkout after
+route B.
 
 ```bash
-sudo cp deploy/quadlet/ha-kake.container deploy/quadlet/ha-kake.volume /etc/containers/systemd/
+sudo cp ha-kake.container ha-kake.volume /etc/containers/systemd/
 sudo /usr/libexec/podman/quadlet -dryrun                  # or: /usr/lib/systemd/system-generators/podman-system-generator --dryrun
 sudo systemctl daemon-reload
 systemctl cat ha-kake | head -40                          # the generated unit; expect --network host --read-only --cap-drop all
