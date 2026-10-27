@@ -11,22 +11,37 @@ the page; the browser that draws it is on another machine.
 
 ```bash
 # on a build machine (needs qemu-user-static / binfmt for a cross-build)
-podman build --platform linux/arm64 -t ha-kake .
-podman save localhost/ha-kake | ssh <user>@<board> podman load
+podman build --platform linux/arm64 -t localhost/ha-kake .
+podman save -o /tmp/ha-kake.tar localhost/ha-kake
+scp /tmp/ha-kake.tar deploy/quadlet/ha-kake.container deploy/quadlet/ha-kake.volume <user>@<board>:
 
-# on the board
-cp deploy/quadlet/ha-kake.container deploy/quadlet/ha-kake.volume /etc/containers/systemd/
-systemctl daemon-reload && systemctl start ha-kake
-journalctl -u ha-kake -f
+# on the board, as root (or with sudo; <user> needs sudo)
+sudo podman load -i ha-kake.tar
+sudo cp ha-kake.container ha-kake.volume /etc/containers/systemd/
+sudo systemctl daemon-reload && sudo systemctl start ha-kake
+sudo journalctl -u ha-kake -f
 
 # on your laptop: forward BOTH ports, with the same numbers
 ssh -L 5000:127.0.0.1:5000 -L 8099:127.0.0.1:8099 <user>@<board>
 # then open http://127.0.0.1:5000  and  http://127.0.0.1:5000/sim
 ```
 
-The image can also be built on the board (`podman build -t ha-kake .` in a
-checkout), and the units should run rootless from
-`~/.config/containers/systemd/` with `systemctl --user`. Neither was tried.
+This is the **rootful** flow, and every step on the board must be root: a Quadlet
+unit under `/etc/containers/systemd/` runs as root and sees only root's image
+store, so an image loaded by a normal user (`podman load` without `sudo`) is
+invisible to it. The archive is copied first and loaded in a second step on
+purpose: piping it into `ssh ... sudo podman load` works only with passwordless
+sudo (`sudo -n`) or as `root@`, because `sudo` needs a terminal for its password
+and stdin is busy carrying the image. The image can also be built on the board
+(`sudo podman build -t localhost/ha-kake .` in a checkout).
+
+A **rootless** setup is a different flow, not a variation: load the image as that
+user (`podman load -i ha-kake.tar`), put the units in `~/.config/containers/systemd/`,
+use `systemctl --user`, and run `loginctl enable-linger <user>` if it must start at
+boot without a login. In the copy you install, change `WantedBy=multi-user.target`
+to `WantedBy=default.target`: a user manager has no `multi-user.target`, so lingering
+would not start the unit otherwise. Don't mix the two flows. Neither was tried on a
+board.
 
 ## With Docker, or on an x86 machine
 
@@ -47,8 +62,13 @@ To build for the board from an x86 machine, with qemu binfmt set up:
 
 ```bash
 docker buildx build --platform linux/arm64 -f Containerfile -t localhost/ha-kake --load .
-docker save localhost/ha-kake | ssh <user>@<board> podman load
+docker save -o /tmp/ha-kake.tar localhost/ha-kake
+scp /tmp/ha-kake.tar <user>@<board>:
+# then on the board: sudo podman load -i ha-kake.tar
 ```
+
+(Copy, then load as root, for the reasons above. The archive goes to `/tmp` on
+purpose: it is about 200 MB, and saved into the checkout `git add -A` would stage it.)
 
 The `localhost/` prefix is what makes `podman load` name the image
 `localhost/ha-kake:latest`, the name the Quadlet unit uses. The Quadlet files
@@ -80,8 +100,26 @@ so a build that ignores both ignore files still cannot pick up
 `config.local.json`, a database or `research/`. `.containerignore` (podman,
 buildah) and `.dockerignore` (docker) hold the same allowlist, which keeps the
 build context at about 2 MB instead of uploading local databases; a test keeps
-the two equal. The base
-is UBI 9 Python 3.12 minimal (`ARG BASE_IMAGE` swaps it); it runs as uid 1001
+the two equal.
+
+The allowlist names directories, so it does not list the files inside them: an
+untracked file sitting in `vehicles/`, `simulator/` or `web/static/` is copied
+unless a rule denies it. The ignore files deny the usual private patterns there
+(`.env*`, `*.pem`, `*.key`, `*.log`, `*.tmp`, `*.jsonl`, databases, state files,
+`config.local.json`), and a test builds a throwaway context with docker's own
+ignore handling and checks that nested private files stay out. Real Podman 5.8.9
+gave the same result with `.containerignore` (checked once by hand, not in the
+test suite). That is a backstop, not a proof about every name. For a build that cannot see anything
+untracked, build from the committed files:
+
+```bash
+git archive HEAD | docker build -f Containerfile -t localhost/ha-kake -
+```
+
+(With the Docker used here, 29.8 with BuildKit, a context read from stdin ignored
+the `.dockerignore` inside it, and the image contents matched the normal build.)
+
+The base is UBI 9 Python 3.12 minimal (`ARG BASE_IMAGE` swaps it); it runs as uid 1001
 with a read-only root, no capabilities and no new privileges. About 200 MB.
 
 The data folder (`docs/DATA.md`) is `/data`, a named volume `ha-kake-data`. It
@@ -119,9 +157,11 @@ podman run --rm -v "$PWD/deploy/quadlet:/q:ro" -e QUADLET_UNIT_DIRS=/q \
 ```
 
 `tests/test_container_files.py` guards the files without an engine: every
-`COPY` source exists, nothing private can be copied, the user is not root, the
-ignore file's denylist comes last, and the unit stays on host networking with
-no `PublishPort=`.
+`COPY` source exists, no `COPY` names the whole tree or a private path, the user
+is not root, the ignore files hold the same rules with the denylist last, and the
+unit stays on host networking with no `PublishPort=`. One more test builds a
+throwaway context with docker to check that nested private files stay out; it
+skips when docker, buildx or the daemon is missing.
 
 ## Not covered
 
