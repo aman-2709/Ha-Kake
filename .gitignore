@@ -49,6 +49,10 @@ battery_log_*.jsonl
 # To share one file, add an explicit negation for that exact file.
 .claude/
 
+# The Playwright MCP writes screenshots, page snapshots and console logs here
+# when the dashboard is checked in a browser: local captures, not project files.
+.playwright-mcp/
+
 # Local-only research, captures, and per-machine config
 research/
 config.local.json
