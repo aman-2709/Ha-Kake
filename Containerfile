@@ -24,7 +24,8 @@ RUN sed -i '/^pytest/d' /tmp/requirements.txt \
  && rm /tmp/requirements.txt
 
 # Explicit paths, not `COPY . .`: a build that ignores both ignore files still
-# cannot pick up config.local.json, a database or research/.
+# cannot pick up config.local.json, a database or research/. Untracked files
+# inside the copied directories are the ignore files' job (docs/CONTAINER.md).
 COPY *.py LICENSE NOTICE ./
 COPY vehicles/ vehicles/
 COPY simulator/ simulator/

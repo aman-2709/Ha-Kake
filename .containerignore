@@ -22,3 +22,10 @@
 **/*.db-*
 **/*_state.json
 **/config.local.json
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*.log
+**/*.tmp
+**/*.jsonl
