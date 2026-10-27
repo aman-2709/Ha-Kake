@@ -1,7 +1,7 @@
 # Ha-Kake dashboard + simulator under systemd, as a Podman Quadlet unit.
 # Install and view it: docs/CONTAINER.md
-#   cp ha-kake.container ha-kake.volume /etc/containers/systemd/
-#   systemctl daemon-reload && systemctl start ha-kake
+#   sudo cp ha-kake.container ha-kake.volume /etc/containers/systemd/
+#   sudo systemctl daemon-reload && sudo systemctl start ha-kake
 [Unit]
 Description=Ha-Kake dashboard (simulator)
 
@@ -25,5 +25,8 @@ RestartSec=5
 # On SIGTERM the app exits 128+15 (web/app.py _shutdown): that is a clean stop.
 SuccessExitStatus=143
 
+# Rootful, as shipped. For a rootless install (~/.config/containers/systemd/,
+# systemctl --user) use WantedBy=default.target: a user manager has no
+# multi-user.target, so this line would never start the unit at boot.
 [Install]
 WantedBy=multi-user.target
