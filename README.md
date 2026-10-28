@@ -11,7 +11,7 @@ decodes far more than the OBD-II standard carries — battery state of health,
 **the method used to find all of that is documented in full**, so you can do
 the same on a car nobody has touched yet.
 
-![status](https://img.shields.io/badge/tests-1469%20passing-brightgreen) ![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/davidkarnowski/Ha-Kake)
+![status](https://img.shields.io/badge/tests-1560%20passing-brightgreen) ![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/davidkarnowski/Ha-Kake)
 
 ## About This Fork
 
@@ -374,6 +374,7 @@ stays the one-adapter shorthand. `docs/ARCHITECTURE.md` "Several adapters".
 | `web/console.py`, `web/static/console.js` | the raw output console: the bounded, decimating ring the reader fills and the terminal tile that reads it (the pure half node-tested) |
 | `docs/CONSOLE.md` | **the raw output console: what each transport can show, why it decimates, and why it is a window and not a capture** |
 | `web/ota.py`, `web/templates/ota.html`, `web/static/ota.js` | the board's OS-update status: the whitelisting reader for the file a host process writes, and the read-only `/ota` page (the pure half node-tested) |
+| `tools/ota_export.py` | the host-side exporter for it: reads `bootc`, eSync's state and `systemctl`, writes the file atomically (standalone, read-only) |
 | `docs/OTA.md` | **the OTA status file: its schema, what the reader answers, and what is deliberately never in it** |
 | `web/static/alerts.js` | audible alerts: the Web Audio tone generator and the threshold rule engine (pure, node-tested) |
 | `web/static/pack3d.js`, `web/static/pack_layout.js` | the 3D battery pack tile: the three.js module, and the pure geometry / colour-scale layer it draws from (node-tested) |
@@ -496,9 +497,10 @@ Being on the bus at all has consequences worth knowing:
   `--read-only --cap-drop all` and cannot see any of that, so a host process writes one JSON file and the app
   only reads it, through a whitelist: unknown keys dropped, strings cleaned, digests and times kept only in
   their one valid form, image registries and device identifiers never present. Read-only, no controls.
-  Test-verified (reader, endpoint, and the page's script against a fake DOM with hostile strings); the host-side
-  exporter is not written yet and nothing has run on the board, and the page's look has not been checked in a
-  browser. [`docs/OTA.md`](docs/OTA.md)
+  The host side is `tools/ota_export.py` (standard library only, read-only, atomic write). Test-verified (reader,
+  endpoint, exporter, and the page's script against a fake DOM with hostile strings); the exporter has been run
+  once on the J7 and its file read back whole, but nothing keeps it running there yet (the board's units come from
+  a signed deployment) and the page's look has not been checked in a browser. [`docs/OTA.md`](docs/OTA.md)
 - Verified on two cars: a 2012 Leaf SL at 35 % SOH (23.2 Ah), and a 2009
   Mitsubishi Lancer ES through the `lancer_2009` profile.
 - **A raw output console, on every car** (2026-09-11): a debug terminal showing

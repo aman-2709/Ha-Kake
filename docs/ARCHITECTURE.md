@@ -118,7 +118,9 @@ is a whitelist (unknown keys dropped at every level, strings cleaned and capped,
 one valid form, numbers range-checked), `read()` turns a missing, broken, oversize or old file into a `status`
 (`waiting`, `invalid`, `stale`, `ok`) and never raises, and each read stands alone. `GET /api/ota` serves that
 form with a 200 whatever the file is; `/ota` is a standalone page whose script writes everything with `textContent`.
-Nothing in the chain can send anything to the board, and in demo mode the real file is never opened.
+Nothing in the chain can send anything to the board, and in demo mode the real file is never opened. The writer is
+`tools/ota_export.py`: standalone, a fixed allowlist of read-only commands, a document built from named fields (so a
+registry or a checksum in its inputs cannot reach the file), and an atomic replace.
 
 ## Scheduler
 

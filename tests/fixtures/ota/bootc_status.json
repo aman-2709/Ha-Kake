@@ -1,0 +1,68 @@
+{
+  "apiVersion": "org.containers.bootc/v1",
+  "kind": "BootcHost",
+  "metadata": {
+    "name": "host"
+  },
+  "spec": {
+    "bootOrder": "rollback",
+    "image": {
+      "image": "registry.invalid/example/os-image@sha256:b81169ec3f3bdc788c379bda293060bd9078cdde78804958b8979d7e24cce1de",
+      "transport": "registry"
+    }
+  },
+  "status": {
+    "booted": {
+      "cachedUpdate": null,
+      "composefs": null,
+      "downloadOnly": false,
+      "image": {
+        "architecture": "arm64",
+        "image": {
+          "image": "registry.invalid/example/os-image@sha256:b81169ec3f3bdc788c379bda293060bd9078cdde78804958b8979d7e24cce1de",
+          "transport": "registry"
+        },
+        "imageDigest": "sha256:b81169ec3f3bdc788c379bda293060bd9078cdde78804958b8979d7e24cce1de",
+        "timestamp": "2026-08-07T23:03:53.358191364Z",
+        "version": "4.4.0"
+      },
+      "incompatible": false,
+      "ostree": {
+        "checksum": "b15cb49456aca7e1d5a414da0d29c1a1a8fe8363d27ac42d600f875fc36d48c8",
+        "deploySerial": 0,
+        "stateroot": "default"
+      },
+      "pinned": false,
+      "softRebootCapable": true,
+      "store": "ostreeContainer"
+    },
+    "rollback": {
+      "cachedUpdate": null,
+      "composefs": null,
+      "downloadOnly": false,
+      "image": {
+        "architecture": "arm64",
+        "image": {
+          "image": "registry.invalid/example/os-image@sha256:df1138afa8e1884c523cdc527e78ed3f3174fc14e0e477f63f8cf7b4e8914cbc",
+          "transport": "registry"
+        },
+        "imageDigest": "sha256:df1138afa8e1884c523cdc527e78ed3f3174fc14e0e477f63f8cf7b4e8914cbc",
+        "timestamp": "2026-08-07T23:03:54.363000895Z",
+        "version": "4.5.0"
+      },
+      "incompatible": false,
+      "ostree": {
+        "checksum": "09c3a3f854b3f4fb55211821e4d75f154c66a22c7160d9157ec7b056dcf96514",
+        "deploySerial": 1160,
+        "stateroot": "default"
+      },
+      "pinned": false,
+      "softRebootCapable": false,
+      "store": "ostreeContainer"
+    },
+    "rollbackQueued": true,
+    "staged": null,
+    "type": "bootcHost",
+    "usrOverlay": null
+  }
+}

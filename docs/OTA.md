@@ -6,8 +6,8 @@ any of that itself: it runs `--read-only --cap-drop all`, with no `bootc`, no `s
 `/etc/os-release` or SELinux. So a process **on the host** writes one small JSON file, and the app only reads it.
 Nothing in the app can change the board's state, and nothing here sends anything to a car.
 
-This page is the contract for that file. It covers the file, the reader (`web/ota.py`), the endpoint and the page;
-the host-side exporter is added in a later commit and documented here when it lands.
+This page is the contract for that file. It covers the file, the reader (`web/ota.py`), the endpoint, the page and
+the host-side exporter (`tools/ota_export.py`).
 
 ## The endpoint and the page
 
@@ -87,6 +87,43 @@ Each read stands alone: a broken file never shows the previous good one.
 On the J7 test board the file would read `booted 4.4.0`, `rollback 4.5.0`, `rollback_queued: true`: **a reboot
 there starts 4.5.0.**
 
+## The exporter
+
+`tools/ota_export.py` runs on the **host**, as root, and writes the file. It is standard library only and imports
+nothing from the project, so it is copied to a board on its own.
+
+```bash
+python3 ota_export.py --out /var/lib/ha-kake-ota/ota_status.json --service esync --service candump
+python3 ota_export.py --out FILE --service esync --interval 30        # keep it fresh; Ctrl-C to stop
+```
+
+| Reads | For |
+|---|---|
+| `bootc status --format json` | booted / staged / rollback image (version, digest, build time) and `rollbackQueued` |
+| `/var/lib/esync/state.json` | the components (the one eSync file it opens; the rest of that directory may hold identifiers and keys) |
+| `systemctl show <unit> -p …` per `--service` | state, sub-state, restart count, and when it started (moved from the unit's monotonic time to the wall clock) |
+| `timedatectl show -p NTPSynchronized`, `/sys/fs/selinux/enforce`, `uname`, `statvfs /var` | the health facts; `var_used_pct` is what `df` prints |
+
+* **It only reads.** The commands it can run are fixed, a `--service` name cannot be an option or a path, and the
+  only thing written is the output file: a temporary file in the same directory renamed over it, mode 0644 because
+  the container runs as another user. The directory must exist; it is never created.
+* **It builds from named fields.** The `bootc` output also carries the image registry, the transport and ostree
+  checksums, and esync's state may carry more than a version. None of that is read out of its input, so none can be
+  in the output; the dashboard's reader whitelists again on the other side. Services come from `--service`, not a
+  built-in list.
+* **A source that fails is an empty section**, with one line on stderr, never an error: the rest of the file is still
+  written. In `--interval` mode a bad pass is logged and the next one runs. A one-shot run exits 1 only if it cannot
+  write the file.
+* **Mount the directory, not the file.** An atomic replace gives the file a new inode, and a single-file bind mount
+  keeps pointing at the old one. Give the container the directory, read-only, and set `HAKAKE_OTA_FILE` to the file
+  in it.
+
+Run once on the J7 test board (2026-10-28) it produced a file the dashboard's reader accepted whole, with `booted
+4.4.0`, `rollback 4.5.0`, `rollback_queued true`, three services and the two eSync components, and no registry
+address anywhere in it. **How the exporter is kept running on that board is not decided:** `/etc` there is rebuilt at
+every boot and the units that survive a reboot come from a signed deployment, so a persistent exporter has to go that
+way (see [CONTAINER.md](CONTAINER.md)).
+
 ## What is deliberately not in it
 
 Registry names and image references, device or vehicle identifiers, VINs, host names, IP addresses, API keys and
@@ -96,6 +133,8 @@ verified on the test board, so a tick would claim something nobody checked.
 
 ## Tests
 
-`tests/test_ota.py`: the clock, every state, the whitelist (including a file seeded with secrets that must not come
+`tests/test_ota_export.py`: the document built from real captures (registry, digests and checksums replaced), what
+must never get out, the allowlist of commands it may run, the atomic write, and that its output is exactly what the
+reader accepts. `tests/test_ota.py`: the clock, every state, the whitelist (including a file seeded with secrets that must not come
 out), caps, enumerations, number ranges, the derived `next_boot`, junk in every field, and a shipped sample that must
-come through whole. `tests/fixtures/ota/status_v1.json` and `docs/demo/ota.json` use synthetic digests.
+come through whole. `tests/fixtures/ota/` and `docs/demo/ota.json` use synthetic digests.
