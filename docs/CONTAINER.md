@@ -126,6 +126,32 @@ The data folder (`docs/DATA.md`) is `/data`, a named volume `ha-kake-data`. It
 holds the tile layouts, bookmarks and the simulator's database, and survives
 image updates. `podman volume rm ha-kake-data` resets it.
 
+## Showing what the board is running (optional)
+
+The `/ota` page ([`OTA.md`](OTA.md)) shows the booted, staged and rollback OS images, the update components and the
+services around them. The container cannot see any of that (no `bootc`, no `systemctl`, not the host's `os-release`),
+so a process on the host, `tools/ota_export.py`, writes one JSON file and the container reads it. This is **opt-in**:
+the shipped unit is unchanged and works without it, because a bind mount whose host directory does not exist stops
+a unit from starting.
+
+```bash
+sudo install -d -m 0755 /var/lib/ha-kake-ota                              # the directory the exporter writes into
+sudo install -d /etc/containers/systemd/ha-kake.container.d
+sudo cp deploy/quadlet/optional/ha-kake.container.d/10-ota.conf /etc/containers/systemd/ha-kake.container.d/
+python3 tools/ota_export.py --out /var/lib/ha-kake-ota/ota_status.json --service esync --interval 30   # as root, kept running somehow
+sudo systemctl daemon-reload && sudo systemctl restart ha-kake
+```
+
+The drop-in adds exactly two lines to the container: `Volume=/var/lib/ha-kake-ota:/ota:ro,z` and
+`Environment=HAKAKE_OTA_FILE=/ota/ota_status.json`. Network, capabilities, the read-only root and the rest are not
+touched (a test pins that). It mounts the **directory**, not the file: the exporter replaces the file atomically, which
+gives it a new inode, and a single-file mount would keep showing the old one. `ro` because the container never writes
+it; `z` so SELinux lets it read the directory. That flag is the part not yet tried on a board.
+
+Checked: the board's own Quadlet generator (Podman 6.0.2 on the J7, run against a scratch directory, nothing installed)
+accepts the drop-in and generates the mount and the variable on top of the unchanged hardening flags. Not checked:
+running the image with the mount, SELinux on the mount, and the page reading the file inside the container.
+
 ## Disk use: the simulator database is never pruned
 
 The simulator writes `sim_leaf_ze0.db` to the volume and nothing deletes rows
@@ -164,6 +190,11 @@ throwaway context with docker to check that nested private files stay out; it
 skips when docker, buildx or the daemon is missing.
 
 ## Not covered
+
+- **Keeping the OTA exporter running on the J7.** On that board `/etc` is rebuilt at every boot (an overlay whose
+  writable layer is in `/run`), and the Quadlet units that survive a reboot are reinstalled from a signed deployment.
+  So the `cp` into `/etc/containers/systemd/` above lasts until the next reboot, and a persistent exporter (and this
+  drop-in) have to go in through that deployment. How is not decided.
 
 - **A screen on the board.** A Wayland kiosk (`cage` plus a browser) in a
   second container sharing the network namespace would show it locally, but it

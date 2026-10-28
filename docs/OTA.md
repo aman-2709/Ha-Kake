@@ -114,7 +114,8 @@ python3 ota_export.py --out FILE --service esync --interval 30        # keep it 
 * **A source that fails is an empty section**, with one line on stderr, never an error: the rest of the file is still
   written. In `--interval` mode a bad pass is logged and the next one runs. A one-shot run exits 1 only if it cannot
   write the file.
-* **Mount the directory, not the file.** An atomic replace gives the file a new inode, and a single-file bind mount
+* **Mount the directory, not the file** (`deploy/quadlet/optional/ha-kake.container.d/10-ota.conf` does, and CONTAINER.md
+  says how to install it). An atomic replace gives the file a new inode, and a single-file bind mount
   keeps pointing at the old one. Give the container the directory, read-only, and set `HAKAKE_OTA_FILE` to the file
   in it.
 
