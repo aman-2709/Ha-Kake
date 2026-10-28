@@ -108,6 +108,18 @@ per id and published. The ring is flushed once a cycle to `<data>/console.jsonl`
 opaque cursor. No tile, no object, no tap, no file. It is a window, not a
 capture: `record_session.py` and the MQTT bridge are the capture tools.
 
+## The OTA status page
+
+The board's OS-update state, shown without the app being able to touch it (`docs/OTA.md` is the authority). The
+container is `--read-only --cap-drop all` with no `bootc`, `systemctl` or view of the host, so a process on the host
+writes one JSON file and Flask reads it: the same one-writer, one-reader, a-file-between-them shape as the state
+file, across a trust boundary instead of a process boundary. `web/ota.py` therefore passes nothing through. `clean()`
+is a whitelist (unknown keys dropped at every level, strings cleaned and capped, digests and times kept only in their
+one valid form, numbers range-checked), `read()` turns a missing, broken, oversize or old file into a `status`
+(`waiting`, `invalid`, `stale`, `ok`) and never raises, and each read stands alone. `GET /api/ota` serves that
+form with a 200 whatever the file is; `/ota` is a standalone page whose script writes everything with `textContent`.
+Nothing in the chain can send anything to the board, and in demo mode the real file is never opened.
+
 ## Scheduler
 
 Every signal source is an **item** the profile declares: a UDS request to one

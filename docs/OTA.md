@@ -6,9 +6,22 @@ any of that itself: it runs `--read-only --cap-drop all`, with no `bootc`, no `s
 `/etc/os-release` or SELinux. So a process **on the host** writes one small JSON file, and the app only reads it.
 Nothing in the app can change the board's state, and nothing here sends anything to a car.
 
-This page is the contract for that file. It grows with the feature: today it covers the file and the reader
-(`web/ota.py`); the endpoint, the page and the host-side exporter are added in later commits and documented here when
-they land.
+This page is the contract for that file. It covers the file, the reader (`web/ota.py`), the endpoint and the page;
+the host-side exporter is added in a later commit and documented here when it lands.
+
+## The endpoint and the page
+
+| | |
+|---|---|
+| `GET /api/ota` | `ota.read()` as JSON. **Always 200**: a missing, broken or old file is a `status` in the body, not an error. The path is never taken from the request. |
+| `GET /ota` | the page. It renders no board data itself; `web/static/ota.js` asks `/api/ota` every 5 s and writes the answer with `textContent`. |
+| Other methods | 405. Nothing in the app can change the board. |
+| `--demo` | serves `docs/demo/ota.json`, re-stamped so it looks current, with `demo: true`; the real file is never opened. |
+
+The page shows the booted, staged and rollback images side by side with the rows that differ highlighted, a "next
+boot" line that warns when the next boot is not the image that is running, the update components, the services and the
+health facts. A banner says what `waiting`, `invalid` and `stale` mean; `stale` still shows the last state, labelled
+with its age. The dashboard header has an **OTA** link to it.
 
 ## Where the file is
 

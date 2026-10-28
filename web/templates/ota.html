@@ -1,0 +1,66 @@
+{#- The board's OTA status. Served by app.py at /ota; ota.js fills it from /api/ota.
+
+    The server renders no board data: every value comes from the host's status file through the
+    whitelist in web/ota.py and is written by ota.js with textContent (tests/test_ota_api.py).
+    Always renders -- with no file it says how to produce one (docs/OTA.md). Read-only: no form,
+    no button that sends anything. -#}
+{%- set veh = vehicle if vehicle is mapping else {} -%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<title>Ha-Kake — OTA status{% if veh.get("title") %} — {{ veh.get("title") }}{% endif %}</title>
+<link rel="stylesheet" href="/static/hakake.css">
+<link rel="stylesheet" href="/static/ota.css">
+</head>
+<body>
+<div class="ota-page" id="ota-root">
+
+<header class="ota-top">
+  <h1>OTA status
+    <small>{{ veh.get("title") ~ " · " if veh.get("title") }}what this board is running, as its host reports it. Read-only.</small></h1>
+  <div class="ota-top-right">
+    <span class="ota-age" id="ota-age"></span>
+    <a class="ota-link" href="/" title="The telemetry dashboard">Dashboard →</a>
+  </div>
+</header>
+
+<div class="card ota-banner" id="ota-banner" role="status" hidden></div>
+
+<noscript><div class="card ota-banner invalid">This page needs JavaScript to show the status; the same data is at
+  <a href="/api/ota">/api/ota</a>.</div></noscript>
+
+<main class="ota-grid" id="ota-main" hidden>
+  <section class="card ota-os" data-span="12">
+    <div class="card-title">Operating system image</div>
+    <div class="ota-next" id="ota-next"></div>
+    <div class="ota-images" id="ota-images"></div>
+    <div class="ota-facts" id="ota-os-facts"></div>
+  </section>
+
+  <section class="card" data-span="6">
+    <div class="card-title">Update components</div>
+    <div id="ota-components"></div>
+  </section>
+
+  <section class="card" data-span="6">
+    <div class="card-title">Services</div>
+    <div id="ota-services"></div>
+  </section>
+
+  <section class="card" data-span="12">
+    <div class="card-title">Health</div>
+    <div class="ota-facts" id="ota-health"></div>
+  </section>
+</main>
+
+<p class="ota-foot">The host writes a small JSON file and this app only reads it (<code>docs/OTA.md</code>).
+  Image registries, device and vehicle identifiers, host names and keys are never in it.</p>
+
+</div>
+<script src="/static/html.js"></script>
+<script src="/static/ota.js"></script>
+</body>
+</html>
