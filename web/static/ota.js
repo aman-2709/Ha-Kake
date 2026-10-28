@@ -28,7 +28,7 @@
   }
 
   const SLOTS = ['booted', 'staged', 'rollback'];
-  const FIELDS = [['Version', 'version', v => v], ['Digest', 'digest', short], ['Built', 'built_at', when]];
+  const FIELDS = [['Version', 'version', v => v], ['Digest', 'digest', short], ['Image created', 'built_at', when]];
 
   // Rows of the image comparison. A row `differs` when two or more of the images that exist disagree on it:
   // that is what the page highlights, so the eye lands on what an update or a rollback would change.
@@ -59,16 +59,17 @@
     }
   }
 
-  // The "next boot" line. It warns when the next boot is not the image that is running.
-  function nextBoot(nb) {
-    if (!nb || !nb.version) return { warn: false, text: '' };
-    if (nb.source === 'rollback') {
-      return { warn: true, text: 'Next boot: ' + nb.version + ' — a rollback is queued, so a reboot switches to this image.' };
-    }
-    if (nb.source === 'staged') {
-      return { warn: true, text: 'Next boot: ' + nb.version + ' — an update is staged, so a reboot installs it.' };
-    }
-    return { warn: false, text: 'Next boot: ' + nb.version + ' — the image that is running.' };
+  // The "next boot" warning, or '' when a reboot would start the image that is running. A version is the
+  // clearest name for an image; one that has none is named by its digest, so the warning never goes missing.
+  function nextBoot(nb, os) {
+    const name = img => (img && (img.version || short(img.digest))) || '';
+    const why = !nb ? '' : nb.source === 'rollback' ? 'queued rollback' : nb.source === 'staged' ? 'staged update' : '';
+    const next = why ? name(nb) : '';
+    if (!next) return '';
+    const running = name(os && os.booted);
+    if (!running) return 'A reboot would start ' + next + ' (' + why + ').';
+    if (running === next) return 'A reboot would start another image with the same name, ' + next + ' (' + why + ').';
+    return 'A reboot would start ' + next + ', not the running ' + running + ' (' + why + ').';
   }
 
   const serviceClass = s => s === 'active' ? 'ok' : s === 'failed' ? 'bad'
@@ -117,11 +118,11 @@
   function fill(id, ...children) { $(id).replaceChildren(...children); }
 
   function renderOs(os, nb) {
-    const n = nextBoot(nb);
+    const warning = nextBoot(nb, os);
     const nextEl = $('ota-next');
-    nextEl.textContent = n.text;
-    nextEl.className = 'ota-next' + (n.text ? (n.warn ? ' warn' : ' ok') : '');
-    nextEl.hidden = !n.text;
+    nextEl.textContent = warning;
+    nextEl.className = 'ota-next' + (warning ? ' warn' : '');
+    nextEl.hidden = !warning;
     const rows = imageRows(os).map(r => ({
       cls: r.differs ? 'diff' : '',
       cells: [el('th', '', r.label), r.cells.booted, r.cells.staged, r.cells.rollback],
@@ -134,7 +135,7 @@
   function renderComponents(list) {
     if (!list || !list.length) { fill('ota-components', el('p', 'ota-none', 'No components reported.')); return; }
     fill('ota-components', table(['Component', 'Version', 'Transaction', 'Installed'],
-      list.map(c => ({ cells: [c.id, c.version, short(c.transaction_digest), when(c.installed_at)] }))));
+      list.map(c => ({ cells: [c.id, c.version || 'not reported', short(c.transaction_digest), when(c.installed_at)] }))));
   }
 
   function renderServices(list) {

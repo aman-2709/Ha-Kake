@@ -555,7 +555,7 @@ def api_console():
 @app.route("/ota")
 def ota_page():
     """The page. It carries no board data itself: ota.js asks /api/ota and writes text."""
-    return render_template("ota.html", vehicle=vehicle_ctx())
+    return render_template("ota.html")
 
 
 @app.route("/api/ota")

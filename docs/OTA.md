@@ -18,10 +18,12 @@ the host-side exporter (`tools/ota_export.py`).
 | Other methods | 405. Nothing in the app can change the board. |
 | `--demo` | serves `docs/demo/ota.json`, re-stamped so it looks current, with `demo: true`; the real file is never opened. |
 
-The page shows the booted, staged and rollback images side by side with the rows that differ highlighted, a "next
-boot" line that warns when the next boot is not the image that is running, the update components, the services and the
-health facts. A banner says what `waiting`, `invalid` and `stale` mean; `stale` still shows the last state, labelled
-with its age. The dashboard header has an **OTA** link to it.
+The page shows the booted, staged and rollback images side by side with the rows that differ highlighted, the update
+components, the services and the health facts. When a reboot would start an image other than the one running, a
+one-sentence warning sits above the images, for example *A reboot would start 4.5.0, not the running 4.4.0 (queued
+rollback).* It says nothing when nothing is queued or staged, and names an image by its digest if it has no version.
+A banner says what `waiting`, `invalid` and `stale` mean; `stale` still shows the last state, labelled with its age.
+The page is about the board, so it does not carry the vehicle's name. The dashboard header has an **OTA** link to it.
 
 ## Where the file is
 
@@ -60,6 +62,13 @@ A field that does not have its form is blanked (`""` or `null`), never passed th
 * At most 32 components and 32 services are kept. Strings are cleaned (control, zero-width and bidirectional
   characters removed, whitespace collapsed) and cut to 120 characters.
 * Unknown keys are dropped at every level.
+* `built_at` is the image's creation time as bootc reports it (`image.timestamp`), not when it was installed or
+  booted, and the page labels the row **Image created**.
+* **`components` is eSync's own record, and it can disagree with `os`.** The J7 test board's OS component had no
+  `version` (the page shows "not reported"), a `transaction_digest` that matches neither bootc image, and an install
+  date of 31 July against images from August. The page does not compare the two: an empty version has nothing to
+  compare, and an eSync transaction digest is not known to be an image digest, so a mismatch flag would be a guess.
+  The card says so; bootc, not eSync, says which image is running.
 
 ## What the reader answers
 

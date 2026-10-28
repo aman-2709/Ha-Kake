@@ -11,7 +11,7 @@ decodes far more than the OBD-II standard carries — battery state of health,
 **the method used to find all of that is documented in full**, so you can do
 the same on a car nobody has touched yet.
 
-![status](https://img.shields.io/badge/tests-1563%20passing-brightgreen) ![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/davidkarnowski/Ha-Kake)
+![status](https://img.shields.io/badge/tests-1572%20passing-brightgreen) ![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/davidkarnowski/Ha-Kake)
 
 ## About This Fork
 
@@ -500,7 +500,9 @@ Being on the bus at all has consequences worth knowing:
   The host side is `tools/ota_export.py` (standard library only, read-only, atomic write). Test-verified (reader,
   endpoint, exporter, and the page's script against a fake DOM with hostile strings); the exporter has been run
   once on the J7 and its file read back whole, but nothing keeps it running there yet (the board's units come from
-  a signed deployment) and the page's look has not been checked in a browser. [`docs/OTA.md`](docs/OTA.md)
+  a signed deployment). The owner viewed the page on 2026-10-28 and the layout was reworked from that (headers on
+  one line, a warn-only "a reboot would start …" line, "Image created", eSync's record labelled as such); it was
+  re-checked in headless Chrome at phone, tablet and desktop widths, not yet on the board. [`docs/OTA.md`](docs/OTA.md)
 - Verified on two cars: a 2012 Leaf SL at 35 % SOH (23.2 Ah), and a 2009
   Mitsubishi Lancer ES through the `lancer_2009` profile.
 - **A raw output console, on every car** (2026-09-11): a debug terminal showing

@@ -29,11 +29,12 @@
 
 .ota-next { margin-bottom: 14px; padding: 10px 14px; border-radius: 8px; font-size: .92em; background: var(--card2); border: 1px solid var(--border); }
 .ota-next.warn { border-color: var(--orange); color: #ffd9a0; }
-.ota-next.ok { color: var(--dim); }
 
+.ota-scroll { overflow-x: auto; }   /* a phone scrolls the table, not the page */
 .ota-table { width: 100%; border-collapse: collapse; font-size: .85em; }
 .ota-table th, .ota-table td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
-.ota-table thead th { color: var(--dim); font-weight: 600; font-size: .85em; text-transform: uppercase; letter-spacing: .08em; }
+.ota-table thead th { color: var(--dim); font-weight: 600; font-size: .85em; text-transform: uppercase; letter-spacing: .08em;
+  white-space: nowrap; overflow-wrap: normal; }   /* the headers are ours, never from the file; only the cells need `anywhere` */
 .ota-table tbody th { color: var(--dim); font-weight: 600; white-space: nowrap; }
 .ota-table td { font-variant-numeric: tabular-nums; }
 .ota-table tr.diff td { background: #14301f; color: #c8f0d2; }
@@ -52,6 +53,7 @@
 .ota-dot.warn { background: var(--yellow); }
 .ota-dot.bad { background: var(--red); }
 
-.ota-none { color: var(--dim); font-size: .85em; }
+.ota-none, .ota-note { color: var(--dim); font-size: .85em; }
+.ota-note { margin-top: 10px; }
 .ota-foot { margin-top: 18px; font-size: .78em; color: var(--dim); }
 .ota-foot code { background: var(--card2); padding: 1px 5px; border-radius: 4px; }

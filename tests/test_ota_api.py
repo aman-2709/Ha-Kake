@@ -6,6 +6,7 @@ demo mode, and nothing the exporter should not have said reaches the browser.
 """
 import json
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -185,10 +186,35 @@ def test_the_page_carries_no_board_data_in_its_markup(api):
     assert "MARKER" not in client.get("/ota").get_data(as_text=True)
 
 
-def test_the_page_names_the_vehicle_in_its_title(api):
+def test_the_page_does_not_name_the_vehicle(api):
+    """It is about the board's OS, and a car's name over it reads as if the car were running the update."""
     client, _ = api
     import reader
-    assert reader.VEHICLE.TITLE in client.get("/ota").get_data(as_text=True)
+    html = client.get("/ota").get_data(as_text=True)
+    assert reader.VEHICLE.TITLE not in html and "OTA status" in html
+
+
+def test_the_components_card_says_it_is_esyncs_own_record(api):
+    html = api[0].get("/ota").get_data(as_text=True)
+    note = html[html.index('class="ota-note"'):]
+    assert "eSync's own record" in note and "bootc" in note
+
+
+def test_every_table_sits_in_a_scroll_box_so_a_phone_scrolls_the_table_not_the_page(api):
+    html = api[0].get("/ota").get_data(as_text=True)
+    for ident in ("ota-images", "ota-components", "ota-services"):
+        tag = re.search(r'<div[^>]*id="%s"[^>]*>' % ident, html).group(0)
+        assert "ota-scroll" in tag, ident
+    css = read(STATIC, "ota.css")
+    assert "overflow-x: auto" in css[css.index(".ota-scroll"):].split("}")[0]
+
+
+def test_table_headers_never_break_inside_a_word():
+    """`overflow-wrap: anywhere` on the cells lets a column shrink to one letter, and VERSION became VERSIO/N.
+    The headers are ours, not the file's, so they can refuse to wrap."""
+    css = read(STATIC, "ota.css")
+    rule = css[css.index(".ota-table thead th"):].split("}")[0]
+    assert "white-space: nowrap" in rule and "overflow-wrap: normal" in rule
 
 
 def test_the_page_loads_the_escape_helper_before_its_own_script(api):
@@ -269,7 +295,7 @@ def test_image_rows_mark_what_differs_between_the_images():
     """, OTA_JS)
     by = {r["label"]: r for r in out}
     assert by["Version"]["differs"] is True and by["Digest"]["differs"] is True
-    assert by["Built"]["differs"] is False                          # same build time on both: not highlighted
+    assert by["Image created"]["differs"] is False                  # same creation time on both: not highlighted
     assert by["Version"]["cells"] == {"booted": "4.4.0", "staged": "", "rollback": "4.5.0"}
     assert by["Digest"]["cells"]["booted"] == "abababababab"
 
@@ -297,17 +323,62 @@ def test_the_banner_says_what_each_status_means():
     assert out[4]["kind"] == "invalid" and out[5]["kind"] == "invalid"           # unknown or no answer: say so
 
 
-@needs_node
-def test_next_boot_line_warns_only_when_the_next_boot_is_another_image():
-    out = node("""
+D1, D2 = 'sha256:' + 'ab' * 32, 'sha256:' + 'cd' * 32
+
+
+def next_boot_lines(cases):
+    """Ota.nextBoot for each (next_boot, os) pair in `cases`, run in node."""
+    return node("""
       globalThis.window = globalThis; require(process.argv[1]);
-      const nb = (source, version) => Ota.nextBoot({ source, version, digest: '' });
-      console.log(JSON.stringify([nb('booted', '4.4.0'), nb('rollback', '4.5.0'), nb('staged', '4.6.0'), Ota.nextBoot(null)]));
-    """, OTA_JS)
-    assert out[0]["warn"] is False and "4.4.0" in out[0]["text"]
-    assert out[1]["warn"] is True and "rollback" in out[1]["text"] and "4.5.0" in out[1]["text"]
-    assert out[2]["warn"] is True and "staged" in out[2]["text"]
-    assert out[3]["warn"] is False and out[3]["text"] == ""
+      console.log(JSON.stringify(JSON.parse(process.argv[2]).map(([nb, os]) => Ota.nextBoot(nb, os))));
+    """, OTA_JS, json.dumps(cases))
+
+
+def booted(version="4.4.0", digest=D1):
+    return {"booted": {"version": version, "digest": digest}}
+
+
+@needs_node
+def test_next_boot_warning_names_both_images_and_why():
+    out = next_boot_lines([
+        [{"source": "rollback", "version": "4.5.0", "digest": D2}, booted()],
+        [{"source": "staged", "version": "4.6.0", "digest": D2}, booted()],
+    ])
+    assert out[0] == "A reboot would start 4.5.0, not the running 4.4.0 (queued rollback)."
+    assert out[1] == "A reboot would start 4.6.0, not the running 4.4.0 (staged update)."
+
+
+@needs_node
+def test_next_boot_says_nothing_when_a_reboot_would_start_the_running_image():
+    out = next_boot_lines([
+        [{"source": "booted", "version": "4.4.0", "digest": D1}, booted()],
+        [None, booted()], [None, None], [{}, booted()],
+        [{"source": "surprise", "version": "4.5.0", "digest": D2}, booted()],     # not a source we know
+        [{"source": "constructor", "version": "4.5.0", "digest": D2}, booted()],  # nor an object key
+    ])
+    assert out == [""] * 6
+
+
+@needs_node
+def test_next_boot_warning_survives_an_image_with_no_version_or_no_running_image():
+    out = next_boot_lines([
+        [{"source": "rollback", "version": "", "digest": D2}, booted()],          # named by its digest instead
+        [{"source": "rollback", "version": "", "digest": ""}, booted()],          # nothing to name it by
+        [{"source": "rollback", "version": "4.5.0", "digest": D2}, None],         # running image unknown
+        [{"source": "rollback", "version": "4.5.0", "digest": D2}, {"booted": None}],
+        [{"source": "rollback", "version": "4.5.0", "digest": D2}, booted("", D1)],  # running named by digest
+    ])
+    assert out[0] == "A reboot would start cdcdcdcdcdcd, not the running 4.4.0 (queued rollback)."
+    assert out[1] == ""
+    assert out[2] == out[3] == "A reboot would start 4.5.0 (queued rollback)."
+    assert out[4] == "A reboot would start 4.5.0, not the running abababababab (queued rollback)."
+
+
+@needs_node
+def test_next_boot_warning_does_not_say_x_instead_of_x():
+    """Two images relabelled to one version: "start 4.4.0, not the running 4.4.0" would read as a mistake."""
+    (line,) = next_boot_lines([[{"source": "rollback", "version": "4.4.0", "digest": D2}, booted()]])
+    assert line == "A reboot would start another image with the same name, 4.4.0 (queued rollback)."
 
 
 @needs_node
@@ -368,7 +439,7 @@ def page(answer):
         console.log(JSON.stringify({
           bannerHidden: g('ota-banner').hidden, banner: t('ota-banner'), bannerClass: g('ota-banner').className,
           mainHidden: g('ota-main').hidden, age: t('ota-age'),
-          next: t('ota-next'), nextClass: g('ota-next').className, images: t('ota-images'),
+          next: t('ota-next'), nextClass: g('ota-next').className, nextHidden: g('ota-next').hidden, images: t('ota-images'),
           osFacts: t('ota-os-facts'), components: t('ota-components'), services: t('ota-services'),
           health: t('ota-health')
         }));
@@ -385,7 +456,7 @@ def test_render_writes_hostile_strings_as_text_and_never_touches_innerhtml():
     d["services"][0]["name"] = HOSTILE
     d["services"][0]["sub_state"] = HOSTILE
     out = page(d)                                   # the fake El throws if innerHTML is ever assigned
-    for key in ("images", "osFacts", "components", "services"):
+    for key in ("images", "osFacts", "components", "services", "next"):
         assert HOSTILE in out[key], key              # present, verbatim, as text
 
 
@@ -393,7 +464,8 @@ def test_render_writes_hostile_strings_as_text_and_never_touches_innerhtml():
 def test_render_shows_the_whole_page_for_a_good_answer():
     out = page(ota.view(fresh(), now=time.time()))
     assert out["bannerHidden"] is True and out["mainHidden"] is False
-    assert "Next boot: 4.5.0" in out["next"] and out["nextClass"] == "ota-next warn"
+    assert out["next"] == "A reboot would start 4.5.0, not the running 4.4.0 (queued rollback)."
+    assert out["nextClass"] == "ota-next warn" and out["nextHidden"] is False
     assert "4.4.0" in out["images"] and "4.5.0" in out["images"] and "Rollback (queued)" in out["images"]
     assert "6.12.0-251.el10iv.aarch64" in out["osFacts"]
     assert "RHIVOS-APP-CANDUMP" in out["components"] and "3.4.0" in out["components"]
@@ -434,3 +506,28 @@ def test_render_copes_with_a_sparse_good_answer():
                 "components": [], "services": [], "health": {}, "next_boot": None})
     assert out["mainHidden"] is False and out["next"] == "" and out["nextClass"] == "ota-next"
     assert "No components reported." in out["components"] and "No services reported." in out["services"]
+
+
+@needs_node
+def test_render_hides_the_next_boot_warning_when_nothing_is_queued_or_staged():
+    d = fresh()
+    d["os"]["rollback_queued"] = False
+    out = page(ota.view(d, now=time.time()))
+    assert out["next"] == "" and out["nextHidden"] is True and out["nextClass"] == "ota-next"
+    assert "4.4.0" in out["images"]                      # the table still shows the images
+
+
+@needs_node
+def test_render_says_not_reported_for_a_component_with_no_version():
+    d = fresh()
+    d["components"] = [{"id": "RHIVOS-OS-AUTOSD", "version": "", "transaction_digest": D2,
+                        "installed_at": "2026-07-31T21:22:00Z"}]
+    out = page(ota.view(d, now=time.time()))
+    assert "not reported" in out["components"] and "RHIVOS-OS-AUTOSD" in out["components"]
+    assert "cdcdcdcdcdcd" in out["components"] and "2026-07-31 21:22:00 UTC" in out["components"]
+
+
+@needs_node
+def test_render_labels_the_image_row_image_created_not_built():
+    out = page(ota.view(fresh(), now=time.time()))
+    assert "Image created" in out["images"] and "Built" not in out["images"]

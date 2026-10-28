@@ -4,14 +4,13 @@
     whitelist in web/ota.py and is written by ota.js with textContent (tests/test_ota_api.py).
     Always renders -- with no file it says how to produce one (docs/OTA.md). Read-only: no form,
     no button that sends anything. -#}
-{%- set veh = vehicle if vehicle is mapping else {} -%}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-<title>Ha-Kake — OTA status{% if veh.get("title") %} — {{ veh.get("title") }}{% endif %}</title>
+<title>Ha-Kake — OTA status</title>
 <link rel="stylesheet" href="/static/hakake.css">
 <link rel="stylesheet" href="/static/ota.css">
 </head>
@@ -20,7 +19,7 @@
 
 <header class="ota-top">
   <h1>OTA status
-    <small>{{ veh.get("title") ~ " · " if veh.get("title") }}what this board is running, as its host reports it. Read-only.</small></h1>
+    <small>What this board is running, as its host reports it. Read-only.</small></h1>
   <div class="ota-top-right">
     <span class="ota-age" id="ota-age"></span>
     <a class="ota-link" href="/" title="The telemetry dashboard">Dashboard →</a>
@@ -36,18 +35,20 @@
   <section class="card ota-os" data-span="12">
     <div class="card-title">Operating system image</div>
     <div class="ota-next" id="ota-next"></div>
-    <div class="ota-images" id="ota-images"></div>
+    <div class="ota-images ota-scroll" id="ota-images"></div>
     <div class="ota-facts" id="ota-os-facts"></div>
   </section>
 
-  <section class="card" data-span="6">
+  <section class="card" data-span="12">
     <div class="card-title">Update components</div>
-    <div id="ota-components"></div>
+    <div class="ota-scroll" id="ota-components"></div>
+    <p class="ota-note">eSync's own record of what it installed. It can differ from the image above: bootc, not eSync,
+      says which image is running, and this page does not compare the two.</p>
   </section>
 
-  <section class="card" data-span="6">
+  <section class="card" data-span="12">
     <div class="card-title">Services</div>
-    <div id="ota-services"></div>
+    <div class="ota-scroll" id="ota-services"></div>
   </section>
 
   <section class="card" data-span="12">
