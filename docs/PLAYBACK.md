@@ -41,7 +41,7 @@ the bottom of the window by default (see *Docked* below):
   brush, so a moment can be pasted into the worklog. With `?shot` the page
   renders that first frame once and holds it.
 - **Docked.** The timeline floats over the page, no wider than the page's own
-  content column (`--app-col` in `hakake.css`, the width of a card) so it lines
+  content column (`--app-col` in `vehicletap.css`, the width of a card) so it lines
   up with everything beneath it on a wide display, and inset from the window
   edges on a narrow one. It is locked to the bottom of the window by
   default, so any tile — the 3D pack three screens down — can be watched

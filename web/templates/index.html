@@ -8,10 +8,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-<title>Ha-Kake{% if veh.get("title") %} — {{ veh.get("title") }}{% endif %} telemetry</title>
+<title>VehicleTap{% if veh.get("title") %} — {{ veh.get("title") }}{% endif %} telemetry</title>
 <link rel="stylesheet" href="/static/vendor/gridstack.min.css">
 <link rel="stylesheet" href="/static/tilestudio.css">
-<link rel="stylesheet" href="/static/hakake.css">
+<link rel="stylesheet" href="/static/vehicletap.css">
 <link rel="stylesheet" href="/static/tiles.css">
 <style>
   .dash {
@@ -513,27 +513,20 @@
 <div class="dash">
 
 <header>
-  {#- Wordmark. The silhouette is the profile's (LOGO = "leaf" gives the leaf,
-      anything else the neutral dial); it fills from the bottom with whatever
-      level signal the profile actually has — SOC on an EV, fuel on the Lancer,
-      nothing at all on a car with neither, in which case the mark is static. #}
-  {%- set leaf_path = 'M16 3 C 23 8 26 18 16 29 C 6 18 9 8 16 3 Z' %}
+  {#- Wordmark: a neutral dial for every vehicle. It fills from the bottom with whatever
+      level signal the profile actually has — SOC on an EV, fuel on the Lancer, nothing at
+      all on a car with neither, in which case the mark is static. #}
   {%- set dial_path = 'M16 4 A 12 12 0 1 0 16 28 A 12 12 0 1 0 16 4 Z' %}
-  {%- set logo_path = leaf_path if veh.get('logo') == 'leaf' else dial_path %}
   <div class="logo">
-    <svg viewBox="0 0 32 32" fill="none" aria-label="Ha-Kake">
-      <defs><clipPath id="logo-clip"><path d="{{ logo_path }}"/></clipPath></defs>
+    <svg viewBox="0 0 32 32" fill="none" aria-label="VehicleTap">
+      <defs><clipPath id="logo-clip"><path d="{{ dial_path }}"/></clipPath></defs>
       {%- if veh.get('level_key', 'soc') %}
       <rect id="batt-fill" x="0" y="3" width="32" height="26" fill="var(--green)" opacity="0.35" clip-path="url(#logo-clip)"/>
       {%- endif %}
-      <path d="{{ logo_path }}" fill="none" stroke="var(--accent)" stroke-width="2"/>
-      {%- if veh.get('logo') == 'leaf' %}
-      <path d="M16 7 L16 26 M16 13 L21 10 M16 18 L11 15 M16 22 L20 20" stroke="var(--accent)" stroke-width="1" opacity="0.55"/>
-      {%- else %}
+      <path d="{{ dial_path }}" fill="none" stroke="var(--accent)" stroke-width="2"/>
       <path d="M16 10 L16 16 L20 19" stroke="var(--accent)" stroke-width="1.5" opacity="0.55" stroke-linecap="round"/>
-      {%- endif %}
     </svg>
-    <h1>Ha-Kake<span>{{ veh.get("title") ~ " · " if veh.get("title") }}read-only telemetry</span></h1>
+    <h1>VehicleTap<span>{{ veh.get("title") ~ " · " if veh.get("title") }}read-only telemetry</span></h1>
   </div>
   <div class="header-right">
     <a class="sim-badge" id="sim-badge" href="/sim" title="This run is a simulated car (--adapter sim). Open the cockpit to drive it.">SIMULATED</a>

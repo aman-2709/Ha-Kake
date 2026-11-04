@@ -7,7 +7,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 How to make this dashboard work on your car.
 
-Everything car-specific in Ha-Kake lives in one module: `vehicles/<name>.py`.
+Everything car-specific in VehicleTap lives in one module: `vehicles/<name>.py`.
 The reader, the scheduler, the SQLite store, the API, Tile Studio and the
 whole page are vehicle-agnostic, and a profile is the only thing you write.
 Two ship today — `vehicles/leaf_ze0.py` (2012 Nissan Leaf, largely reverse
@@ -240,7 +240,6 @@ asleep every time a slow cycle comes around.
 | `BUSES` | `tuple` of names | The car's networks, default `("car",)`. Every item's `bus` must be listed, and the `FAST_ONLY` items must share one bus — the primary, whose silence means the car is asleep. |
 | `SIGNALS[k]["sources"]`, `["tolerance"]` | list, number | A value reachable more than one way: `sources: [{"key": "ev_pack_v", "item": "p1DB", "confidence": "verified", "rate_hz": 100}, {"key": "pack_v", "item": "lbc01", "confidence": "verified", "rate_hz": 0.5}]` names the record key each source writes (decoders never write one key from two items); `tolerance` is in the signal's unit. The reader's generic resolver picks — pin, then verified over tentative, then freshness, then rate — and stamps `<k>_src`; it writes `k` itself only when no decoder does, else `<k>_resolved`; two fresh sources apart by more than `tolerance` set `<k>_disagree` and log an event. See `docs/ARCHITECTURE.md` "Provenance" and the Leaf's `current_a`. |
 | `DB_FILE` | `str` | A database file of this profile's own, in the data folder. Unset is the normal case: every profile shares `<data>/leaf_battery.db` and rows are separated by the `vehicle` column. |
-| `LOGO` | `str` | Header wordmark art. `"leaf"` gives the leaf silhouette; anything else — including omitting it — gives a neutral dial. The mark fills with the first level-ish signal your registry declares (`soc`, then `fuel_pct`), or stays static if you declare neither. |
 
 `HISTORY_COLS` spec keys, all optional except `kind`:
 

@@ -49,7 +49,7 @@ _chan = [0]
 def channel():
     """A fresh virtual channel per test, so frames never cross between tests."""
     _chan[0] += 1
-    return f"hakake-test-{os.getpid()}-{_chan[0]}"
+    return f"vehicletap-test-{os.getpid()}-{_chan[0]}"
 
 
 def vbus(chan):
@@ -541,7 +541,7 @@ def test_no_board_at_all_is_a_clear_error(monkeypatch):
 def test_slcan_listen_only_opens_with_m1_then_o():
     """Stock canable2-fw has no `L`; silent mode is `M1` before `O`."""
     writes = []
-    b = ct.HakakeSlcanBus.__new__(ct.HakakeSlcanBus)
+    b = ct.VehicleTapSlcanBus.__new__(ct.VehicleTapSlcanBus)
     b._listen_only = True
     b._write = writes.append
     b.open()
@@ -585,7 +585,7 @@ def test_liveness_reports_frames_and_rate():
 # ── configuration and detect_adapter ─────────────────────────────────────
 
 def test_can_config_requires_the_bus(monkeypatch):
-    monkeypatch.delenv("HAKAKE_CAN_BUS", raising=False)
+    monkeypatch.delenv("VEHICLETAP_CAN_BUS", raising=False)
     with pytest.raises(ConnectionError, match="can_bus"):
         ct.can_config({})
     with pytest.raises(ConnectionError, match="can_bus"):
@@ -600,21 +600,21 @@ def test_can_config_requires_the_bus(monkeypatch):
 
 
 def test_environment_wins_over_the_config_file(monkeypatch):
-    monkeypatch.setenv("HAKAKE_CAN_BUS", "ev")
-    monkeypatch.setenv("HAKAKE_CAN_BITRATE", "250000")
+    monkeypatch.setenv("VEHICLETAP_CAN_BUS", "ev")
+    monkeypatch.setenv("VEHICLETAP_CAN_BITRATE", "250000")
     c = ct.can_config({"can_bus": "car", "can_bitrate": 500000})
     assert c["bus"] == "ev" and c["listen_only"] is True and c["bitrate"] == 250000
 
 
 def test_detect_adapter_can_refuses_to_run_without_a_bus(monkeypatch):
-    monkeypatch.delenv("HAKAKE_CAN_BUS", raising=False)
+    monkeypatch.delenv("VEHICLETAP_CAN_BUS", raising=False)
     monkeypatch.setattr(elm327, "_cfg", {"can_interface": "virtual"})
     with pytest.raises(ConnectionError, match="can_bus"):
         run(elm327.detect_adapter(prefer="can", log=lambda *a: None))
 
 
 def test_detect_adapter_can_builds_the_facade_from_config(monkeypatch):
-    monkeypatch.delenv("HAKAKE_CAN_BUS", raising=False)
+    monkeypatch.delenv("VEHICLETAP_CAN_BUS", raising=False)
     chan = channel()
     monkeypatch.setattr(elm327, "_cfg", {"can_interface": "virtual", "can_channel": chan, "can_bus": "car"})
     said = []
@@ -807,7 +807,7 @@ def test_read_duration_and_gap_are_never_stored(tmp_store):
 
 
 def test_can_channel_flag_is_on_both_entry_points():
-    # --can-channel only sets HAKAKE_CAN_CHANNEL, which can_config() already honours
+    # --can-channel only sets VEHICLETAP_CAN_CHANNEL, which can_config() already honours
     import subprocess, sys
     for script in ("web/app.py", "web/reader.py"):
         out = subprocess.run([sys.executable, script, "--help"], capture_output=True, text=True,
@@ -816,6 +816,6 @@ def test_can_channel_flag_is_on_both_entry_points():
 
 
 def test_can_channel_environment_wins_over_the_file(monkeypatch):
-    monkeypatch.setenv("HAKAKE_CAN_CHANNEL", "vcan0")
-    monkeypatch.delenv("HAKAKE_CAN_BUS", raising=False)
+    monkeypatch.setenv("VEHICLETAP_CAN_CHANNEL", "vcan0")
+    monkeypatch.delenv("VEHICLETAP_CAN_BUS", raising=False)
     assert ct.can_config({"can_bus": "car", "can_channel": "can0"})["channel"] == "vcan0"

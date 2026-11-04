@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 David D. Karnowski
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""Ha-Kake vehicle simulator — a car made of arithmetic.
+"""VehicleTap vehicle simulator — a car made of arithmetic.
 
     from simulator import make_sim, KNOBS
 
@@ -71,9 +71,9 @@ TIME_SCALE_MAX = 3600.0
 # old behaviour multiply. `outer_scale` is how the rig tells the core "this
 # much has already been applied to the dt you are about to get", so the core
 # can divide it back out and the product is the resolved scale and nothing
-# else. `--adapter sim` reaches SimELM through HAKAKE_SIM_SPEED without passing
+# else. `--adapter sim` reaches SimELM through VEHICLETAP_SIM_SPEED without passing
 # through the rig at all, so the core reads that variable itself.
-SIM_SPEED_ENV = "HAKAKE_SIM_SPEED"
+SIM_SPEED_ENV = "VEHICLETAP_SIM_SPEED"
 
 
 def _env_speed():

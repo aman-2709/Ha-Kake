@@ -1,6 +1,6 @@
-# Ha-Kake dashboard + simulator as an OCI image (docs/CONTAINER.md).
+# VehicleTap dashboard + simulator as an OCI image (docs/CONTAINER.md).
 #
-#   podman build --platform linux/arm64 -t ha-kake .      # for a TDA4 / Jacinto 7 board
+#   podman build --platform linux/arm64 -t vehicletap .      # for a TDA4 / Jacinto 7 board
 #
 # The app binds 127.0.0.1 only, on purpose (SECURITY.md). Run it with host
 # networking, not -p: a published port cannot reach a container's own loopback.
@@ -11,7 +11,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_ROOT_USER_ACTION=ignore \
     PIP_NO_CACHE_DIR=1 \
-    HAKAKE_DATA_DIR=/data
+    VEHICLETAP_DATA_DIR=/data
 
 USER 0
 WORKDIR /app
@@ -39,7 +39,7 @@ COPY web/layouts/ web/layouts/
 RUN mkdir /data && chown 1001:0 /data && chmod 0770 /data
 USER 1001
 
-LABEL org.opencontainers.image.title="Ha-Kake" \
+LABEL org.opencontainers.image.title="VehicleTap" \
       org.opencontainers.image.licenses="AGPL-3.0-or-later"
 
 CMD ["python", "web/app.py", "--adapter", "sim"]

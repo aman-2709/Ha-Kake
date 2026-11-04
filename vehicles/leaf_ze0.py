@@ -14,7 +14,6 @@ from leaf_decoders import decode_reading, decode_hvac, decode_carcan
 
 NAME = "leaf_ze0"
 TITLE = "2012 Nissan Leaf (ZE0)"
-LOGO = "leaf"        # header wordmark art; profiles without one get a neutral dial
 
 # kind -> UDS (tx, rx) headers, or None for passive monitor capture
 TARGETS = {"lbc": ("79B", "7BB"), "hvac": ("744", "764"), "passive": None}

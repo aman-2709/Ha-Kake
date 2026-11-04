@@ -1,7 +1,7 @@
 # Simulator contract
 
 The interface between a simulator core and everything that drives it — the
-transports in `elm327.py`, the rig and control API in `hakake_sim.py`, the
+transports in `elm327.py`, the rig and control API in `vehicletap_sim.py`, the
 history generator, the cockpit page, and any sub-agent building one of those.
 It stays a separate document on purpose: `docs/SIMULATOR.md` is the guide to
 *using* the simulator; this is what a core must provide and what a caller may
@@ -245,7 +245,7 @@ keyed by `sim.vehicle`, the UDS pairs come from the profile's `TARGETS`.
 
 ## Agent usability — a hard requirement, not a nice-to-have
 
-- `sim.knob_schema()` and `python hakake_sim.py --dump-schema` emit JSON so an agent
+- `sim.knob_schema()` and `python vehicletap_sim.py --dump-schema` emit JSON so an agent
   discovers every knob without reading source.
 - A control surface lets an agent change conditions **mid-run** and watch the
   dashboard react. That is the whole point.

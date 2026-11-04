@@ -1,11 +1,18 @@
-Ha-Kake — attribution and third-party notices
-=============================================
+VehicleTap — attribution and third-party notices
+================================================
 
-Ha-Kake is a read-only OBD-II telemetry dashboard, developed on a 2012 Nissan
+VehicleTap is a read-only OBD-II telemetry dashboard, developed on a 2012 Nissan
 Leaf (ZE0) and now vehicle-agnostic through the profiles in `vehicles/`.
+
+It is based on Ha-Kake, created by David D. Karnowski
+(https://github.com/davidkarnowski/Ha-Kake), and is maintained as an independent
+fork by Amandeep Kirpalsingh. Everything the original author wrote stays under
+his copyright and his license, recorded below.
 
 Copyright and licensing
 -----------------------
+
+The original work, Ha-Kake:
 
     Ha-Kake
     Copyright (C) 2026 David D. Karnowski
@@ -23,12 +30,22 @@ Copyright and licensing
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+The modifications and additions made in VehicleTap:
+
+    VehicleTap
+    Copyright (C) 2026 Amandeep Kirpalsingh, for the changes listed in
+    CHANGELOG.md, the first made on 2026-10-09. Offered under the same terms
+    (AGPL-3.0-or-later). The original work above stays under its author's
+    copyright.
+
 The documentation — everything under `docs/`, including `docs/SIGNALS.md` and
 `docs/reverse-engineering/` — is licensed instead under Creative Commons
 Attribution-ShareAlike 4.0 International (CC BY-SA 4.0). See `LICENSE-DOCS`.
 
-Proprietary licensing is available separately for anyone who cannot ship under
-the AGPL; see `COMMERCIAL.md`.
+VehicleTap does not offer proprietary licensing. The original Ha-Kake code is its
+author's to license: for commercial licensing of that code, see the upstream
+project, https://github.com/davidkarnowski/Ha-Kake. VehicleTap's own changes are
+available under AGPL-3.0-or-later only.
 
 (This file is an attribution notice for readers. It is not an Apache-2.0
 NOTICE file, and no Apache-2.0 obligations attach to it.)
@@ -46,7 +63,7 @@ Bundled third-party components
   `web/static/vendor/LICENSE.gridstack`. The MIT license requires that the
   copyright notice and permission notice travel with all copies and
   substantial portions of the software, so that file must stay in place in
-  any copy, fork or redistribution of Ha-Kake.
+  any copy, fork or redistribution of VehicleTap.
 
   three.js — r170 (0.170.0), MIT License
   Copyright © 2010-2024 three.js authors
@@ -99,7 +116,7 @@ certain CAN ID is a fact about the Leaf, not an expression owned by whoever
 wrote it down first. The credit above is therefore offered as ordinary good
 citizenship in the Leaf-hacking community — these people did the hard early
 work in public and it saved real time — and not because a license required it.
-Their licenses are recorded here so that anyone building on Ha-Kake can make
+Their licenses are recorded here so that anyone building on VehicleTap can make
 their own assessment rather than having to redo the research.
 
 Trademarks
@@ -109,10 +126,10 @@ Trademarks
 **not** licensed under the AGPL or CC BY-SA. A copyright license grants no
 trademark rights (see AGPL section 7(e) and CC BY-SA section 2(b)(2)).
 
-If you fork this project, you are very welcome to the code — please just give
-your fork its own name and its own logo, so that nobody downloads yours
-thinking it is this one, and so bug reports land in the right place. Saying
-"based on Ha-Kake" is fine and appreciated.
+VehicleTap is a fork that uses its own name and its own logo, as the original
+author asks of forks, so that nobody downloads it thinking it is the original
+and so bug reports land in the right place. It says only that it is "based on
+Ha-Kake". It is not affiliated with, and not endorsed by, the original author.
 
 "Nissan" and "Leaf" are trademarks of Nissan Motor Co., Ltd. "Mitsubishi" and
 "Lancer" are trademarks of Mitsubishi Motors Corporation. They are used here

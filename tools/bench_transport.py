@@ -30,7 +30,7 @@ Usage:
   python tools/bench_transport.py --no-uds              # AT only (car asleep)
   python tools/bench_transport.py --compare-poll        # include the old loop
 
-The port comes from --port, else HAKAKE_SERIAL_PORT, else the usual glob —
+The port comes from --port, else VEHICLETAP_SERIAL_PORT, else the usual glob —
 the device path is machine-specific and never belongs in a committed file.
 
 The timing self-test (docs/TIMING.md) is a different measurement: it runs the
@@ -54,6 +54,8 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from util import env  # noqa: E402
+
 # ELM327 ATBRD divisors: baud = 4_000_000 / divisor
 BRD_DIVISOR = {
     9600: 0x1A0, 19200: 0xD0, 38400: 0x68, 57600: 0x45,
@@ -64,7 +66,7 @@ BRD_DIVISOR = {
 def find_port(explicit=None):
     if explicit:
         return explicit
-    forced = os.environ.get("HAKAKE_SERIAL_PORT")
+    forced = env("VEHICLETAP_SERIAL_PORT")
     if forced:
         return forced
     for pattern in ("/dev/tty.usbserial-*", "/dev/cu.usbserial-*"):
@@ -470,7 +472,7 @@ def main():
                     help="--timing: minimum seconds per cycle, the reader's own default (0.5)")
     ap.add_argument("--fast", action="store_true", help="--timing: fast-lane primary item only")
     ap.add_argument("--json", action="store_true", help="--timing: print the result as JSON")
-    ap.add_argument("--port", help="serial device (default: $HAKAKE_SERIAL_PORT or glob)")
+    ap.add_argument("--port", help="serial device (default: $VEHICLETAP_SERIAL_PORT or glob)")
     ap.add_argument("--bauds", default="38400,115200,500000",
                     help="comma-separated baud rates to try (default 38400,115200,500000)")
     ap.add_argument("--at", default="1", help="comma-separated ATAT values, or 'skip'")
@@ -495,7 +497,7 @@ def main():
 
     port = find_port(args.port)
     if not port:
-        print("No serial port found. Pass --port or set HAKAKE_SERIAL_PORT.")
+        print("No serial port found. Pass --port or set VEHICLETAP_SERIAL_PORT.")
         return 1
     print(f"Adapter port: {os.path.basename(port)}   (path hidden — machine-specific)")
 

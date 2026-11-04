@@ -3,7 +3,7 @@
 
 /* The four styled tiles — vehicle & shifter, tires, body, climate — whose
    markup lives in web/templates/tiles/ and whose renderers are tiles.js.
-   Moved verbatim out of index.html; needs the palette from hakake.css. */
+   Moved verbatim out of index.html; needs the palette from vehicletap.css. */
 /* ── Vehicle / Tires / HVAC row ── */
 .gear-big {
   font-size: 3.2em; font-weight: 700; line-height: 1; letter-spacing: -0.02em;

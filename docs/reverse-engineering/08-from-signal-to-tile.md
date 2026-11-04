@@ -15,7 +15,7 @@
 
 ## The whole path, once
 
-Here is every stage a number passes through in Ha-Kake. Nothing in this chapter is more complicated than this list.
+Here is every stage a number passes through in VehicleTap. Nothing in this chapter is more complicated than this list.
 
 ```
   the car
@@ -187,7 +187,7 @@ A profile is one module in `vehicles/` that packages everything above for one ca
 | `decode(responses) -> (record, alive)` | raw lines in, flat record out |
 | `apply_policy(cache, calib, state)` | optional per-vehicle sensor policy (the Leaf's current fusion lives here) |
 
-`reader.set_vehicle()` binds the chosen profile into the reader's module globals and rebinds `signals.SIGNALS`. That was a deliberate choice: it means the scheduler tests, the store, the supervisor, the API and Tile Studio keep reading `reader.ITEMS` unchanged and needed no vehicle knowledge at all. Selection is `--vehicle` on `app.py` or `reader.py`, the `HAKAKE_VEHICLE` environment variable, or `"vehicle"` in `config.local.json`, defaulting to `leaf_ze0`.
+`reader.set_vehicle()` binds the chosen profile into the reader's module globals and rebinds `signals.SIGNALS`. That was a deliberate choice: it means the scheduler tests, the store, the supervisor, the API and Tile Studio keep reading `reader.ITEMS` unchanged and needed no vehicle knowledge at all. Selection is `--vehicle` on `app.py` or `reader.py`, the `VEHICLETAP_VEHICLE` environment variable, or `"vehicle"` in `config.local.json`, defaulting to `leaf_ze0`.
 
 `get_vehicle()` validates cross-references loudly on load: every tile must reference a real item, every signal must reference a real item, every item must have a kind that exists in `TARGETS`. A typo fails at import, not at 2 a.m. in a parking lot.
 

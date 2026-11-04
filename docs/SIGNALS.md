@@ -436,7 +436,7 @@ two community projects:
 - dalathegreat — `leaf_can_bus_messages` (DBC collection). GPL-3.0, verified
   2026-09-02.
 
-**No code from either project is in Ha-Kake.** Every decoder here was written
+**No code from either project is in VehicleTap.** Every decoder here was written
 from scratch against captures from the owner's own car, and every signal was
 re-verified on that car before being marked verified above; what was taken from
 those projects is *facts* about how the vehicle behaves, not expression. Their

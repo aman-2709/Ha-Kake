@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2026 David D. Karnowski
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-Ha-Kake Dashboard
+VehicleTap Dashboard
 Flask web server with integrated reader. The vehicle comes from --vehicle
 (profiles in vehicles/; default the 2012 Leaf).
 
@@ -49,7 +49,7 @@ Usage:
   python app.py --no-reader          # dashboard only (reader.py separate)
   python app.py --db /tmp/ui.db --no-reader --port 5001
                                      # no car: open a database someone else wrote
-                                     # (e.g. `hakake_sim.py --generate`) and iterate on charts
+                                     # (e.g. `vehicletap_sim.py --generate`) and iterate on charts
   python app.py --vehicle lancer_2009  # a different vehicle profile
 """
 
@@ -83,7 +83,7 @@ from util import env                                     # noqa: E402
 DIR = os.path.dirname(os.path.abspath(__file__))
 STATE_FILE = datadir.path("battery_state.json")
 DEMO_DIR = os.path.join(os.path.dirname(DIR), "docs", "demo")
-DEMO = env("HAKAKE_DEMO", "LEAF_DEMO")   # dir with state.json / history.json for docs screenshots
+DEMO = env("VEHICLETAP_DEMO", "LEAF_DEMO")   # dir with state.json / history.json for docs screenshots
 DB_PATH = None                           # None → the profile's own file; replay overrides it
 # Where the simulator's control API is, when this process knows at startup:
 # `--adapter sim` on a fixed port (default 8099), or `--sim-serial` with the
@@ -139,14 +139,14 @@ _local = threading.local()
 # The dashboard is served on loopback (app.run binds 127.0.0.1). Every request
 # must also *name* a loopback host, and a request that changes something must
 # come from a page on one (its Origin) — or, from a tool with no Origin such as
-# curl or the tests, say it is sending JSON. HAKAKE_ALLOWED_HOSTS adds host
+# curl or the tests, say it is sending JSON. VEHICLETAP_ALLOWED_HOSTS adds host
 # names for someone who deliberately serves the page elsewhere (comma list).
 LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "[::1]")
 MUTATING = ("POST", "PUT", "DELETE", "PATCH")
 
 
 def allowed_hosts():
-    extra = env("HAKAKE_ALLOWED_HOSTS") or ""
+    extra = env("VEHICLETAP_ALLOWED_HOSTS") or ""
     return set(LOOPBACK_HOSTS) | {h.strip().lower() for h in extra.split(",") if h.strip()}
 
 
@@ -204,8 +204,6 @@ def store():
 def vehicle_ctx():
     """What the page chrome needs to know about the active profile.
 
-    `logo` is an optional profile attribute (LOGO = "leaf" restores the leaf
-    silhouette on the Leaf); anything else gets the neutral dial mark.
     `level_key` is the signal the mark fills with — the first level-ish signal
     the profile's registry actually declares, or None for a static mark.
     """
@@ -217,9 +215,7 @@ def vehicle_ctx():
         pack = {"module": v.PACK_MODULE, "case": v.PACK_CASE,
                 "layout": v.PACK_LAYOUT, "sensors": getattr(v, "PACK_SENSORS", []),
                 "modes": getattr(v, "PACK_MODES", [])}
-    return {"name": v.NAME, "title": v.TITLE,
-            "logo": getattr(v, "LOGO", "dial"),
-            "level_key": level, "pack": pack}
+    return {"name": v.NAME, "title": v.TITLE, "level_key": level, "pack": pack}
 
 
 @app.route("/")
@@ -752,7 +748,7 @@ if __name__ == "__main__":
     except AttributeError:
         pass
     print(datadir.startup_note())
-    ap = argparse.ArgumentParser(description="Ha-Kake — read-only OBD-II telemetry dashboard")
+    ap = argparse.ArgumentParser(description="VehicleTap — read-only OBD-II telemetry dashboard")
     ap.add_argument("--interval", type=float, default=None,
                     help="Minimum seconds per reader cycle (default: the adapter's own — 0.5 for an ELM327, 0 for native CAN)")
     ap.add_argument("--budget", type=float, default=1.5, help="Slow-lane seconds per cycle (default: 1.5)")
@@ -779,7 +775,7 @@ if __name__ == "__main__":
                     help="Do not serve the simulator control API (--adapter sim)")
     ap.add_argument("--sim-serial", default=None, metavar="DEV",
                     help="Point the real serial transport at a simulator pty from "
-                         "hakake_sim.py --pty (--adapter sim)")
+                         "vehicletap_sim.py --pty (--adapter sim)")
     ap.add_argument("--sim-can", nargs="?", const="car", choices=["car", "ev"], default=None,
                     metavar="BUS",
                     help="With --adapter sim: the model's ECUs on an in-process virtual CAN bus "
@@ -789,7 +785,7 @@ if __name__ == "__main__":
                     help="Serve canned JSON from a demo directory (default: docs/demo), no reader")
     ap.add_argument("--db", default=None, metavar="PATH",
                     help="Open this SQLite database instead of the profile's own. "
-                         "The route for generated history: hakake_sim.py --generate "
+                         "The route for generated history: vehicletap_sim.py --generate "
                          "writes one, this opens it (with its _state.json sibling if "
                          "there is one). --adapter replay/sim still use their own file.")
     ap.add_argument("--can-channel", default=None, metavar="DEV",
@@ -798,7 +794,7 @@ if __name__ == "__main__":
     ap.add_argument("--port", type=int, default=5000)
     args = ap.parse_args()
     if args.can_channel:
-        os.environ["HAKAKE_CAN_CHANNEL"] = args.can_channel     # the reader child inherits it
+        os.environ["VEHICLETAP_CAN_CHANNEL"] = args.can_channel     # the reader child inherits it
 
     pref = None if args.adapter == "auto" else args.adapter
     if args.sim_control_url:
@@ -882,7 +878,7 @@ if __name__ == "__main__":
     else:
         print("Dashboard only — run reader.py separately.")
 
-    print(f"\nHa-Kake dashboard   http://127.0.0.1:{args.port}")
+    print(f"\nVehicleTap dashboard   http://127.0.0.1:{args.port}")
     if pref == "sim" and not DEMO and not args.no_reader:
         # Three lines, one per thing a person wants to open. The cockpit page
         # is the dashboard's; the control API is the reader's (or the external

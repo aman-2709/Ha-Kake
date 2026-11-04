@@ -7,7 +7,7 @@
     from simulator.canbus import SimCanEcu
 
     sim = make_sim(vehicle="leaf_ze0", scenario="drive", seed=1)
-    ecu = SimCanEcu(sim, bus="car", channel="hakake-car")     # ≈1,700 frames/s
+    ecu = SimCanEcu(sim, bus="car", channel="vehicletap-car")     # ≈1,700 frames/s
     ecu.start()
     ...
     ecu.stop()
@@ -64,7 +64,7 @@ __all__ = ["SimCanEcu", "FrameSchedule", "CAR_PERIODS_MS", "EV_PERIODS_MS", "FIL
            "decode_1d4", "decode_55b", "decode_5bc", "decode_11a", "decode_1dc",
            "crc8_nissan", "frames_of_lines", "expected_fps", "CHANNELS"]
 
-CHANNELS = {"car": "hakake-car", "ev": "hakake-ev"}
+CHANNELS = {"car": "vehicletap-car", "ev": "vehicletap-ev"}
 BUSES = ("car", "ev")
 
 # ── the survey: period in ms per id, per bus, per vehicle ─────────────────

@@ -5,7 +5,7 @@
 
 Vehicle & shifter, tires, body and climate live as Jinja partials in
 web/templates/tiles/, are painted by web/static/tiles.js (window.Tiles),
-and are styled by tiles.css on top of the page chrome in hakake.css — so a
+and are styled by tiles.css on top of the page chrome in vehicletap.css — so a
 second page (the simulator cockpit) can host the same tiles. These tests pin
 the seam: the partials are included once each, the renderers are scoped to a
 root element rather than the document, the shared CSS is linked before the
@@ -150,7 +150,7 @@ def test_fmt_temp_reproduces_the_dashboard_strings():
 
 def test_head_links_shared_css_after_tilestudio_and_before_inline_style(page):
     head = page[:page.index("</head>")]
-    order = [head.index(s) for s in ('href="/static/tilestudio.css"', 'href="/static/hakake.css"',
+    order = [head.index(s) for s in ('href="/static/tilestudio.css"', 'href="/static/vehicletap.css"',
                                      'href="/static/tiles.css"', "<style>")]
     assert order == sorted(order), order
     assert head.count("<style>") == 1
@@ -200,16 +200,16 @@ def _rules(text, prefix=""):
 
 
 def test_shared_css_holds_the_tile_and_chrome_rules_and_nothing_is_duplicated(page):
-    hakake = _rules(read(os.path.join(STATIC, "hakake.css")))
+    vehicletap = _rules(read(os.path.join(STATIC, "vehicletap.css")))
     tiles = _rules(read(os.path.join(STATIC, "tiles.css")))
     inline = _rules(re.search(r"<style>(.*?)</style>", page, re.S).group(1))
     sel = lambda rules: {r[0] for r in rules}  # noqa: E731
     # what each file is for
-    assert {":root", "body", ".card", ".card-title", ".tiles", ".tiles > .card", ".tile-age", ".tiles-menu"} <= sel(hakake)
+    assert {":root", "body", ".card", ".card-title", ".tiles", ".tiles > .card", ".tile-age", ".tiles-menu"} <= sel(vehicletap)
     assert {".shifter", ".wheel", ".door", ".lamp", ".fan-rotor", ".hvac-big", "html.shot *"} <= sel(tiles)
     # a rule lives in exactly one place — no selector is styled twice across the three sources
-    assert not (sel(hakake) & sel(tiles))
-    assert not (sel(hakake) & sel(inline))
+    assert not (sel(vehicletap) & sel(tiles))
+    assert not (sel(vehicletap) & sel(inline))
     assert not (sel(tiles) & sel(inline))
 
 

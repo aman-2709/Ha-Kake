@@ -38,3 +38,5 @@ privately by the maintainer and are not part of this repository.
   MQTT session recorder was added and MQTT clients reconnect within seconds. A guide for monitoring a car from the house
   over wifi (`docs/REMOTE_MQTT.md`) was written. Ha-Kake's data (database and settings) now lives in a documented data
   folder created on first run (`docs/DATA.md`), no longer next to the source.
+- **2026-11-03** — The project is renamed VehicleTap. It is a fork of Ha-Kake by David D. Karnowski, whose notice asks forks for
+  their own name. Existing data folders, `HAKAKE_*` variables and replay recordings keep working; `CHANGELOG.md` lists the changes.

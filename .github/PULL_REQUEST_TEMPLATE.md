@@ -22,8 +22,8 @@
       reports `privacy sweep OK`. No home paths, usernames, e-mails, adapter
       UUIDs, VINs, serials, IPs, keys or session URLs.
 - [ ] **DCO sign-off present** — every commit made with `git commit -s`, so it
-      carries a `Signed-off-by:` line. Contributions are offered under
-      Apache-2.0; see `CONTRIBUTING.md`.
+      carries a `Signed-off-by:` line. Contributions are accepted under
+      AGPL-3.0-or-later (docs: CC BY-SA 4.0); see `CONTRIBUTING.md`.
 - [ ] **Read-only rule respected** — this PR adds **no** control, routine,
       write or security-access service (UDS `0x2E`, `0x2F`, `0x31`, `0x3D`,
       `0x27`) and nothing that actuates the vehicle. See `SECURITY.md`; PRs

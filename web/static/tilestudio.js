@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 David D. Karnowski
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-/* Tile Studio — user-configurable tiles for the Ha-Kake dashboard.
+/* Tile Studio — user-configurable tiles for the VehicleTap dashboard.
  *
  * Owns: tile config (order / enabled / span / type / colour options), the Tiles
  * menu, the per-tile ⋯ menu, "Add tile", drag-to-reorder, and the generic

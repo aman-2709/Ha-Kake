@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 David D. Karnowski
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""hakake-bridge — the Raspberry Pi side of docs/MQTT.md, without a Pi.
+"""vehicletap-bridge — the Raspberry Pi side of docs/MQTT.md, without a Pi.
 
 python-can's ``virtual`` interface is the car (a fake ECU answers ISO-TP on
 it), a fake paho client is the broker. What is proven: a frame on the bus
@@ -25,7 +25,7 @@ can = pytest.importorskip("can")
 isotp = pytest.importorskip("isotp")
 
 sys.path.insert(0, os.path.join(ROOT, "bridge"))
-import hakake_bridge as hb  # noqa: E402
+import vehicletap_bridge as hb  # noqa: E402
 from leaf_decoders import parse_isotp  # noqa: E402
 
 _chan = [0]
@@ -63,8 +63,8 @@ class FakeClient:
 
 def make_bridge(**over):
     _chan[0] += 1
-    ch = f"hakake-test-{_chan[0]}-{os.getpid()}"
-    cfg = hb.load_config(None, dict({"prefix": "hakake/t", "bus": "car", "interface": "virtual",
+    ch = f"vehicletap-test-{_chan[0]}-{os.getpid()}"
+    cfg = hb.load_config(None, dict({"prefix": "vehicletap/t", "bus": "car", "interface": "virtual",
                                      "channel": ch, "stats_s": 0, "status_s": 100}, **over))
     car = can.Bus(interface="virtual", channel=ch)
     pi = can.Bus(interface="virtual", channel=ch)
@@ -85,7 +85,7 @@ def live():
     bridge.bus.shutdown()
 
 
-ROOT_T = "hakake/t/car"
+ROOT_T = "vehicletap/t/car"
 
 
 # ── serialisation ────────────────────────────────────────────────────────
@@ -207,7 +207,7 @@ def test_status_and_lwt_shapes(live):
               "dropped", "queue", "fps_out"):
         assert k in s
     assert s["v"] == 1 and s["online"] is True and s["bus"] == "car" and s["listen_only"] is False
-    assert s["bridge"].startswith("hakake-bridge ") and any(c.isdigit() for c in s["bridge"])
+    assert s["bridge"].startswith("vehicletap-bridge ") and any(c.isdigit() for c in s["bridge"])
     topic, payload, qos, retain = bridge.client.will
     assert topic == f"{ROOT_T}/status" and qos == 1 and retain is True
     assert json.loads(payload) == {"v": 1, "online": False, "bus": "car", "bridge": s["bridge"]}

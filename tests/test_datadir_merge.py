@@ -16,7 +16,7 @@ def test_cockpit_layout_and_simulator_files_follow_the_data_folder(tmp_path):
             "import reader as rd\n"
             "print(rd.SIM_TILES_FILE); print(rd.sim_db()); print(rd.LAYOUTS_DIR)\n") % (ROOT, ROOT)
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
-                         env={**os.environ, "HAKAKE_DATA_DIR": str(tmp_path / "d")}, timeout=60)
+                         env={**os.environ, "VEHICLETAP_DATA_DIR": str(tmp_path / "d")}, timeout=60)
     tiles, sim_db, layouts = out.stdout.split()
     assert tiles.startswith(str(tmp_path / "d")) and sim_db.startswith(str(tmp_path / "d")), out.stderr
     # The shipped layouts are code: they stay in the repo, never in the data folder.

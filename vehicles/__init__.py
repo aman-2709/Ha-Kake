@@ -111,7 +111,7 @@ the value modes (which record key the bodies colour from, its unit and scales).
 A profile that declares `PACK_LAYOUT` must cover every value index from 0 to
 (values − 1) exactly once; `validate_profile` checks that.
 
-`get_vehicle(name)` resolves: explicit arg -> HAKAKE_VEHICLE env ->
+`get_vehicle(name)` resolves: explicit arg -> VEHICLETAP_VEHICLE env ->
 config.local.json "vehicle" -> "leaf_ze0", and validates the profile.
 `validate_profile(mod)` returns the list of problems (empty == valid) and is
 runnable standalone:  python vehicles/__init__.py [name ...]
@@ -268,7 +268,8 @@ def peak_keys(mod):
 
 def get_vehicle(name=None):
     global _active
-    name = name or os.environ.get("HAKAKE_VEHICLE") or _config_vehicle() or DEFAULT
+    from util import env     # here, not at the top: `python vehicles/__init__.py` starts before the repo root is on sys.path
+    name = name or env("VEHICLETAP_VEHICLE") or _config_vehicle() or DEFAULT
     if name in _cache:
         _active = _cache[name]
         return _cache[name]

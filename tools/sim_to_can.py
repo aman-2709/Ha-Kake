@@ -94,7 +94,7 @@ def start_control(sim, port, lock, log=print):
 
     A busy port falls back to a free one, and says so, rather than failing a run
     that is otherwise fine (a dashboard's own simulator may already hold 8099)."""
-    from hakake_sim import serve_control      # lazy: utility, not a dependency
+    from vehicletap_sim import serve_control      # lazy: utility, not a dependency
     try:
         httpd = serve_control(sim, port, lock=lock, log=log)
     except OSError as e:

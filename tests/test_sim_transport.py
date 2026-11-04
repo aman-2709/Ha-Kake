@@ -194,10 +194,10 @@ def stub_factory(monkeypatch):
 
 
 def test_detect_adapter_sim_reads_the_environment(monkeypatch, stub_factory):
-    monkeypatch.setenv("HAKAKE_SIM_SCENARIO", "drive")
-    monkeypatch.setenv("HAKAKE_SIM_SEED", "42")
-    monkeypatch.setenv("HAKAKE_SIM_SPEED", "5")
-    monkeypatch.setenv("HAKAKE_SIM_KNOBS", json.dumps({"soc": 15}))
+    monkeypatch.setenv("VEHICLETAP_SIM_SCENARIO", "drive")
+    monkeypatch.setenv("VEHICLETAP_SIM_SEED", "42")
+    monkeypatch.setenv("VEHICLETAP_SIM_SPEED", "5")
+    monkeypatch.setenv("VEHICLETAP_SIM_KNOBS", json.dumps({"soc": 15}))
     e = run(elm327.detect_adapter(prefer="sim", log=lambda *a: None))
     assert e.adapter_type == "sim" and e.simulated is True
     assert e.scenario == "drive" and e.seed == 42 and e.speed == 5.0
@@ -207,8 +207,8 @@ def test_detect_adapter_sim_reads_the_environment(monkeypatch, stub_factory):
 
 
 def test_bad_knob_env_is_a_clear_error_not_a_traceback(monkeypatch, stub_factory):
-    monkeypatch.setenv("HAKAKE_SIM_KNOBS", "{not json")
-    with pytest.raises(ConnectionError, match="HAKAKE_SIM_KNOBS"):
+    monkeypatch.setenv("VEHICLETAP_SIM_KNOBS", "{not json")
+    with pytest.raises(ConnectionError, match="VEHICLETAP_SIM_KNOBS"):
         run(elm327.detect_adapter(prefer="sim", log=lambda *a: None))
 
 
@@ -245,7 +245,7 @@ def test_missing_core_is_a_readable_error(monkeypatch):
 # ── the serial-port override that makes the pty usable ───────────────────
 
 def test_serial_port_env_overrides_the_usb_glob(monkeypatch):
-    monkeypatch.setenv("HAKAKE_SERIAL_PORT", "/dev/ttys999")
+    monkeypatch.setenv("VEHICLETAP_SERIAL_PORT", "/dev/ttys999")
     assert elm327._find_serial_port() == "/dev/ttys999"
 
 
@@ -273,7 +273,7 @@ def test_detect_adapter_sim_serial_uses_the_serial_transport(monkeypatch):
         self.adapter_port = self.port
         self.adapter_name = "ELM327 v1.5"
 
-    monkeypatch.setenv("HAKAKE_SIM_SERIAL", "/dev/ttys999")
+    monkeypatch.setenv("VEHICLETAP_SIM_SERIAL", "/dev/ttys999")
     monkeypatch.setattr(elm327.SimSerialELM, "connect", fake_connect)
     e = run(elm327.detect_adapter(prefer="sim", log=lambda *a: None))
     assert isinstance(e, elm327.SimSerialELM) and seen["port"] == "/dev/ttys999"
@@ -286,7 +286,7 @@ def test_pty_publishes_a_real_device_and_speaks_elm327(sim):
     """The strongest form of 'looks like a car': a real tty, opened by the
     real serial transport, answering ELM327."""
     import serial as pyserial
-    from hakake_sim import PtyServer
+    from vehicletap_sim import PtyServer
 
     pty = PtyServer(SimELM(sim=sim), monitor_window=0.1, log=lambda *a: None)
     path = pty.open()
@@ -304,7 +304,7 @@ def test_pty_publishes_a_real_device_and_speaks_elm327(sim):
 
 
 def test_pty_wire_format_is_what_serialelm_parses(sim):
-    from hakake_sim import PtyServer
+    from vehicletap_sim import PtyServer
 
     pty = PtyServer(SimELM(sim=sim), monitor_window=0.1, log=lambda *a: None)
     out = pty.feed(b"ATE0\rATSH 79B\rATCRA 7BB\r2101\r")
@@ -316,7 +316,7 @@ def test_pty_wire_format_is_what_serialelm_parses(sim):
 
 
 def test_pty_handles_a_command_split_across_reads(sim):
-    from hakake_sim import PtyServer
+    from vehicletap_sim import PtyServer
 
     pty = PtyServer(SimELM(sim=sim), log=lambda *a: None)
     assert pty.feed(b"AT") == b""              # nothing until the CR

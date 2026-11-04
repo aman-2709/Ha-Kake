@@ -39,7 +39,7 @@ CLOCKED = "degradation_arc"
 CLOCK = 3600.0
 
 from conftest import ROOT                                        # noqa: E402
-import hakake_sim                                                # noqa: E402
+import vehicletap_sim                                                # noqa: E402
 from simulator import TIME_SCALE_MAX, TIME_SCALE_MIN, make_sim   # noqa: E402
 
 
@@ -132,7 +132,7 @@ def test_overriding_a_scenarios_clock_leaves_a_note_a_human_will_read():
 
 def test_info_reports_the_clock(tmp_path):
     sim = make_sim(scenario=CLOCKED, speed=45.0)
-    httpd = hakake_sim.serve_control(sim, port=0, log=lambda *a: None)
+    httpd = vehicletap_sim.serve_control(sim, port=0, log=lambda *a: None)
     try:
         base = f"http://127.0.0.1:{httpd.server_address[1]}"
         with urllib.request.urlopen(base + "/sim/info", timeout=5) as r:
@@ -147,7 +147,7 @@ def test_info_reports_the_clock(tmp_path):
 
 
 def test_the_banner_prints_the_effective_multiplier():
-    p = subprocess.run([sys.executable, "hakake_sim.py", "--scenario", CLOCKED,
+    p = subprocess.run([sys.executable, "vehicletap_sim.py", "--scenario", CLOCKED,
                         "--speed", "30", "--no-control", "--duration", "0.3", "--report", "0"],
                        cwd=ROOT, capture_output=True, text=True, timeout=60)
     assert p.returncode == 0, p.stderr
@@ -156,7 +156,7 @@ def test_the_banner_prints_the_effective_multiplier():
 
 
 def test_json_mode_carries_the_multiplier_for_an_agent():
-    p = subprocess.run([sys.executable, "hakake_sim.py", "--scenario", CLOCKED,
+    p = subprocess.run([sys.executable, "vehicletap_sim.py", "--scenario", CLOCKED,
                         "--speed", "12", "--no-control", "--json",
                         "--duration", "0.3", "--report", "0"],
                        cwd=ROOT, capture_output=True, text=True, timeout=60)
@@ -174,7 +174,7 @@ def test_the_sim_transport_does_not_reintroduce_the_multiplication():
     else — which is why the rig can keep handing SimELM the same number."""
     from elm327 import SimELM
     sim = make_sim(scenario=CLOCKED)                # carries a clock_scale
-    sim.set_speed(120.0, outer=120.0)               # what hakake_sim.build_sim does
+    sim.set_speed(120.0, outer=120.0)               # what vehicletap_sim.build_sim does
     elm = SimELM(sim=sim, speed=120.0)
     elm.advance(0.0)
     before = sim.state()["t"]
@@ -183,11 +183,11 @@ def test_the_sim_transport_does_not_reintroduce_the_multiplication():
 
 
 def test_adapter_sim_speed_arrives_through_the_environment_without_multiplying(monkeypatch):
-    """`web/reader.py --speed X` sets HAKAKE_SIM_SPEED and elm327 builds the
+    """`web/reader.py --speed X` sets VEHICLETAP_SIM_SPEED and elm327 builds the
     transport from it. The core reads the same variable so the two roads meet
     at one number instead of multiplying."""
     from elm327 import SimELM
-    monkeypatch.setenv("HAKAKE_SIM_SPEED", "50")
+    monkeypatch.setenv("VEHICLETAP_SIM_SPEED", "50")
     sim = make_sim(scenario=CLOCKED)
     assert sim.time_scale() == 50.0, "the environment override beats the scenario clock"
     elm = SimELM(sim=sim, speed=50.0)
@@ -198,5 +198,5 @@ def test_adapter_sim_speed_arrives_through_the_environment_without_multiplying(m
 
 
 def test_an_unparseable_environment_speed_is_ignored_not_fatal(monkeypatch):
-    monkeypatch.setenv("HAKAKE_SIM_SPEED", "quickly")
+    monkeypatch.setenv("VEHICLETAP_SIM_SPEED", "quickly")
     assert make_sim(scenario=CLOCKED).time_scale() == CLOCK

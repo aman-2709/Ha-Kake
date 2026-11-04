@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ha-Kake SIMULATOR — control API</title>
+<title>VehicleTap SIMULATOR — control API</title>
 <!--
   SPDX-FileCopyrightText: 2026 David D. Karnowski
   SPDX-License-Identifier: AGPL-3.0-or-later
 
-  The control API's own landing page: a minimal fallback for `hakake_sim.py
+  The control API's own landing page: a minimal fallback for `vehicletap_sim.py
   --pty` runs and for anyone who opens the API port in a browser. The real
   cockpit is the dashboard's page, `GET /sim` (web/templates/sim.html +
   web/static/sim.js), which drives this API cross-origin and reuses the
@@ -58,7 +58,7 @@ li{margin:3px 0}
 </div>
 
 <div class="wrap">
-<h1>Ha-Kake simulator — control API
+<h1>VehicleTap simulator — control API
   <small>This port drives the model. The cockpit that looks like the car is the dashboard's <code>/sim</code> page.</small></h1>
 
 <div class="card hot" id="cockpit" hidden>
@@ -71,7 +71,7 @@ li{margin:3px 0}
   <p>Either command starts the simulated car and the dashboard whose <code>/sim</code> page is the cockpit.
     The first is the usual one; the second is this rig, over a pseudo-terminal, starting the dashboard itself:</p>
 <pre>python web/app.py --adapter sim --port 5055</pre>
-<pre>python hakake_sim.py --pty --scenario drive --launch-dashboard</pre>
+<pre>python vehicletap_sim.py --pty --scenario drive --launch-dashboard</pre>
   <p class="note">Both print the dashboard, cockpit and control-API URLs. Add <code>?dashboard=5055</code>
     (or a full URL) to this page's address and the link above appears.</p>
 </div>
@@ -95,7 +95,7 @@ curl -s -X POST localhost:PORT/sim/reset</pre>
     the scenario and the model free-runs.</p>
 </div>
 
-<p class="note" style="margin-top:18px">Ha-Kake is not affiliated with or endorsed by Nissan (see NOTICE).</p>
+<p class="note" style="margin-top:18px">VehicleTap is not affiliated with or endorsed by Nissan (see NOTICE).</p>
 </div>
 
 <script>

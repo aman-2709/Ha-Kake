@@ -508,7 +508,7 @@ def test_a_request_naming_another_host_is_refused(api):
 
 
 def test_extra_hosts_can_be_allowed_deliberately(api, monkeypatch):
-    monkeypatch.setenv("HAKAKE_ALLOWED_HOSTS", "carpi.lan, dash.home")
+    monkeypatch.setenv("VEHICLETAP_ALLOWED_HOSTS", "carpi.lan, dash.home")
     assert api.get("/api/status", headers={"Host": "carpi.lan:5000"}).status_code == 200
     assert api.get("/api/status", headers={"Host": "other.example"}).status_code == 403
 

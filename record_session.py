@@ -22,7 +22,7 @@ Two ways to get one:
 
   Convert a captured MQTT stream (docs/MQTT.md) — a drive recorded on the bridge
   with nothing on the laptop — into a fixture (no hardware):
-      mosquitto_sub -h <broker> -t 'hakake/leaf/car/#' -F '{"topic":"%t","payload":%p}' > drive.jsonl
+      mosquitto_sub -h <broker> -t 'vehicletap/leaf/car/#' -F '{"topic":"%t","payload":%p}' > drive.jsonl
       ./venv/bin/python record_session.py --from-mqtt drive.jsonl --vehicle leaf_ze0 --out drive.json
 
 The recorder polls exactly what the active profile declares (ITEMS/TARGETS),
@@ -304,11 +304,11 @@ def mqtt_stream_events(path):
 
 
 def from_mqtt(path, out=None, vehicle=None, period=1.0, notes="", log=print,
-              synthetic=False, adapter="hakake-bridge (mqtt)"):
+              synthetic=False, adapter="vehicletap-bridge (mqtt)"):
     """Build a replay fixture from a captured `rx/#` (and optionally `tx/uds`) stream.
 
     `synthetic=True` marks a stream that did not come from a car (the
-    simulated CAN rig's, `hakake_sim.py --pull`); replay reports it as such."""
+    simulated CAN rig's, `vehicletap_sim.py --pull`); replay reports it as such."""
     vehicle = get_vehicle(vehicle)
     period = max(0.05, float(period or 1.0))
     passive = []                    # (t, id_hex, line)
@@ -374,7 +374,7 @@ def from_mqtt(path, out=None, vehicle=None, period=1.0, notes="", log=print,
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Record (or derive) a Ha-Kake replay session fixture")
+    ap = argparse.ArgumentParser(description="Record (or derive) a VehicleTap replay session fixture")
     ap.add_argument("--derive", action="store_true",
                     help="build fixtures from raw captures in tests/fixtures (no hardware)")
     ap.add_argument("--vehicle", default=None, help="vehicle profile (default: the configured one)")

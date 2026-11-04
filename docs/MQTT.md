@@ -3,13 +3,13 @@ SPDX-FileCopyrightText: 2026 David D. Karnowski
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# Ha-Kake over MQTT — the wire protocol
+# VehicleTap over MQTT — the wire protocol
 
 This is a standalone specification. You can build a gauge, a logger or a
 bridge from it without reading any of the project's Python.
 
 **Status (2026-09-09): specified, implemented on both ends (`mqttsource.py`,
-`bridge/hakake_bridge.py`) and tested in-process against fake clients and
+`bridge/vehicletap_bridge.py`) and tested in-process against fake clients and
 python-can's virtual bus. Nothing has yet run against a real broker, a
 Raspberry Pi, or a car.** Treat every number that describes the bus as a
 design expectation until someone measures it.
@@ -18,7 +18,7 @@ design expectation until someone measures it.
 
 Two things travel over the broker, for two audiences:
 
-1. **CAN frames and read requests** — for a Ha-Kake reader ingesting a car
+1. **CAN frames and read requests** — for a VehicleTap reader ingesting a car
    that is somewhere else. A Raspberry Pi on the car's OBD port (`bridge/`)
    mirrors raw CAN frames to per-id topics and runs the reader's ISO-TP read
    requests. The reader (`--adapter mqtt`) sees the same raw lines it would
@@ -34,7 +34,7 @@ If you only want numbers, read §2, §3.6–3.7, §7 and §8 and skip the rest.
 
 ## 2. Topic tree
 
-`<prefix>` is chosen by whoever runs it (default `hakake/leaf`); `<bus>` is
+`<prefix>` is chosen by whoever runs it (default `vehicletap/leaf`); `<bus>` is
 `car` or `ev` — which physical bus the bridge is wired to, stated in its
 config, never guessed. `<ID>` is a CAN id in ELM327 style: **3 upper-case hex
 digits for 11-bit ids (`421`, `7BB`), 8 for 29-bit (`18DAF110`)**.
@@ -71,7 +71,7 @@ Each schema below is JSON Schema draft 2020-12.
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "hakake/mqtt/frame",
+  "$id": "vehicletap/mqtt/frame",
   "type": "object",
   "required": ["t", "id", "d"],
   "properties": {
@@ -102,7 +102,7 @@ on a slow link or a small Pi.
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "hakake/mqtt/batch",
+  "$id": "vehicletap/mqtt/batch",
   "type": "object",
   "required": ["t0", "frames"],
   "properties": {
@@ -147,7 +147,7 @@ frame is built.
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "hakake/mqtt/uds-request",
+  "$id": "vehicletap/mqtt/uds-request",
   "type": "object",
   "required": ["req", "tx", "rx", "data"],
   "properties": {
@@ -162,7 +162,7 @@ frame is built.
 }
 ```
 
-`req` is chosen by the sender — Ha-Kake uses four random hex digits — and only
+`req` is chosen by the sender — VehicleTap uses four random hex digits — and only
 has to be unique among that sender's in-flight requests. It is part of a
 topic, so it must not contain `/`, `+` or `#`. The pattern above is a rule for
 producers: the bridge enforces only that `req` is non-empty and free of those
@@ -180,7 +180,7 @@ three characters, and echoes anything else back on the ack topic unchanged.
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "hakake/mqtt/uds-ack",
+  "$id": "vehicletap/mqtt/uds-ack",
   "type": "object",
   "required": ["req", "ok"],
   "properties": {
@@ -196,7 +196,7 @@ three characters, and echoes anything else back on the ack topic unchanged.
 
 Because `rx/<ID>` is QoS 0 and the ack QoS 1, the ack can overtake the last
 response frame. A consumer should count frames of `rx` against `frames` for
-a short grace (Ha-Kake waits up to 0.25 s) before closing its capture window.
+a short grace (VehicleTap waits up to 0.25 s) before closing its capture window.
 A bridge in batch mode flushes its pending batch before publishing an ack.
 
 ### 3.5 status — `status` (retained)
@@ -210,7 +210,7 @@ an unplugged Pi or a lost WiFi link shows as offline within the keep-alive
 ```json
 {"v": 1, "online": true, "bus": "car", "bitrate": 500000, "listen_only": false,
  "fps": 188.5, "fps_out": 188.5, "dropped": 0, "queue": 0, "errors": 0, "refused": 0,
- "adapter": "socketcan can0", "bridge": "hakake-bridge 0.1",
+ "adapter": "socketcan can0", "bridge": "vehicletap-bridge 0.1",
  "filter": ["284", "292", "355", "358", "385", "421", "5A9", "5B3", "5C5", "60D", "764", "7BB"],
  "batch_ms": 0, "t": 1757440000.0}
 ```
@@ -218,7 +218,7 @@ an unplugged Pi or a lost WiFi link shows as offline within the keep-alive
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "hakake/mqtt/status",
+  "$id": "vehicletap/mqtt/status",
   "type": "object",
   "required": ["v", "online", "bus"],
   "properties": {
@@ -234,7 +234,7 @@ an unplugged Pi or a lost WiFi link shows as offline within the keep-alive
     "errors":      {"type": "integer", "description": "CAN error frames and bus errors since start"},
     "refused":     {"type": "integer", "description": "tx/uds requests refused since start (§5)"},
     "adapter":     {"type": "string", "description": "python-can interface and channel"},
-    "bridge":      {"type": "string", "description": "software name and version, e.g. \"hakake-bridge 0.1\""},
+    "bridge":      {"type": "string", "description": "software name and version, e.g. \"vehicletap-bridge 0.1\""},
     "filter":      {"oneOf": [{"const": "all"}, {"type": "array", "items": {"type": "string"}}], "description": "the ids the bridge mirrors"},
     "batch_ms":    {"type": "integer", "description": "0 = one message per frame"},
     "t":           {"type": "number", "description": "bridge clock, epoch seconds"}
@@ -256,7 +256,7 @@ profile's signal registry (§8).
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "hakake/mqtt/state",
+  "$id": "vehicletap/mqtt/state",
   "type": "object",
   "required": ["v", "status", "state_time"],
   "properties": {
@@ -299,7 +299,7 @@ One value, as a bare JSON scalar — the whole payload is `87.5`, `true` or
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "hakake/mqtt/signal",
+  "$id": "vehicletap/mqtt/signal",
   "type": ["number", "boolean", "string"],
   "description": "the value of record[key]; a list value publishes one topic per index, signal/<key>/<n>"
 }
@@ -331,7 +331,7 @@ but it will not "tick" while the value is stable — for a heartbeat, watch
 
 ## 5. Read-only, enforced on both ends
 
-Ha-Kake never writes to a car (`SECURITY.md`). Over MQTT that promise has two
+VehicleTap never writes to a car (`SECURITY.md`). Over MQTT that promise has two
 guards, and neither trusts the other:
 
 - **The bridge** — the only process that can actually transmit — accepts a
@@ -383,48 +383,48 @@ wherever the broker runs — plain MQTT, so nothing else to pass.
 
 ```bash
 # Is the bridge alive? Retained: you get an answer immediately, even if it is offline.
-mosquitto_sub -h <broker> -t 'hakake/leaf/car/status' -v
-# hakake/leaf/car/status {"v":1,"online":true,"bus":"car","bitrate":500000,...}
+mosquitto_sub -h <broker> -t 'vehicletap/leaf/car/status' -v
+# vehicletap/leaf/car/status {"v":1,"online":true,"bus":"car","bitrate":500000,...}
 
 # Watch one CAN id (the Leaf's 0x421 carries the gear lever):
-mosquitto_sub -h <broker> -t 'hakake/leaf/car/rx/421' -v
-# hakake/leaf/car/rx/421 {"t":1757440000.123456,"id":"421","d":"08 00 00"}
+mosquitto_sub -h <broker> -t 'vehicletap/leaf/car/rx/421' -v
+# vehicletap/leaf/car/rx/421 {"t":1757440000.123456,"id":"421","d":"08 00 00"}
 
 # Every frame on the bus (or the batches, if the bridge bundles):
-mosquitto_sub -h <broker> -t 'hakake/leaf/car/rx/#' -v
+mosquitto_sub -h <broker> -t 'vehicletap/leaf/car/rx/#' -v
 
 # Record a drive for later replay (docs/REPLAY.md): one JSON object per line
-mosquitto_sub -h <broker> -t 'hakake/leaf/car/#' -F '{"topic":"%t","payload":%p}' > drive.jsonl
+mosquitto_sub -h <broker> -t 'vehicletap/leaf/car/#' -F '{"topic":"%t","payload":%p}' > drive.jsonl
 python record_session.py --from-mqtt drive.jsonl --vehicle leaf_ze0 --out drive.json
 
 # Ask the Leaf's battery controller for group 01 (a read; anything else is refused):
-mosquitto_sub -h <broker> -t 'hakake/leaf/car/tx/uds/+' -t 'hakake/leaf/car/rx/7BB' -v &
-mosquitto_pub -h <broker> -t 'hakake/leaf/car/tx/uds' -q 1 \
+mosquitto_sub -h <broker> -t 'vehicletap/leaf/car/tx/uds/+' -t 'vehicletap/leaf/car/rx/7BB' -v &
+mosquitto_pub -h <broker> -t 'vehicletap/leaf/car/tx/uds' -q 1 \
   -m '{"req":"demo1","tx":"79B","rx":"7BB","data":"21 01","bs":0,"stmin":0,"timeout":2.0}'
-# hakake/leaf/car/rx/7BB {"t":...,"id":"7BB","d":"10 29 61 01 FF FF F9 E9"}
-# hakake/leaf/car/rx/7BB {"t":...,"id":"7BB","d":"21 02 87 FF FF FC 44 FF"}
+# vehicletap/leaf/car/rx/7BB {"t":...,"id":"7BB","d":"10 29 61 01 FF FF F9 E9"}
+# vehicletap/leaf/car/rx/7BB {"t":...,"id":"7BB","d":"21 02 87 FF FF FC 44 FF"}
 # ...
-# hakake/leaf/car/tx/uds/demo1 {"req":"demo1","ok":true,"frames":6,"bytes":41}
+# vehicletap/leaf/car/tx/uds/demo1 {"req":"demo1","ok":true,"frames":6,"bytes":41}
 
 # What a refusal looks like (mode 04 clears trouble codes; it never leaves the bridge):
-mosquitto_pub -h <broker> -t 'hakake/leaf/car/tx/uds' -q 1 \
+mosquitto_pub -h <broker> -t 'vehicletap/leaf/car/tx/uds' -q 1 \
   -m '{"req":"nope","tx":"7E0","rx":"7E8","data":"04"}'
-# hakake/leaf/car/tx/uds/nope {"req":"nope","ok":false,"error":"refused","reason":"service not in the read-only set"}
+# vehicletap/leaf/car/tx/uds/nope {"req":"nope","ok":false,"error":"refused","reason":"service not in the read-only set"}
 
 # The decoded car, whole record (retained; the last cycle appears at once):
-mosquitto_sub -h <broker> -t 'hakake/leaf/state'
+mosquitto_sub -h <broker> -t 'vehicletap/leaf/state'
 
 # One number:
-mosquitto_sub -h <broker> -t 'hakake/leaf/signal/soc'
+mosquitto_sub -h <broker> -t 'vehicletap/leaf/signal/soc'
 # 87.5
 
 # Every decoded value, one per line, as they change:
-mosquitto_sub -h <broker> -t 'hakake/leaf/signal/#' -v
-# hakake/leaf/signal/soc 87.5
-# hakake/leaf/signal/pack_v 393.2
-# hakake/leaf/signal/hv_current_a -1.25
-# hakake/leaf/signal/gear "P"
-# hakake/leaf/signal/cells/0 3.95
+mosquitto_sub -h <broker> -t 'vehicletap/leaf/signal/#' -v
+# vehicletap/leaf/signal/soc 87.5
+# vehicletap/leaf/signal/pack_v 393.2
+# vehicletap/leaf/signal/hv_current_a -1.25
+# vehicletap/leaf/signal/gear "P"
+# vehicletap/leaf/signal/cells/0 3.95
 ```
 
 ### 7.1 A Python gauge (paho-mqtt 2.x)
@@ -435,7 +435,7 @@ mosquitto_sub -h <broker> -t 'hakake/leaf/signal/#' -v
 import json, sys
 import paho.mqtt.client as mqtt
 
-BROKER, PREFIX, KEY = sys.argv[1], "hakake/leaf", "soc"
+BROKER, PREFIX, KEY = sys.argv[1], "vehicletap/leaf", "soc"
 
 def on_connect(client, userdata, flags, reason_code, properties):
     client.subscribe(f"{PREFIX}/signal/{KEY}")          # retained: the last value arrives at once
@@ -466,7 +466,7 @@ CDN; pin the version you tested.
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.10.1/mqtt.min.js"></script>
 <script>
   const client = mqtt.connect("ws://BROKER:9001");        // plain MQTT over WebSockets, LAN or tailnet
-  client.on("connect", () => client.subscribe("hakake/leaf/signal/soc"));
+  client.on("connect", () => client.subscribe("vehicletap/leaf/signal/soc"));
   client.on("message", (topic, payload) => {
     document.getElementById("soc").textContent = JSON.parse(payload.toString());
   });
@@ -487,7 +487,7 @@ record retained. So:
 - Treat a retained `signal/*` value as "last known", not "now", until a
   non-retained update follows.
 - A publisher that wants to remove a stale value publishes an empty retained
-  payload to the topic; Ha-Kake does not do this for signals (values are
+  payload to the topic; VehicleTap does not do this for signals (values are
   sticky in the reader's cache by design), so age is the thing to watch.
 
 ## 8. What the values mean
@@ -530,12 +530,12 @@ negligible: one record plus the changed signals per cycle.
 
 ## 10. Running it
 
-**Reader side** (`config.local.json`, gitignored; `HAKAKE_MQTT_HOST`,
-`HAKAKE_MQTT_PORT`, `HAKAKE_MQTT_PREFIX` and `HAKAKE_MQTT_BUS` override it —
+**Reader side** (`config.local.json`, gitignored; `VEHICLETAP_MQTT_HOST`,
+`VEHICLETAP_MQTT_PORT`, `VEHICLETAP_MQTT_PREFIX` and `VEHICLETAP_MQTT_BUS` override it —
 `subscribe` and `batch` have no environment override):
 
 ```json
-{"mqtt": {"host": "", "port": 1883, "prefix": "hakake/leaf", "bus": "car",
+{"mqtt": {"host": "", "port": 1883, "prefix": "vehicletap/leaf", "bus": "car",
           "subscribe": "auto", "batch": false}}
 ```
 

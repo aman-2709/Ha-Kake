@@ -1,6 +1,6 @@
 ---
 name: New vehicle profile
-about: You want Ha-Kake to support a car it doesn't know yet
+about: You want VehicleTap to support a car it doesn't know yet
 title: 'vehicle: '
 labels: vehicle-profile
 assignees: ''
@@ -38,7 +38,7 @@ Raw captures are worth more than guesses about meaning — a profile can't be
 merged without them, since no test may touch a real car.
 
 - [ ] I can capture raw frames from this car and attach them
-- [ ] I have an adapter that works with Ha-Kake (which one? )
+- [ ] I have an adapter that works with VehicleTap (which one? )
 - [ ] I can re-test on the car when asked to verify a decode
 - [ ] I can't capture — I'm reporting from documentation only
 

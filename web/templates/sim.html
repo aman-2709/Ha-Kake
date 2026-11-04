@@ -1,5 +1,5 @@
 {#- The simulator cockpit. Served by app.py at /sim; drives the simulator's
-    control API (hakake_sim.py) cross-origin from sim.js. Same tile engine and
+    control API (vehicletap_sim.py) cross-origin from sim.js. Same tile engine and
     the same four styled tiles as the dashboard, so what is driven here looks
     like what the dashboard shows.
 
@@ -22,10 +22,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-<title>Ha-Kake SIMULATOR — cockpit{% if veh.get("title") %} — {{ veh.get("title") }}{% endif %}</title>
+<title>VehicleTap SIMULATOR — cockpit{% if veh.get("title") %} — {{ veh.get("title") }}{% endif %}</title>
 <link rel="stylesheet" href="/static/vendor/gridstack.min.css">
 <link rel="stylesheet" href="/static/tilestudio.css">
-<link rel="stylesheet" href="/static/hakake.css">
+<link rel="stylesheet" href="/static/vehicletap.css">
 <link rel="stylesheet" href="/static/tiles.css">
 <link rel="stylesheet" href="/static/sim.css">
 </head>
@@ -41,7 +41,7 @@
 
 <div class="dash">
 <header class="top">
-  <h1>Ha-Kake simulator cockpit
+  <h1>VehicleTap simulator cockpit
     <small>{{ veh.get("title") ~ " · " if veh.get("title") }}drive the simulated car from here; watch the dashboard react. Drag a card title to rearrange.</small></h1>
   <div class="facts" id="facts"></div>
   <div class="tiles-menu">
@@ -59,7 +59,7 @@
   <p id="notice-text">This page drives a simulated car through its control API, and none was found.
     Start one with either command — the first is the usual one:</p>
   <pre>python web/app.py --adapter sim --port 5055</pre>
-  <pre>python hakake_sim.py --pty --scenario drive --launch-dashboard</pre>
+  <pre>python vehicletap_sim.py --pty --scenario drive --launch-dashboard</pre>
   <p>Both print the dashboard, cockpit and control-API URLs. A rig on an unusual port can be named
     directly: <code>/sim?control=http://127.0.0.1:PORT</code>.</p>
   <p class="waiting" id="notice-wait" hidden>The reader says this run is simulated — waiting for it to publish its control port…</p>

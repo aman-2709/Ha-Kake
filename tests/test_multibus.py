@@ -6,7 +6,7 @@ docs/ARCHITECTURE.md "Several adapters"), without a car:
 
   * the contract: ITEMS[i]["bus"], BUSES, SIGNALS `sources` / `tolerance`,
     and what the validator refuses;
-  * the adapters list: `--adapter X` shorthand, HAKAKE_ADAPTERS, the file,
+  * the adapters list: `--adapter X` shorthand, VEHICLETAP_ADAPTERS, the file,
     the per-entry overrides detect_adapter(cfg=) receives;
   * two fake transports polled concurrently with per-bus timing and target
     state; one bus dropping and reconnecting while the other keeps storing;
@@ -96,7 +96,7 @@ def env(isolated_reader, leaf_profile, tmp_path, monkeypatch):
     monkeypatch.setattr(rd, "BACKOFF_MIN", 0.01)
     monkeypatch.setattr(rd, "BACKOFF_MAX", 0.02)
     monkeypatch.setattr(rd, "ASLEEP_INTERVAL", 0.01)
-    monkeypatch.delenv("HAKAKE_ADAPTERS", raising=False)
+    monkeypatch.delenv("VEHICLETAP_ADAPTERS", raising=False)
     store = Store(str(tmp_path / "t.db"))
     yield tmp_path, store
     store.close()
@@ -180,7 +180,7 @@ def test_validator_checks_buses_and_sources():
 # ── the adapters list ────────────────────────────────────────────────────
 
 def test_adapter_entries_shorthand_file_and_env(leaf_profile, monkeypatch):
-    monkeypatch.delenv("HAKAKE_ADAPTERS", raising=False)
+    monkeypatch.delenv("VEHICLETAP_ADAPTERS", raising=False)
     assert rd.adapter_entries("usb") == [{"type": "usb", "bus": "car", "shorthand": True}]
     assert rd.adapter_entries(None, cfg={}) == [{"type": None, "bus": "car", "shorthand": True}]
     assert rd.entry_cfg(rd.adapter_entries("can")[0]) == {}          # the file's can_bus still names the bus
@@ -192,15 +192,15 @@ def test_adapter_entries_shorthand_file_and_env(leaf_profile, monkeypatch):
     assert rd.entry_cfg(ents[1]) == {"can_channel": "/dev/x", "can_bus": "ev"}
     m = rd.entry_cfg({"type": "mqtt", "bus": "ev", "host": "pi", "port": 1884, "can_bitrate": 1})
     assert m == {"mqtt": {"host": "pi", "port": 1884, "bus": "ev"}, "can_bitrate": 1}
-    monkeypatch.setenv("HAKAKE_ADAPTERS", json.dumps([{"type": "mqtt", "bus": "ev"}, {"type": "ble"}]))
+    monkeypatch.setenv("VEHICLETAP_ADAPTERS", json.dumps([{"type": "mqtt", "bus": "ev"}, {"type": "ble"}]))
     ents = rd.adapter_entries(None, cfg={"adapters": [{"type": "usb"}]})
     assert [(e["type"], e["bus"]) for e in ents] == [("ble", "car"), ("mqtt", "ev")]   # env wins
     assert rd.adapter_entries("replay")[0]["type"] == "replay"                       # --adapter wins over both
     for bad in ([{"type": "warp"}], [{"bus": "nope"}], [{"type": "usb"}, {"type": "ble"}], "usb", [1]):
-        monkeypatch.setenv("HAKAKE_ADAPTERS", json.dumps(bad))
+        monkeypatch.setenv("VEHICLETAP_ADAPTERS", json.dumps(bad))
         with pytest.raises(ValueError):
             rd.adapter_entries(None)
-    monkeypatch.setenv("HAKAKE_ADAPTERS", "{not json")
+    monkeypatch.setenv("VEHICLETAP_ADAPTERS", "{not json")
     with pytest.raises(ValueError):
         rd.adapter_entries(None)
 

@@ -264,7 +264,7 @@ def test_a_service_name_that_could_be_an_option_or_a_path_is_refused(name):
         ex.parse_args(["--out", "/x/o.json", "--service", name])
 
 
-@pytest.mark.parametrize("name", ["esync", "candump", "cangen", "ha-kake", "getty@tty1", "systemd-resolved.service", "a_b"])
+@pytest.mark.parametrize("name", ["esync", "candump", "cangen", "vehicletap", "getty@tty1", "systemd-resolved.service", "a_b"])
 def test_ordinary_unit_names_are_fine(name):
     assert ex.parse_args(["--out", "/x/o.json", "--service", name]).service == [name]
 

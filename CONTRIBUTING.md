@@ -29,8 +29,8 @@ here is what makes a contribution easy to merge.
   with `git config core.hooksPath .githooks`); there is no hosted CI, so the
   local run is the check — a pull request is verified the same way before merge. Home paths, adapter UUIDs,
   VINs, keys and session URLs never go public; personal captures live in
-  `research/`, which is gitignored. Mark a deliberately public line (like the
-  security contact) with `privacy-ok:<rule>` (e.g. `privacy-ok:e-mail`); a
+  `research/`, which is gitignored. Mark a deliberately public line (like a
+  published contact address) with `privacy-ok:<rule>` (e.g. `privacy-ok:e-mail`); a
   bare `privacy-ok` only silences warnings.
 - **Temperatures** are always presented as °C / °F together.
 - **Safety:** read-only. See SECURITY.md before adding any UDS service other
@@ -38,28 +38,19 @@ here is what makes a contribution easy to merge.
 
 ## Licensing — please read before you send a patch
 
-Ha-Kake ships under the **GNU Affero General Public License, version 3 or
+VehicleTap ships under the **GNU Affero General Public License, version 3 or
 later** (AGPL-3.0-or-later); see `LICENSE`. The documentation under `docs/`
 ships under **CC BY-SA 4.0**; see `LICENSE-DOCS`.
 
-**Contributions are offered to this project under the Apache License 2.0.** By
-submitting a pull request you are licensing your contribution under Apache-2.0,
-which permits the maintainer to include it in the AGPL-licensed project and in
-separately licensed builds. Documentation contributions are offered under
-CC BY-SA 4.0, matching the docs license.
+**Contributions are accepted under the same licenses.** By submitting a pull
+request you license your code under AGPL-3.0-or-later and your documentation
+under CC BY-SA 4.0: what comes in is what goes out. You keep your copyright.
+This project asks for no additional or proprietary relicensing rights and does
+not sell licenses.
 
-Why the inbound license differs from the outbound one, plainly: the maintainer
-owns the copyright in the existing code and sells proprietary licenses to
-companies that cannot ship under the AGPL (see `COMMERCIAL.md`). That is how
-this project gets funded. Apache-2.0 inbound keeps that possible — your patch
-can be folded into a commercially licensed build — without asking you to sign
-and return a CLA. You keep your copyright; you are granting a license, not
-assigning ownership. That is the whole trade, and you should know about it
-before you send code rather than after.
-
-If you are not comfortable with that, say so in the issue before writing the
-patch — a bug report, a fixture capture, or a clear description of the fix is
-still enormously useful and carries none of this.
+VehicleTap is based on Ha-Kake by David D. Karnowski. The original code remains
+his, under the same AGPL; if you need a commercial license for it, that is his to
+offer — ask the upstream project, https://github.com/davidkarnowski/Ha-Kake.
 
 ### Sign your commits off (DCO)
 

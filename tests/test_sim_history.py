@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 David D. Karnowski
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Bulk history generation (`hakake_sim.py --generate`).
+"""Bulk history generation (`vehicletap_sim.py --generate`).
 
 What these tests are guarding:
 

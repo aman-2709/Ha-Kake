@@ -55,7 +55,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 from elm327 import detect_adapter, set_uds_target, passive_capture, load_local_config  # noqa: E402
 from store import Store, utc_now_iso, ev_norm                       # noqa: E402
-import datadir               # where Ha-Kake keeps its own data (docs/DATA.md)  # noqa: E402
+import datadir               # where VehicleTap keeps its own data (docs/DATA.md)  # noqa: E402
+from util import env         # VEHICLETAP_* with the older names still read  # noqa: E402
 import mqttsource            # <prefix>/state + signal/<key> for gauges; no-op without mqtt.host  # noqa: E402
 from vehicles import (get_vehicle, peak_keys, buses, item_bus, primary_bus, source_specs,  # noqa: E402
                       tiles as vehicle_tiles, default_span, default_tiles)
@@ -751,7 +752,7 @@ def adapter_entries(pref=None, cfg=None):
     [{"type": "usb"|"ble"|"can"|"mqtt"|"replay"|"sim"|None, "bus": ..., ...}].
 
     `--adapter X` (pref) is the one-entry shorthand for the primary bus and
-    wins over any list. Otherwise the `adapters` list — HAKAKE_ADAPTERS (a
+    wins over any list. Otherwise the `adapters` list — VEHICLETAP_ADAPTERS (a
     JSON list) over config.local.json — names them; the entry's other keys
     are per-adapter overrides in the file's own shape (`can_channel`,
     `host`, `serial_port`, …). Neither → one auto-detected adapter on the
@@ -759,12 +760,12 @@ def adapter_entries(pref=None, cfg=None):
     if pref:
         return [{"type": pref, "bus": PRIMARY_BUS, "shorthand": True}]
     raw = None
-    js = os.environ.get("HAKAKE_ADAPTERS")
+    js = env("VEHICLETAP_ADAPTERS")
     if js:
         try:
             raw = json.loads(js)
         except json.JSONDecodeError as e:
-            raise ValueError(f"HAKAKE_ADAPTERS is not valid JSON: {e}")
+            raise ValueError(f"VEHICLETAP_ADAPTERS is not valid JSON: {e}")
     if raw is None:
         raw = (cfg if cfg is not None else load_local_config()).get("adapters")
     if not raw:
@@ -1729,7 +1730,7 @@ if __name__ == "__main__":
     ap.add_argument("--sim-control", type=int, default=None, metavar="PORT",
                     help="Serve the simulator control API on 127.0.0.1:PORT (--adapter sim)")
     ap.add_argument("--sim-serial", default=None, metavar="DEV",
-                    help="Talk to a simulator pty (hakake_sim.py --pty) over the real "
+                    help="Talk to a simulator pty (vehicletap_sim.py --pty) over the real "
                          "serial transport (--adapter sim)")
     ap.add_argument("--sim-can", nargs="?", const="car", choices=["car", "ev"], default=None,
                     metavar="BUS",
@@ -1744,7 +1745,7 @@ if __name__ == "__main__":
     if args.vehicle:
         set_vehicle(args.vehicle)
     if args.can_channel:
-        os.environ["HAKAKE_CAN_CHANNEL"] = args.can_channel     # can_config() reads it
+        os.environ["VEHICLETAP_CAN_CHANNEL"] = args.can_channel     # can_config() reads it
     pref = None if args.adapter == "auto" else args.adapter
     db = args.db
     if pref == "replay":
@@ -1753,38 +1754,38 @@ if __name__ == "__main__":
         db = db or replay_db()
         STATE_FILE = replay_state()        # keep the last real reading intact
         if args.fixture:
-            os.environ["HAKAKE_REPLAY_FIXTURE"] = os.path.abspath(args.fixture)
+            os.environ["VEHICLETAP_REPLAY_FIXTURE"] = os.path.abspath(args.fixture)
         if args.speed:
-            os.environ["HAKAKE_REPLAY_SPEED"] = str(args.speed)
+            os.environ["VEHICLETAP_REPLAY_SPEED"] = str(args.speed)
     if pref == "sim":
         # Same rule as replay: generated rows get their own database and their
         # own state file. The real ones are never opened in this mode.
         db = db or sim_db()
         STATE_FILE = sim_state()
         if args.scenario:
-            os.environ["HAKAKE_SIM_SCENARIO"] = args.scenario
+            os.environ["VEHICLETAP_SIM_SCENARIO"] = args.scenario
         if args.seed is not None:
-            os.environ["HAKAKE_SIM_SEED"] = str(args.seed)
+            os.environ["VEHICLETAP_SIM_SEED"] = str(args.seed)
         if args.speed:
-            os.environ["HAKAKE_SIM_SPEED"] = str(args.speed)
+            os.environ["VEHICLETAP_SIM_SPEED"] = str(args.speed)
         if args.sim_can and args.sim_serial:
             ap.error("--sim-can and --sim-serial are two different rigs; pick one")
         if args.sim_can:
-            os.environ["HAKAKE_SIM_CAN"] = args.sim_can
+            os.environ["VEHICLETAP_SIM_CAN"] = args.sim_can
         if args.sim_serial:
-            # The model lives in another process (hakake_sim.py --pty), and so
+            # The model lives in another process (vehicletap_sim.py --pty), and so
             # does its control API: --sim-control here names the port THAT rig
             # owns, so the dashboard can link to it. We must not start one.
-            os.environ["HAKAKE_SIM_SERIAL"] = args.sim_serial
+            os.environ["VEHICLETAP_SIM_SERIAL"] = args.sim_serial
             if args.sim_control:
-                os.environ["HAKAKE_SIM_CONTROL_URL"] = f"http://127.0.0.1:{args.sim_control}"
+                os.environ["VEHICLETAP_SIM_CONTROL_URL"] = f"http://127.0.0.1:{args.sim_control}"
         elif args.sim_control is not None:
             # In-process model: SimELM serves the API itself. 0 = a free port.
-            os.environ["HAKAKE_SIM_CONTROL_PORT"] = str(args.sim_control)
+            os.environ["VEHICLETAP_SIM_CONTROL_PORT"] = str(args.sim_control)
         if args.knob:
             sys.path.insert(0, os.path.dirname(DIR))
-            from hakake_sim import parse_knob_args        # noqa: E402
-            os.environ["HAKAKE_SIM_KNOBS"] = json.dumps(parse_knob_args(args.knob))
+            from vehicletap_sim import parse_knob_args        # noqa: E402
+            os.environ["VEHICLETAP_SIM_KNOBS"] = json.dumps(parse_knob_args(args.knob))
     try:
         asyncio.run(main(args.interval, pref, fast=args.fast, budget=args.budget, db=db))
     except KeyboardInterrupt:

@@ -18,12 +18,12 @@ assignees: ''
 - **Car** (year, model, market — e.g. 2012 Nissan Leaf SL, US):
 - **Adapter** (BLE / USB CH340 / other; make and model if known):
 - **OS and Python version**:
-- **Ha-Kake version or commit**:
+- **VehicleTap version or commit**:
 
 ## Does it reproduce in demo mode?
 
 <!-- Demo mode needs no car and no adapter: start the web app with
-     `--demo` (or `HAKAKE_DEMO=docs/demo`), which serves the canned
+     `--demo` (or `VEHICLETAP_DEMO=docs/demo`), which serves the canned
      state/history snapshots. Say yes / no / not applicable. This is the single most useful line in the report: it
      tells us whether the bug is in the UI and decode path or in the
      hardware conversation. -->

@@ -66,7 +66,7 @@ def test_dockerignore_is_the_same_rules_as_containerignore():
 
 # Files the image needs, and untracked private files that may sit inside the copied directories.
 _WANTED = ["requirements.txt", "LICENSE", "NOTICE", "app_root.py", "vehicles/__init__.py", "simulator/model.py",
-           "simulator/scenarios/idle.json", "web/app.py", "web/templates/index.html", "web/static/hakake.css",
+           "simulator/scenarios/idle.json", "web/app.py", "web/templates/index.html", "web/static/vehicletap.css",
            "web/static/vendor/x.js", "web/layouts/tiles.leaf_ze0.json"]
 _PRIVATE = [".env", "config.local.json", "research/notes.md", "legacy/old.py", "tests/t.py", "web/sim_x.db",
             "simulator/private.log", "web/static/.env", "vehicles/local.pem", "simulator/secret.key",
@@ -115,20 +115,20 @@ def test_the_effective_ignore_rules_keep_private_files_out_of_the_image_context(
 
 
 def test_quadlet_runs_the_simulator_on_host_networking_with_the_data_volume():
-    unit = _lines("deploy/quadlet/ha-kake.container")
+    unit = _lines("deploy/quadlet/vehicletap.container")
     assert "Network=host" in unit                       # the app binds loopback only (SECURITY.md)
     assert not any(ln.startswith("PublishPort=") for ln in unit)
     assert "Exec=python web/app.py --adapter sim" in unit
-    assert "Environment=HAKAKE_DATA_DIR=/data" in unit
+    assert "Environment=VEHICLETAP_DATA_DIR=/data" in unit
     assert "ReadOnly=true" in unit
-    assert [ln for ln in unit if ln.startswith("Volume=")] == ["Volume=ha-kake.volume:/data"]
-    assert os.path.exists(os.path.join(ROOT, "deploy", "quadlet", "ha-kake.volume"))
-    assert "HAKAKE_DATA_DIR=/data" in " ".join(_lines("Containerfile"))
+    assert [ln for ln in unit if ln.startswith("Volume=")] == ["Volume=vehicletap.volume:/data"]
+    assert os.path.exists(os.path.join(ROOT, "deploy", "quadlet", "vehicletap.volume"))
+    assert "VEHICLETAP_DATA_DIR=/data" in " ".join(_lines("Containerfile"))
 
 
 # ── the opt-in OTA status mount (docs/OTA.md) ──
 
-OTA_DROPIN = "deploy/quadlet/optional/ha-kake.container.d/10-ota.conf"
+OTA_DROPIN = "deploy/quadlet/optional/vehicletap.container.d/10-ota.conf"
 
 
 def test_the_ota_dropin_hands_the_container_a_directory_read_only_and_changes_nothing_else():
@@ -142,7 +142,7 @@ def test_the_ota_dropin_hands_the_container_a_directory_read_only_and_changes_no
     host, inside, options = volumes[0][len("Volume="):].split(":")
     assert host.startswith("/") and not host.endswith(".json"), "mount the directory"
     assert "ro" in options.split(","), "the container only reads it"
-    assert [ln for ln in lines if ln.startswith("Environment=")] == [f"Environment=HAKAKE_OTA_FILE={inside}/ota_status.json"]
+    assert [ln for ln in lines if ln.startswith("Environment=")] == [f"Environment=VEHICLETAP_OTA_FILE={inside}/ota_status.json"]
     assert len(lines) == 3, lines                         # [Container], the Volume, the Environment: nothing else
     # and the hardening the shipped unit sets is not touched from here
     assert not any(ln.startswith(("Network=", "PublishPort=", "PodmanArgs=", "AddCapability=", "SecurityLabel",
@@ -150,8 +150,8 @@ def test_the_ota_dropin_hands_the_container_a_directory_read_only_and_changes_no
 
 
 def test_the_ota_dropin_is_not_in_the_directory_the_install_command_copies_from():
-    assert not os.path.exists(os.path.join(ROOT, "deploy", "quadlet", "ha-kake.container.d"))
-    assert [ln for ln in _lines("deploy/quadlet/ha-kake.container") if ln.startswith("Volume=")] == ["Volume=ha-kake.volume:/data"]
+    assert not os.path.exists(os.path.join(ROOT, "deploy", "quadlet", "vehicletap.container.d"))
+    assert [ln for ln in _lines("deploy/quadlet/vehicletap.container") if ln.startswith("Volume=")] == ["Volume=vehicletap.volume:/data"]
 
 
 def test_the_ota_files_the_image_needs_are_copied_and_the_exporter_stays_on_the_host():

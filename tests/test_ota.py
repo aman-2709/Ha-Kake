@@ -68,12 +68,12 @@ def test_format_time_round_trips():
 # ── where the file is ──
 
 def test_the_path_is_the_environment_variable_else_the_data_folder(monkeypatch, tmp_path):
-    monkeypatch.delenv("HAKAKE_OTA_FILE", raising=False)
+    monkeypatch.delenv("VEHICLETAP_OTA_FILE", raising=False)
     import datadir
     assert ota.path() == datadir.path("ota_status.json")
-    monkeypatch.setenv("HAKAKE_OTA_FILE", str(tmp_path / "elsewhere.json"))
+    monkeypatch.setenv("VEHICLETAP_OTA_FILE", str(tmp_path / "elsewhere.json"))
     assert ota.path() == str(tmp_path / "elsewhere.json")
-    monkeypatch.setenv("HAKAKE_OTA_FILE", "")                 # empty is unset (util.env)
+    monkeypatch.setenv("VEHICLETAP_OTA_FILE", "")                 # empty is unset (util.env)
     assert ota.path() == datadir.path("ota_status.json")
 
 

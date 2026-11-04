@@ -36,7 +36,7 @@ def api(tmp_path, monkeypatch, leaf_profile):
     monkeypatch.setattr(webapp, "DEMO", None)
     monkeypatch.setattr(webapp, "STATE_FILE", str(tmp_path / "state.json"))
     f = tmp_path / "ota_status.json"
-    monkeypatch.setenv("HAKAKE_OTA_FILE", str(f))
+    monkeypatch.setenv("VEHICLETAP_OTA_FILE", str(f))
     webapp.app.config["TESTING"] = True
 
     def write(obj):
@@ -220,7 +220,7 @@ def test_table_headers_never_break_inside_a_word():
 def test_the_page_loads_the_escape_helper_before_its_own_script(api):
     html = api[0].get("/ota").get_data(as_text=True)
     assert html.index('src="/static/html.js"') < html.index('src="/static/ota.js"')
-    assert "/static/hakake.css" in html and "/static/ota.css" in html
+    assert "/static/vehicletap.css" in html and "/static/ota.css" in html
 
 
 def test_the_page_loads_nothing_from_outside_this_server(api):

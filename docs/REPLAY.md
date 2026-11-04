@@ -76,9 +76,13 @@ not respond to your driving.
 
 ## The session-fixture format
 
+Sessions recorded before the rename carry `"hakake_replay": 1` where this has `"vehicletap_replay": 1`. Both are
+read, so no recording needs touching; only the new key is written. The recordings in `tests/fixtures/` are left as
+they were captured.
+
 ```json
 {
-  "hakake_replay": 1,
+  "vehicletap_replay": 1,
   "vehicle": "leaf_ze0",
   "title": "2012 Nissan Leaf (ZE0)",
   "adapter": "ELM327 v1.5",
