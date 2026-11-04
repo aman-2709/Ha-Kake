@@ -204,8 +204,6 @@ def store():
 def vehicle_ctx():
     """What the page chrome needs to know about the active profile.
 
-    `logo` is an optional profile attribute (LOGO = "leaf" restores the leaf
-    silhouette on the Leaf); anything else gets the neutral dial mark.
     `level_key` is the signal the mark fills with — the first level-ish signal
     the profile's registry actually declares, or None for a static mark.
     """
@@ -217,9 +215,7 @@ def vehicle_ctx():
         pack = {"module": v.PACK_MODULE, "case": v.PACK_CASE,
                 "layout": v.PACK_LAYOUT, "sensors": getattr(v, "PACK_SENSORS", []),
                 "modes": getattr(v, "PACK_MODES", [])}
-    return {"name": v.NAME, "title": v.TITLE,
-            "logo": getattr(v, "LOGO", "dial"),
-            "level_key": level, "pack": pack}
+    return {"name": v.NAME, "title": v.TITLE, "level_key": level, "pack": pack}
 
 
 @app.route("/")

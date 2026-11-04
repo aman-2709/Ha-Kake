@@ -28,6 +28,7 @@ Ha-Kake and its leaf logo are trademarks of the original author, who asks forks 
 | MQTT topic root `hakake/leaf` (default) | `vehicletap/leaf` | **breaking if you rely on the default**: a bridge and a reader on different versions see nothing until both are updated, or set `prefix` explicitly to the old root |
 | JSON schema ids `hakake/mqtt/*`, bridge name `hakake-bridge` | `vehicletap/mqtt/*`, `vehicletap-bridge` | only if you match on them |
 | Container image, Quadlet unit and volume `ha-kake` | `vehicletap` | rename them on a board that has the old ones |
+| the header's leaf mark and the profile's `LOGO` field | a neutral dial for every vehicle; `LOGO` is no longer read | nothing, unless your own profile sets `LOGO`: it is ignored |
 | `web/static/hakake.css` | `web/static/vehicletap.css` | only if you link it |
 
 The commercial-licensing offer in the original project is the original author's to make, so it is not carried

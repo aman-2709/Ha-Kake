@@ -59,7 +59,7 @@ Everything vehicle-specific lives in one module per vehicle under
 `vehicles/` — its items and UDS/passive targets, built-in tiles, signal
 registry entries, the `HISTORY_COLS` it wants as real database columns,
 `configure(elm)`, `decode(responses)`, and an optional sensor policy (the
-Leaf's current fusion). `NAME`, `TITLE` and an optional `LOGO` name the car
+Leaf's current fusion). `NAME` and `TITLE` name the car
 in the page chrome. `reader.set_vehicle()` binds the active profile to the
 reader's globals and the signal registry; `--vehicle` on `app.py` /
 `reader.py`, `VEHICLETAP_VEHICLE`, or `"vehicle"` in `config.local.json`
@@ -429,8 +429,7 @@ pulls (`Store.pulls()`, `/api/bookmarks/auto`), and its playhead is grabbable.
 
 `web/templates/index.html` (no framework) is rendered with the active
 profile's chrome: the page title and header subtitle come from `TITLE`, the
-wordmark silhouette from `LOGO` (`leaf_ze0` sets `"leaf"`; a profile without
-one gets a neutral dial), and the mark's level fill appears only when the
+wordmark is the same neutral dial for every vehicle, and its level fill appears only when the
 profile's registry declares a level signal (`soc`, else `fuel_pct`).
 
 The same file holds the twelve built-in tiles — SOC, health, temps,
