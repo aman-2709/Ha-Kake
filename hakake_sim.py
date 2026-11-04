@@ -85,6 +85,8 @@ _ROOT = os.path.dirname(os.path.abspath(__file__))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
+from util import env  # noqa: E402
+
 DEFAULT_CONTROL_PORT = 8099
 DEFAULT_DASHBOARD_PORT = 5055        # what --launch-dashboard and the printed command use
 MAX_BODY = 256 * 1024
@@ -314,7 +316,7 @@ def make_handler(sim, lock, log):
         # ── plumbing ─────────────────────────────────────────────────────
 
         def log_message(self, fmt, *args):        # quiet unless asked
-            if os.environ.get("HAKAKE_SIM_HTTP_LOG"):
+            if env("HAKAKE_SIM_HTTP_LOG"):
                 log("  [control] " + (fmt % args))
 
         def _send(self, code, payload):

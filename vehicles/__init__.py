@@ -268,7 +268,8 @@ def peak_keys(mod):
 
 def get_vehicle(name=None):
     global _active
-    name = name or os.environ.get("HAKAKE_VEHICLE") or _config_vehicle() or DEFAULT
+    from util import env     # here, not at the top: `python vehicles/__init__.py` starts before the repo root is on sys.path
+    name = name or env("HAKAKE_VEHICLE") or _config_vehicle() or DEFAULT
     if name in _cache:
         _active = _cache[name]
         return _cache[name]

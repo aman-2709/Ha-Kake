@@ -54,6 +54,8 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from util import env  # noqa: E402
+
 # ELM327 ATBRD divisors: baud = 4_000_000 / divisor
 BRD_DIVISOR = {
     9600: 0x1A0, 19200: 0xD0, 38400: 0x68, 57600: 0x45,
@@ -64,7 +66,7 @@ BRD_DIVISOR = {
 def find_port(explicit=None):
     if explicit:
         return explicit
-    forced = os.environ.get("HAKAKE_SERIAL_PORT")
+    forced = env("HAKAKE_SERIAL_PORT")
     if forced:
         return forced
     for pattern in ("/dev/tty.usbserial-*", "/dev/cu.usbserial-*"):

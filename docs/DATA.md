@@ -11,9 +11,9 @@ database there (the schema is created on first use).
 
 | Platform | Default data folder |
 |---|---|
-| macOS | `~/Library/Application Support/Ha-Kake` |
-| Linux and others | `$XDG_DATA_HOME/ha-kake`, else `~/.local/share/ha-kake` |
-| Windows | `%APPDATA%\Ha-Kake` |
+| macOS | `~/Library/Application Support/VehicleTap` |
+| Linux and others | `$XDG_DATA_HOME/vehicletap`, else `~/.local/share/vehicletap` |
+| Windows | `%APPDATA%\VehicleTap` |
 
 Set `HAKAKE_DATA_DIR` to use another folder, for example one folder per car:
 
@@ -22,6 +22,12 @@ HAKAKE_DATA_DIR=~/cars/my-leaf ./venv/bin/python web/app.py
 ```
 
 The startup banner prints the folder in use (`data folder: …`). The folder is created owner-only.
+
+**An install from before the rename.** The folder used to be called `Ha-Kake` (`ha-kake` on Linux). If that folder
+exists and the new one does not, the app keeps using the old one exactly as it is: nothing is created beside it and
+nothing is moved, copied or deleted, so your history stays where it was. If both exist, the new one is used and the
+startup banner says the old one is not. To switch on purpose, stop the app and move the files yourself, or point
+`HAKAKE_DATA_DIR` at the folder you want.
 
 ## What is in it
 

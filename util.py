@@ -14,16 +14,27 @@ helpers, so its long-standing callers are unaffected.
 import os
 
 
+ENV_PREFIX = "VEHICLETAP_"
+OLD_ENV_PREFIX = "HAKAKE_"      # the project's name until 2026-11; still read, see env()
+
+
 def env(name, *aliases, default=None):
     """Environment variable, with backward-compatible older names.
 
-    The project standardised on a ``HAKAKE_`` prefix when it grew past one car
-    (``HAKAKE_VEHICLE`` came first). The older ``LEAF_*`` names still work —
-    silently, because they are documented in the README and in use on the
-    owner's machine — but the new name wins when both are set. Empty is
-    treated as unset, so ``HAKAKE_X= LEAF_X=abc`` still finds ``abc``.
+    Names are tried in this order, and the first non-empty one wins:
+
+    1. ``name`` itself.
+    2. If ``name`` starts with ``VEHICLETAP_``, the same name with the ``HAKAKE_`` prefix the project used
+       before it was renamed, so an existing setup keeps working with no call site carrying an alias for it.
+    3. The explicit ``aliases``, such as the ``LEAF_*`` names from when it was a one-car tool. Those still
+       work too, silently, because they are documented in the README and in use on the owner's machine.
+
+    Empty is treated as unset, so ``VEHICLETAP_X= HAKAKE_X=abc`` still finds ``abc``.
     """
-    for n in (name,) + aliases:
+    names = [name]
+    if name.startswith(ENV_PREFIX):
+        names.append(OLD_ENV_PREFIX + name[len(ENV_PREFIX):])
+    for n in (*names, *aliases):
         v = os.environ.get(n)
         if v:
             return v

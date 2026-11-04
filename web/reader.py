@@ -56,6 +56,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 from elm327 import detect_adapter, set_uds_target, passive_capture, load_local_config  # noqa: E402
 from store import Store, utc_now_iso, ev_norm                       # noqa: E402
 import datadir               # where Ha-Kake keeps its own data (docs/DATA.md)  # noqa: E402
+from util import env         # HAKAKE_* with the older names still read  # noqa: E402
 import mqttsource            # <prefix>/state + signal/<key> for gauges; no-op without mqtt.host  # noqa: E402
 from vehicles import (get_vehicle, peak_keys, buses, item_bus, primary_bus, source_specs,  # noqa: E402
                       tiles as vehicle_tiles, default_span, default_tiles)
@@ -759,7 +760,7 @@ def adapter_entries(pref=None, cfg=None):
     if pref:
         return [{"type": pref, "bus": PRIMARY_BUS, "shorthand": True}]
     raw = None
-    js = os.environ.get("HAKAKE_ADAPTERS")
+    js = env("HAKAKE_ADAPTERS")
     if js:
         try:
             raw = json.loads(js)
