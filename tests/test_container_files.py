@@ -124,3 +124,37 @@ def test_quadlet_runs_the_simulator_on_host_networking_with_the_data_volume():
     assert [ln for ln in unit if ln.startswith("Volume=")] == ["Volume=ha-kake.volume:/data"]
     assert os.path.exists(os.path.join(ROOT, "deploy", "quadlet", "ha-kake.volume"))
     assert "HAKAKE_DATA_DIR=/data" in " ".join(_lines("Containerfile"))
+
+
+# ── the opt-in OTA status mount (docs/OTA.md) ──
+
+OTA_DROPIN = "deploy/quadlet/optional/ha-kake.container.d/10-ota.conf"
+
+
+def test_the_ota_dropin_hands_the_container_a_directory_read_only_and_changes_nothing_else():
+    """Optional, so the shipped unit keeps working on a board with no exporter (a bind mount whose source does
+    not exist stops a unit from starting). A directory, not the file: an atomic replace gives the file a new
+    inode, and a single-file bind mount would keep showing the old one."""
+    lines = _lines(OTA_DROPIN)
+    assert lines[0] == "[Container]" and not any(ln.startswith("[") for ln in lines[1:])
+    volumes = [ln for ln in lines if ln.startswith("Volume=")]
+    assert len(volumes) == 1
+    host, inside, options = volumes[0][len("Volume="):].split(":")
+    assert host.startswith("/") and not host.endswith(".json"), "mount the directory"
+    assert "ro" in options.split(","), "the container only reads it"
+    assert [ln for ln in lines if ln.startswith("Environment=")] == [f"Environment=HAKAKE_OTA_FILE={inside}/ota_status.json"]
+    assert len(lines) == 3, lines                         # [Container], the Volume, the Environment: nothing else
+    # and the hardening the shipped unit sets is not touched from here
+    assert not any(ln.startswith(("Network=", "PublishPort=", "PodmanArgs=", "AddCapability=", "SecurityLabel",
+                                  "Exec=", "ReadOnly=", "User=", "NoNewPrivileges=", "DropCapability=")) for ln in lines)
+
+
+def test_the_ota_dropin_is_not_in_the_directory_the_install_command_copies_from():
+    assert not os.path.exists(os.path.join(ROOT, "deploy", "quadlet", "ha-kake.container.d"))
+    assert [ln for ln in _lines("deploy/quadlet/ha-kake.container") if ln.startswith("Volume=")] == ["Volume=ha-kake.volume:/data"]
+
+
+def test_the_ota_files_the_image_needs_are_copied_and_the_exporter_stays_on_the_host():
+    copied = [s for sources in _copy_sources() for s in sources]
+    assert "web/*.py" in copied and "web/templates/" in copied and "web/static/" in copied
+    assert not any(s.startswith("tools") for s in copied), "the exporter runs on the host, not in the image"

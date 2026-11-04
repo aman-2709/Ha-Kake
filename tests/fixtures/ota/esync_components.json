@@ -1,0 +1,12 @@
+{
+  "RHIVOS-APP-CANDUMP": {
+    "version": "3.4.0",
+    "transactionDigest": "sha256:b725f5b13fc4becc93f2385f31d73492925654432f58221f198ca5f766bacbe8",
+    "installedAt": "2026-07-24T20:16:34Z"
+  },
+  "RHIVOS-OS-AUTOSD": {
+    "version": "",
+    "transactionDigest": "sha256:c00fdb1486e13a56507f28b5d232ddcb5fe546876b0a255544b77a797f4a83f0",
+    "installedAt": "2026-07-31T21:22:36Z"
+  }
+}

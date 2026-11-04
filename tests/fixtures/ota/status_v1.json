@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "generated_at": "2026-10-28T03:30:00Z",
+  "os": {
+    "booted": {
+      "version": "4.4.0",
+      "digest": "sha256:b81169ec3f3bdc788c379bda293060bd9078cdde78804958b8979d7e24cce1de",
+      "built_at": "2026-08-07T23:03:53Z"
+    },
+    "staged": null,
+    "rollback": {
+      "version": "4.5.0",
+      "digest": "sha256:df1138afa8e1884c523cdc527e78ed3f3174fc14e0e477f63f8cf7b4e8914cbc",
+      "built_at": "2026-08-07T23:03:54Z"
+    },
+    "rollback_queued": true,
+    "kernel": "6.12.0-251.el10iv.aarch64",
+    "booted_at": "2026-10-27T23:47:19Z"
+  },
+  "components": [
+    {
+      "id": "RHIVOS-APP-CANDUMP",
+      "version": "3.4.0",
+      "transaction_digest": "sha256:b725f5b13fc4becc93f2385f31d73492925654432f58221f198ca5f766bacbe8",
+      "installed_at": "2026-08-04T16:32:00Z"
+    },
+    {
+      "id": "RHIVOS-OS-AUTOSD",
+      "version": "",
+      "transaction_digest": "sha256:c00fdb1486e13a56507f28b5d232ddcb5fe546876b0a255544b77a797f4a83f0",
+      "installed_at": "2026-07-31T21:22:00Z"
+    }
+  ],
+  "services": [
+    {
+      "name": "esync",
+      "active_state": "active",
+      "sub_state": "running",
+      "since": "2026-10-27T23:47:46Z",
+      "restarts": 0
+    },
+    {
+      "name": "candump",
+      "active_state": "active",
+      "sub_state": "running",
+      "since": "2026-10-27T23:47:32Z",
+      "restarts": 0
+    },
+    {
+      "name": "cangen",
+      "active_state": "active",
+      "sub_state": "running",
+      "since": "2026-10-27T23:47:32Z",
+      "restarts": 0
+    }
+  ],
+  "health": {
+    "selinux": "enforcing",
+    "ntp_synced": true,
+    "var_used_pct": 25.0,
+    "var_free_bytes": 22000000000
+  }
+}

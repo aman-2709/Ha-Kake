@@ -21,6 +21,9 @@ API:
   /api/console?since=&kind=&ids=&limit=
                                  the raw output console's entries after an opaque
                                  cursor (docs/CONSOLE.md); a window, not a capture
+  /api/ota                       the board's OS-update status as a host process wrote it, cleaned
+                                 (docs/OTA.md); always 200, its `status` says waiting/invalid/stale/ok
+  /ota                           the page that shows it (read-only)
   /api/tiles                     GET/PUT tile layout (drives what the reader polls)
   /api/signals                   signal registry, colour scales, tile types
   /api/layouts[/<name>[/load]]   named layouts (save / load / delete)
@@ -67,6 +70,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import datadir                           # noqa: E402  (where the data lives, docs/DATA.md)
 from store import Store                 # noqa: E402
 import console as consolelog           # the raw output console's file reader  # noqa: E402
+import ota                               # the host's OTA status file, whitelisted  # noqa: E402
 import dtc                               # noqa: E402  (trouble-code dictionary; absent is normal)
 import reader                            # noqa: E402  (vehicle-bound globals: reader.ITEMS etc.)
 import signals                           # noqa: E402
@@ -544,6 +548,30 @@ def api_console():
     cursor = str(entries[-1]["seq"]) if entries else str(since)
     return jsonify({"entries": entries, "cursor": cursor, "stats": stats,
                     "kinds": list(consolelog.KINDS)})
+
+
+# ── the board's OTA status (docs/OTA.md) ─────────────────────────────────
+
+@app.route("/ota")
+def ota_page():
+    """The page. It carries no board data itself: ota.js asks /api/ota and writes text."""
+    return render_template("ota.html")
+
+
+@app.route("/api/ota")
+def api_ota():
+    """What the host wrote about the booted, staged and rollback images, the update components and the
+    services around them. The file is not ours -- a process outside the container writes it -- so this serves
+    `ota.read()`'s whitelisted form, never the bytes. Always 200: a missing, broken or old file is a
+    `status` in the body, which the page words, not an error. Nothing here can change the board."""
+    if DEMO:
+        canned = _demo("ota.json", None)
+        if not isinstance(canned, dict):
+            return jsonify({"status": "waiting", "age_s": None, "demo": True,
+                            "message": "demo mode has no OTA file"})
+        canned["generated_at"] = ota.format_time(time.time())      # keep demo looking live, like /api/status
+        return jsonify(dict(ota.view(canned), demo=True))
+    return jsonify(ota.read())
 
 
 @app.route("/api/cells")

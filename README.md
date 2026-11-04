@@ -11,7 +11,7 @@ decodes far more than the OBD-II standard carries — battery state of health,
 **the method used to find all of that is documented in full**, so you can do
 the same on a car nobody has touched yet.
 
-![status](https://img.shields.io/badge/tests-1290%20passing-brightgreen) ![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/davidkarnowski/Ha-Kake)
+![status](https://img.shields.io/badge/tests-1572%20passing-brightgreen) ![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/davidkarnowski/Ha-Kake)
 
 ## About This Fork
 
@@ -373,6 +373,9 @@ stays the one-adapter shorthand. `docs/ARCHITECTURE.md` "Several adapters".
 | `web/static/tilestudio.js` | Tile Studio: per-tile menus, add-tile, renderers, drag-to-reorder |
 | `web/console.py`, `web/static/console.js` | the raw output console: the bounded, decimating ring the reader fills and the terminal tile that reads it (the pure half node-tested) |
 | `docs/CONSOLE.md` | **the raw output console: what each transport can show, why it decimates, and why it is a window and not a capture** |
+| `web/ota.py`, `web/templates/ota.html`, `web/static/ota.js` | the board's OS-update status: the whitelisting reader for the file a host process writes, and the read-only `/ota` page (the pure half node-tested) |
+| `tools/ota_export.py` | the host-side exporter for it: reads `bootc`, eSync's state and `systemctl`, writes the file atomically (standalone, read-only) |
+| `docs/OTA.md` | **the OTA status file: its schema, what the reader answers, and what is deliberately never in it** |
 | `web/static/alerts.js` | audible alerts: the Web Audio tone generator and the threshold rule engine (pure, node-tested) |
 | `web/static/pack3d.js`, `web/static/pack_layout.js` | the 3D battery pack tile: the three.js module, and the pure geometry / colour-scale layer it draws from (node-tested) |
 | `web/static/vendor/` | gridstack.js and three.js, vendored with their MIT licences — nothing loads from a CDN |
@@ -423,6 +426,8 @@ stays the one-adapter shorthand. `docs/ARCHITECTURE.md` "Several adapters".
 | `GET/PUT /api/tiles` | tile order, enabled, span, type, options (including each tile's `opts.alerts` rules), user tiles (drives what the reader polls) |
 | `GET /api/signals` | signal registry, colour scales, tile types, items (each with the `can_id` it puts on the wire), tile defaults, which signals each built-in tile shows (`tile_signals`) |
 | `GET /api/console?since=&kind=&ids=&limit=` | the raw output console's entries after an opaque cursor, with what was dropped and why — a window on the transport, never a capture ([`docs/CONSOLE.md`](docs/CONSOLE.md)) |
+| `GET /api/ota` | the board's OS-update status — booted / staged / rollback image, update components, services, health — from a file a host process writes, whitelisted and cleaned; always 200, `status` is `waiting`, `invalid`, `stale` or `ok` ([`docs/OTA.md`](docs/OTA.md)) |
+| `GET /ota` | the page that shows it (always renders; read-only) |
 | `GET /api/bookmarks?from&to`, `PUT /api/bookmarks {t?, label?}`, `DELETE /api/bookmarks?t=` | timeline flags in `<data>/bookmarks.json` (gitignored); `t` defaults to now |
 | `GET /api/bookmarks/auto?from&to&amps=40` | discharge pulls found in the readings (runs below −amps A), as candidate flags |
 | `GET /api/layouts`, `PUT/DELETE /api/layouts/<name>`, `POST /api/layouts/<name>/load` | named layouts saved in `<data>/layouts.json` (gitignored); names are trimmed to 60 characters, the same way for save, load and delete |
@@ -484,8 +489,20 @@ Being on the bus at all has consequences worth knowing:
   **do not operate the laptop while driving.** The dashboard is a passenger's
   tool.
 
-## Status (2026-10-03)
+## Status (2026-10-27)
 
+- **An OTA status page** (2026-10-27, branch `feature/ota-status`): `/ota` and `GET /api/ota` show which OS
+  image the board booted, what is staged or queued for rollback (and which image the *next* boot starts), the
+  installed update components, the services around them and basic health. The container is
+  `--read-only --cap-drop all` and cannot see any of that, so a host process writes one JSON file and the app
+  only reads it, through a whitelist: unknown keys dropped, strings cleaned, digests and times kept only in
+  their one valid form, image registries and device identifiers never present. Read-only, no controls.
+  The host side is `tools/ota_export.py` (standard library only, read-only, atomic write). Test-verified (reader,
+  endpoint, exporter, and the page's script against a fake DOM with hostile strings); the exporter has been run
+  once on the J7 and its file read back whole, but nothing keeps it running there yet (the board's units come from
+  a signed deployment). The owner viewed the page on 2026-10-28 and the layout was reworked from that (headers on
+  one line, a warn-only "a reboot would start …" line, "Image created", eSync's record labelled as such); it was
+  re-checked in headless Chrome at phone, tablet and desktop widths, not yet on the board. [`docs/OTA.md`](docs/OTA.md)
 - Verified on two cars: a 2012 Leaf SL at 35 % SOH (23.2 Ah), and a 2009
   Mitsubishi Lancer ES through the `lancer_2009` profile.
 - **A raw output console, on every car** (2026-09-11): a debug terminal showing
