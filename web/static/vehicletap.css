@@ -1,7 +1,7 @@
 /* SPDX-FileCopyrightText: 2026 David D. Karnowski */
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
-/* Ha-Kake page chrome shared by every page that hosts tiles: the palette,
+/* VehicleTap page chrome shared by every page that hosts tiles: the palette,
    the body reset, the card, the 12-column tile grid and the Tiles menu.
    Moved verbatim out of index.html; tiles.css holds the tile internals. */
 :root {

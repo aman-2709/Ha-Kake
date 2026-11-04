@@ -261,31 +261,31 @@ def test_summary_signals_are_fast_lane_only():
         _with_vehicle(profile, check)
 
 
-def test_env_prefers_hakake_and_falls_back_to_leaf(monkeypatch):
+def test_env_prefers_vehicletap_and_falls_back_to_leaf(monkeypatch):
     """LEAF_* names are documented and in use, so they must keep working; the
-    HAKAKE_* name wins when both are set."""
+    VEHICLETAP_* name wins when both are set."""
     import util
-    monkeypatch.delenv("HAKAKE_BLE_ADDR", raising=False)
+    monkeypatch.delenv("VEHICLETAP_BLE_ADDR", raising=False)
     monkeypatch.delenv("LEAF_BLE_ADDR", raising=False)
-    assert util.env("HAKAKE_BLE_ADDR", "LEAF_BLE_ADDR") is None
-    assert util.env("HAKAKE_BLE_ADDR", "LEAF_BLE_ADDR", default="x") == "x"
+    assert util.env("VEHICLETAP_BLE_ADDR", "LEAF_BLE_ADDR") is None
+    assert util.env("VEHICLETAP_BLE_ADDR", "LEAF_BLE_ADDR", default="x") == "x"
 
     monkeypatch.setenv("LEAF_BLE_ADDR", "old-name")
-    assert util.env("HAKAKE_BLE_ADDR", "LEAF_BLE_ADDR") == "old-name"
+    assert util.env("VEHICLETAP_BLE_ADDR", "LEAF_BLE_ADDR") == "old-name"
 
-    monkeypatch.setenv("HAKAKE_BLE_ADDR", "new-name")
-    assert util.env("HAKAKE_BLE_ADDR", "LEAF_BLE_ADDR") == "new-name"
+    monkeypatch.setenv("VEHICLETAP_BLE_ADDR", "new-name")
+    assert util.env("VEHICLETAP_BLE_ADDR", "LEAF_BLE_ADDR") == "new-name"
 
-    monkeypatch.setenv("HAKAKE_BLE_ADDR", "")          # empty is unset, not a win
-    assert util.env("HAKAKE_BLE_ADDR", "LEAF_BLE_ADDR") == "old-name"
+    monkeypatch.setenv("VEHICLETAP_BLE_ADDR", "")          # empty is unset, not a win
+    assert util.env("VEHICLETAP_BLE_ADDR", "LEAF_BLE_ADDR") == "old-name"
 
 
 def test_local_config_honours_both_env_spellings(monkeypatch):
     import elm327
-    for n in ("HAKAKE_BLE_ADDR", "LEAF_BLE_ADDR", "HAKAKE_BLE_NAME", "LEAF_BLE_NAME"):
+    for n in ("VEHICLETAP_BLE_ADDR", "LEAF_BLE_ADDR", "VEHICLETAP_BLE_NAME", "LEAF_BLE_NAME"):
         monkeypatch.delenv(n, raising=False)
     monkeypatch.setenv("LEAF_BLE_NAME", "OLDBLE")
-    monkeypatch.setenv("HAKAKE_BLE_ADDR", "AA:BB")
+    monkeypatch.setenv("VEHICLETAP_BLE_ADDR", "AA:BB")
     cfg = elm327.load_local_config()
     assert cfg["ble_name"] == "OLDBLE" and cfg["ble_addr"] == "AA:BB"
 

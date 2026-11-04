@@ -24,8 +24,8 @@ import pytest
 
 from conftest import ROOT  # noqa: E402  (sys.path is set up there)
 
-import hakake_sim  # noqa: E402
-from hakake_sim import parse_knob_args, parse_knob_value, serve_control, suggest  # noqa: E402
+import vehicletap_sim  # noqa: E402
+from vehicletap_sim import parse_knob_args, parse_knob_value, serve_control, suggest  # noqa: E402
 from sim_stub import make_sim  # noqa: E402
 
 
@@ -325,7 +325,7 @@ def test_sim_seconds_on_a_core_with_no_clock_equal_dt(api):
     assert api("GET", "/sim/state")[1]["state"]["sim_time_s"] - before == pytest.approx(30)
 
 
-@pytest.mark.parametrize("bad", [-1, hakake_sim.MAX_SIM_SECONDS + 1, "soon", None])
+@pytest.mark.parametrize("bad", [-1, vehicletap_sim.MAX_SIM_SECONDS + 1, "soon", None])
 def test_a_nonsense_sim_seconds_is_refused(api, bad):
     code, body = api("POST", "/sim/step", {"sim_seconds": bad})
     assert code == 400 and "sim_seconds" in body["error"]
@@ -418,7 +418,7 @@ def run_cli(*argv, timeout=30):
                            "elm327.make_simulator = lambda vehicle=None, scenario=None, seed=None, knobs=None:"
                            " sim_stub.make_sim(vehicle=vehicle or 'leaf_ze0', knobs=knobs,"
                            " seed=seed, scenario=scenario);"
-                           "import hakake_sim; sys.exit(hakake_sim.main(sys.argv[1:]))",
+                           "import vehicletap_sim; sys.exit(vehicletap_sim.main(sys.argv[1:]))",
                            *argv], cwd=ROOT, capture_output=True, text=True, timeout=timeout)
 
 
@@ -487,10 +487,10 @@ def test_record_is_501_not_500_on_a_core_whose_model_lacks_record():
     NotImplementedError. The control API must answer 501 (so the cockpit
     draws knob cards only), never a 500 that looks like a broken server."""
     import json, threading, urllib.error, urllib.request
-    import hakake_sim
+    import vehicletap_sim
     from simulator import make_sim
     sim = make_sim(vehicle="lancer_2009", seed=1)
-    httpd = hakake_sim.serve_control(sim, port=0, lock=threading.Lock(), log=lambda *a, **k: None)
+    httpd = vehicletap_sim.serve_control(sim, port=0, lock=threading.Lock(), log=lambda *a, **k: None)
     try:
         port = httpd.server_address[1]
         with pytest.raises(urllib.error.HTTPError) as ei:

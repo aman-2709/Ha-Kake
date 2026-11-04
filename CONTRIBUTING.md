@@ -38,7 +38,7 @@ here is what makes a contribution easy to merge.
 
 ## Licensing — please read before you send a patch
 
-Ha-Kake ships under the **GNU Affero General Public License, version 3 or
+VehicleTap ships under the **GNU Affero General Public License, version 3 or
 later** (AGPL-3.0-or-later); see `LICENSE`. The documentation under `docs/`
 ships under **CC BY-SA 4.0**; see `LICENSE-DOCS`.
 

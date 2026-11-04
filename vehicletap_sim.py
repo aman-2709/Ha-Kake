@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2026 David D. Karnowski
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-hakake_sim — run the vehicle simulator as a standalone rig.
+vehicletap_sim — run the vehicle simulator as a standalone rig.
 
 Three things live here, and they are deliberately in one file because they are
 one idea: *a car that is not there*.
@@ -38,7 +38,7 @@ one idea: *a car that is not there*.
 
 Populate a database and point the dashboard at it:
 
-    python hakake_sim.py --generate --days 180 --out /tmp/ui.db
+    python vehicletap_sim.py --generate --days 180 --out /tmp/ui.db
     python web/app.py --db /tmp/ui.db --no-reader --port 5001
 
 The one command (the reader hosts the model; control API on 8099 by default):
@@ -48,16 +48,16 @@ The one command (the reader hosts the model; control API on 8099 by default):
 
 Quick start over a real serial device (human):
 
-    python hakake_sim.py --pty --scenario drive
+    python vehicletap_sim.py --pty --scenario drive
     # prints the pty, the control URL, and the exact dashboard command:
     python web/app.py --adapter sim --sim-serial /dev/ttys012 --sim-control 8099 --port 5055
     # or let the rig start the dashboard itself:
-    python hakake_sim.py --pty --scenario drive --launch-dashboard
+    python vehicletap_sim.py --pty --scenario drive --launch-dashboard
 
 Quick start (agent):
 
-    python hakake_sim.py --dump-schema | jq .              # discover the knobs
-    python hakake_sim.py --pty --json &                    # run it
+    python vehicletap_sim.py --dump-schema | jq .              # discover the knobs
+    python vehicletap_sim.py --pty --json &                    # run it
     curl -s localhost:8099/sim/state | jq .                # read the model
     curl -s -X POST localhost:8099/sim/knobs \
          -H 'content-type: application/json' -d '{"soc": 15}'
@@ -114,7 +114,7 @@ def panel_html():
         with open(PANEL_FILE, encoding="utf-8") as f:
             return f.read()
     except OSError as e:
-        return ("<!doctype html><meta charset=utf-8><title>Ha-Kake SIMULATOR</title>"
+        return ("<!doctype html><meta charset=utf-8><title>VehicleTap SIMULATOR</title>"
                 "<body style=\"background:#0a0e17;color:#e0e6f0;font-family:sans-serif;padding:2rem\">"
                 f"<h1>SIMULATOR</h1><p>The control panel file is missing: {e}</p>"
                 "<p>The JSON API is unaffected: <code>/sim/schema</code>, "
@@ -257,7 +257,7 @@ class _NullLock:
 
 # ── control API ──────────────────────────────────────────────────────────
 #
-# Deliberately stdlib-only. Ha-Kake has three runtime dependencies (flask,
+# Deliberately stdlib-only. VehicleTap has three runtime dependencies (flask,
 # bleak, pyserial) and a test rig is not a reason to make it four.
 #
 #   GET  /sim/schema      every knob: type, unit, range, default, help
@@ -310,13 +310,13 @@ def make_handler(sim, lock, log):
     lock = lock or threading.RLock()
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = "hakake-sim/1"
+        server_version = "vehicletap-sim/1"
         protocol_version = "HTTP/1.1"
 
         # ── plumbing ─────────────────────────────────────────────────────
 
         def log_message(self, fmt, *args):        # quiet unless asked
-            if env("HAKAKE_SIM_HTTP_LOG"):
+            if env("VEHICLETAP_SIM_HTTP_LOG"):
                 log("  [control] " + (fmt % args))
 
         def _send(self, code, payload):
@@ -830,7 +830,7 @@ def dashboard_command(pty, control_port=None, port=DEFAULT_DASHBOARD_PORT, pytho
     """argv for `web/app.py` against a pty from this rig.
 
     `--sim-control <port>` here means "an external rig (us) owns that port —
-    do not start one"; the reader exports it as HAKAKE_SIM_CONTROL_URL so the
+    do not start one"; the reader exports it as VEHICLETAP_SIM_CONTROL_URL so the
     dashboard can link to the panel. Without a control port the dashboard
     still runs; there is just nothing to link to.
     """
@@ -895,8 +895,8 @@ class DashboardChild:
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        prog="hakake_sim",
-        description="Run the Ha-Kake vehicle simulator (no car, no adapter). "
+        prog="vehicletap_sim",
+        description="Run the VehicleTap vehicle simulator (no car, no adapter). "
                     "Everything it produces is simulated and labelled as such.",
         epilog="Agent guide: docs/SIMULATOR.md")
     ap.add_argument("--vehicle", default=None, help="Vehicle profile (default: the active one)")
@@ -1039,7 +1039,7 @@ def main(argv=None):
     if args.json:
         emit(ready, True)
     else:
-        print("Ha-Kake SIMULATOR — no adapter, no car. Every value is generated.")
+        print("VehicleTap SIMULATOR — no adapter, no car. Every value is generated.")
         print(f"  vehicle:  {ready['vehicle']}    scenario: {elm.scenario}    seed: {elm.seed}")
         if ts.get("time_scale") is not None:
             print(f"  clock:    {ts['time_scale']}x simulated time  ({ts['source']})")

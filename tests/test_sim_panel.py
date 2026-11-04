@@ -8,7 +8,7 @@ Two pages talk to the control API from a browser:
     the dashboard at `GET /sim`, built on the dashboard's tile engine and its
     four styled tiles (tests/test_sim_page.py covers the Flask side);
   * `simulator/panel.html` — the API's own landing page, a minimal fallback
-    for `hakake_sim.py --pty` runs: the launch commands, the endpoints, and a
+    for `vehicletap_sim.py --pty` runs: the launch commands, the endpoints, and a
     link to the cockpit when told where the dashboard is.
 
 The one architectural rule is the same for all three files and is the only
@@ -36,8 +36,8 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import hakake_sim                                                # noqa: E402
-from hakake_sim import PANEL_FILE, panel_html, schema_defaults   # noqa: E402
+import vehicletap_sim                                                # noqa: E402
+from vehicletap_sim import PANEL_FILE, panel_html, schema_defaults   # noqa: E402
 from sim_stub import make_sim as make_stub                       # noqa: E402
 from simulator import KNOBS, make_sim                            # noqa: E402
 
@@ -67,7 +67,7 @@ def api(request):
     """
     sim = (make_sim(vehicle="leaf_ze0", seed=1) if request.param == "core"
            else make_stub(vehicle="leaf_ze0", seed=1))
-    httpd = hakake_sim.serve_control(sim, port=0, log=lambda *a: None)
+    httpd = vehicletap_sim.serve_control(sim, port=0, log=lambda *a: None)
     base = f"http://127.0.0.1:{httpd.server_address[1]}"
 
     def call(method, path, body=None):
@@ -110,8 +110,8 @@ def test_the_json_api_is_untouched_by_the_panel_living_at_the_root(api):
 
 
 def test_a_missing_panel_file_still_answers_a_page_not_a_traceback(monkeypatch):
-    monkeypatch.setattr(hakake_sim, "PANEL_FILE", "/nonexistent/panel.html")
-    out = hakake_sim.panel_html()
+    monkeypatch.setattr(vehicletap_sim, "PANEL_FILE", "/nonexistent/panel.html")
+    out = vehicletap_sim.panel_html()
     assert "SIMULATOR" in out and "/sim/schema" in out
 
 
@@ -119,7 +119,7 @@ def test_the_fallback_panel_says_how_to_launch_and_where_the_api_is():
     """`--pty` users land here. They need the two commands, the endpoints,
     and — given `?dashboard=` — a link to the cockpit pointed at this API."""
     assert "python web/app.py --adapter sim --port 5055" in PANEL
-    assert "python hakake_sim.py --pty --scenario drive --launch-dashboard" in PANEL
+    assert "python vehicletap_sim.py --pty --scenario drive --launch-dashboard" in PANEL
     for ep in ("/sim/schema", "/sim/state", "/sim/record", "/sim/knobs", "/sim/scenarios"):
         assert f'href="{ep}"' in PANEL, ep
     assert "?control=" in PANEL and "dashboard" in PANEL
@@ -334,7 +334,7 @@ def test_reset_needs_no_knowledge_of_any_particular_vehicle():
     """Same code path, a different profile, nothing added."""
     sim = make_sim(vehicle="lancer_2009", seed=1)
     sim.set(rpm=4200.0, mil_on=True)
-    applied, err = hakake_sim.apply_knobs(sim, schema_defaults(sim))
+    applied, err = vehicletap_sim.apply_knobs(sim, schema_defaults(sim))
     assert err is None, err
     assert sim.get_knobs()["rpm"] == 719.0 and sim.get_knobs()["mil_on"] is False
 

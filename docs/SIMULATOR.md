@@ -3,7 +3,7 @@
 
 # The simulator
 
-Ha-Kake can run its whole stack against a **generated car**: a physical model
+VehicleTap can run its whole stack against a **generated car**: a physical model
 (`simulator/`) answers the UDS and monitor commands a real ELM327 would, and
 the reader, the decoders, the store, the API and the dashboard cannot tell the
 difference. It is a **development fixture** — a stand-in car for working on
@@ -14,7 +14,7 @@ the app's tiles, charts and reports — not a signal-verification tool (see
 
 ```bash
 python web/app.py --adapter sim
-# Ha-Kake dashboard   http://127.0.0.1:5000
+# VehicleTap dashboard   http://127.0.0.1:5000
 #   simulator panel   http://127.0.0.1:5000/sim
 #   control API       http://127.0.0.1:8099/sim/schema
 ```
@@ -46,15 +46,15 @@ rig, say — the reader does not crash: `SimELM.serve_control()` catches the
 
 ### The other path: a real serial port
 
-`hakake_sim.py --pty` runs the model as a **separate process** and publishes
+`vehicletap_sim.py --pty` runs the model as a **separate process** and publishes
 a pseudo-terminal. The dashboard then connects with the real `SerialELM`,
 over a real tty, exactly as it does to a USB dongle — so this path exercises
 the serial transport that `--adapter sim` bypasses, and is the strongest form
 of "it looks like a car". It works on macOS and Linux.
 
 ```bash
-python hakake_sim.py --pty --scenario drive
-# Ha-Kake SIMULATOR — no adapter, no car. Every value is generated.
+python vehicletap_sim.py --pty --scenario drive
+# VehicleTap SIMULATOR — no adapter, no car. Every value is generated.
 #   vehicle:  leaf_ze0    scenario: drive    seed: 1
 #   pty:      /dev/ttys005
 #   start the dashboard against it with exactly this:
@@ -85,7 +85,7 @@ to the throwaway database instead of the one holding real readings.
 | `--demo` | frozen JSON in `docs/demo/` | reproducible screenshots |
 | `--adapter replay` | a **recorded** session fixture (`docs/REPLAY.md`) | "does this profile decode a real capture?" |
 | `--adapter sim` | a **running model** you can change mid-run | "what does the dashboard do when a cell degrades?" |
-| `hakake_sim.py --generate` | **months of history**, written straight to a database | "what does this chart look like with six months behind it?" |
+| `vehicletap_sim.py --generate` | **months of history**, written straight to a database | "what does this chart look like with six months behind it?" |
 
 A recording can only replay the conditions that happened to exist when
 someone was sitting in a parked Leaf with the AC on. A simulator can be told
@@ -281,7 +281,7 @@ Leaf-shaped came out.
 and the *not readable* tags, as described above. And nothing on the page is
 a photograph, screenshot, manual scan or manufacturer mark: the cluster and
 head unit are original SVG and CSS drawn from published descriptions of the
-layout, no CDN, no image, no build step, and Ha-Kake is not affiliated with
+layout, no CDN, no image, no build step, and VehicleTap is not affiliated with
 or endorsed by Nissan (see `NOTICE`).
 
 **The fallback panel.** The control API still serves a page of its own at
@@ -451,7 +451,7 @@ reads 150 W and about −0.39 A; switched off it loses 0.8 % a day. The
 identity `Σ loads ≈ −power_kw·1000 + I²R` is a test.
 
 ```bash
-python hakake_sim.py --dump-state | jq '.state.power, .state.loads_w, .state.messages'
+python vehicletap_sim.py --dump-state | jq '.state.power, .state.loads_w, .state.messages'
 ```
 
 ### The couplings audit
@@ -581,7 +581,7 @@ way the data is drawn can be worked on.** Two commands, and you are looking at
 six months of a car's life:
 
 ```bash
-python hakake_sim.py --generate --days 180 --out /tmp/ui.db
+python vehicletap_sim.py --generate --days 180 --out /tmp/ui.db
 python web/app.py --db /tmp/ui.db --no-reader --port 5001
 # http://127.0.0.1:5001 — degradation, history, power, cells, A/C usage, all populated
 ```
@@ -626,7 +626,7 @@ carries a load lump of its own).
 ### For an agent
 
 ```bash
-python hakake_sim.py --generate --days 180 --out /tmp/ui.db --seed 1 --json
+python vehicletap_sim.py --generate --days 180 --out /tmp/ui.db --seed 1 --json
 # {"rows": 49553, "cell_rows": 67968, "events": 3882, "drives": 332,
 #  "charges": 145, "idle_days": 25, "path": "/tmp/ui.db",
 #  "state_path": "/tmp/ui_state.json", "seed": 1, "days": 180,
@@ -733,17 +733,17 @@ also want to override the power.
 | `--no-sim-control` | `app.py` | no control API |
 | `--sim-control-url URL` | `app.py` | name a simulator in *another process* (`http://127.0.0.1:PORT`, loopback only) so `/sim` finds it without `?control=`; for `--adapter can` beside `tools/sim_to_can.py`; refused with `--adapter sim` |
 | `--sim-serial DEV` | `app.py`, `reader.py` | talk to a `--pty` rig over real serial |
-| `--pty` | `hakake_sim.py` | publish a pseudo-terminal |
-| `--launch-dashboard [PORT]` | `hakake_sim.py` | with `--pty`: also start `web/app.py` against it (default port 5055), stopped when the rig stops |
-| `--control PORT` / `--no-control` | `hakake_sim.py` | control API (default port 8099) |
-| `--json` | `hakake_sim.py` | one JSON object per line instead of prose; the first is a `ready` object with `pty`, `control`, `dashboard_command`, `panel_url`, `scenario`, `seed`, `time_scale` and a `warning` |
-| `--report S` / `--duration S` | `hakake_sim.py` | status line period (0 = never) / exit after S seconds |
-| `--dump-schema` / `--dump-state` | `hakake_sim.py` | print and exit |
+| `--pty` | `vehicletap_sim.py` | publish a pseudo-terminal |
+| `--launch-dashboard [PORT]` | `vehicletap_sim.py` | with `--pty`: also start `web/app.py` against it (default port 5055), stopped when the rig stops |
+| `--control PORT` / `--no-control` | `vehicletap_sim.py` | control API (default port 8099) |
+| `--json` | `vehicletap_sim.py` | one JSON object per line instead of prose; the first is a `ready` object with `pty`, `control`, `dashboard_command`, `panel_url`, `scenario`, `seed`, `time_scale` and a `warning` |
+| `--report S` / `--duration S` | `vehicletap_sim.py` | status line period (0 = never) / exit after S seconds |
+| `--dump-schema` / `--dump-state` | `vehicletap_sim.py` | print and exit |
 | `--sim-can [BUS]` | `app.py`, `reader.py` | run the model behind simulated ECUs on a virtual CAN bus instead of the ELM327 look-alike; `ev` also starts the EV-CAN channel ([The simulated bus](#the-simulated-bus)) |
 | `--monitor-window S` | `app.py`, `reader.py` | how far back a passive capture may reach in the frame table |
 | `--db PATH` | `app.py`, `reader.py` | read an existing database instead of the throwaway one |
-| `--generate` | `hakake_sim.py` | write months of synthetic history and exit; with `--days`, `--out`, `--sample`, `--idle-sample`, `--cells-per-day` |
-| `--pull` | `hakake_sim.py` | run the acceleration scenario and leave its three artefacts; with `--jsonl`, `--fixture`, `--no-fixture`, `--bus-load` |
+| `--generate` | `vehicletap_sim.py` | write months of synthetic history and exit; with `--days`, `--out`, `--sample`, `--idle-sample`, `--cells-per-day` |
+| `--pull` | `vehicletap_sim.py` | run the acceleration scenario and leave its three artefacts; with `--jsonl`, `--fixture`, `--no-fixture`, `--bus-load` |
 
 ---
 
@@ -756,7 +756,7 @@ changes conditions mid-run, and **errors that say what to do instead**.
 ### 1. Discover what you can change
 
 ```bash
-python hakake_sim.py --dump-schema | jq '.knobs | keys'
+python vehicletap_sim.py --dump-schema | jq '.knobs | keys'
 ```
 
 Sixty-odd knobs for the Leaf, twenty-eight for the Lancer, each with `type`,
@@ -792,10 +792,10 @@ python web/app.py --adapter sim --port 5055 &
 or run the rig separately and point the dashboard at its pty:
 
 ```bash
-python hakake_sim.py --pty --json --control 8099 --report 0 > /tmp/sim.log &
+python vehicletap_sim.py --pty --json --control 8099 --report 0 > /tmp/sim.log &
 PTY=$(head -1 /tmp/sim.log | jq -r .pty)
 python web/app.py --adapter sim --sim-serial "$PTY" --sim-control 8099 --port 5055 &
-# or simply: python hakake_sim.py --pty --launch-dashboard
+# or simply: python vehicletap_sim.py --pty --launch-dashboard
 ```
 
 ### 3. The control API
@@ -854,7 +854,7 @@ path (the in-process path gives the same shape with different rounding).
 
 ```bash
 # start the rig behind a real pty, and the dashboard in front of it
-python hakake_sim.py --pty --json --control 8099 --scenario drive --seed 1 --report 0 > /tmp/sim.log &
+python vehicletap_sim.py --pty --json --control 8099 --scenario drive --seed 1 --report 0 > /tmp/sim.log &
 sleep 3; PTY=$(head -1 /tmp/sim.log | jq -r .pty)          # -> /dev/ttys005
 python web/app.py --adapter sim --sim-serial "$PTY" --sim-control 8099 --port 5055 > /tmp/app.log &
 sleep 20
@@ -1043,14 +1043,14 @@ does every cycle.
 
 ```bash
 # real time, like every shipped scenario bar degradation_arc
-python hakake_sim.py --scenario charge --pty
+python vehicletap_sim.py --scenario charge --pty
 
 # compress it yourself: 120x puts the five-hour charge into two and a half minutes
-python hakake_sim.py --scenario charge --speed 120 --pty
+python vehicletap_sim.py --scenario charge --speed 120 --pty
 #   clock:    120.0x simulated time  (--speed)
 
 # the one that ships with a clock, overridden
-python hakake_sim.py --scenario degradation_arc --speed 30 --pty
+python vehicletap_sim.py --scenario degradation_arc --speed 30 --pty
 #   clock:    30.0x simulated time  (--speed (overrides the scenario's clock_scale))
 #   note:     --speed 30.0 overrides clock_scale 3600.0 from scenario 'degradation_arc'; …
 
@@ -1200,7 +1200,7 @@ python web/app.py --adapter sim --sim-can --scenario pull --knob bus_load=0.5
 ```
 
 What runs: the model's ECUs (`simulator/canbus.py`, `SimCanEcu`) on an
-in-process python-can `virtual` channel (`hakake-car`), and the native CAN
+in-process python-can `virtual` channel (`vehicletap-car`), and the native CAN
 façade (`cantransport.CanFacade`) on the same channel — so the reader, the
 scheduler, the profile's `configure()` and `decode()`, the store, the API,
 the dashboard and the cockpit at `/sim` all run exactly as they would on the
@@ -1292,7 +1292,7 @@ façade there is no `SimELM.advance()` — stepping it by real time at the
 sim's own `time_scale`.
 
 **EV-CAN, all of it ASSERTED.** With `--sim-can ev` a second ECU broadcasts
-on `hakake-ev`: `0x1DB` (pack current 0.5 A and voltage 0.5 V, 10 ms),
+on `vehicletap-ev`: `0x1DB` (pack current 0.5 A and voltage 0.5 V, 10 ms),
 `0x1DA` (motor torque and rpm), `0x1D4` (torque request), `0x1DC` (power
 limits), `0x11A` (shifter), `0x55B` (SOC 0.1 %), `0x5BC` (gids, SOH, bars) and
 20 filler ids, ≈790 frames/s. The byte layouts are transcribed from the
@@ -1359,7 +1359,7 @@ a scenario knob, `internal_resistance_ohm: 0.16`, which is what puts 271 A at
 not measured.
 
 ```bash
-python hakake_sim.py --pull                # one command, three artefacts:
+python vehicletap_sim.py --pull                # one command, three artefacts:
 #   web/sim_leaf_ze0.db                    a sim database with the cell log armed
 #   research/sim_pull_<date>.jsonl         both channels' frames, MQTT rx/# format (gitignored)
 #   tests/fixtures/session_leaf_ze0_pull_sim.json   a thinned replay fixture, synthetic: true
@@ -1392,7 +1392,7 @@ drive, narrow it to the pull with `--obs-from/--obs-to` (or `--exp-from/--exp-to
 for the expected side; epoch seconds or an ISO time, local unless `Z`):
 
 ```bash
-python tools/compare_sessions.py tests/fixtures/session_leaf_ze0_pull_sim.json "${HAKAKE_DATA_DIR:-$HOME/Library/Application Support/Ha-Kake}"/leaf_battery.db \
+python tools/compare_sessions.py tests/fixtures/session_leaf_ze0_pull_sim.json "${VEHICLETAP_DATA_DIR:-$HOME/Library/Application Support/VehicleTap}"/leaf_battery.db \
     --obs-from 2026-10-05T12:10:00 --obs-to 2026-10-05T12:12:00
 ```
 
@@ -1430,7 +1430,7 @@ bench numbers, on this laptop, against this virtual bus, and nothing else.
 | The bench and the comparison | `tools/bench_canrate.py`, `tools/compare_sessions.py` |
 | Scenarios | `simulator/scenarios/*.json` |
 | The transports (`SimELM`, `SimSerialELM`), control-port fallback | `elm327.py` |
-| The rig: pty, control API, `--launch-dashboard`, CLI | `hakake_sim.py` |
+| The rig: pty, control API, `--launch-dashboard`, CLI | `vehicletap_sim.py` |
 | The fallback panel on the API port | `simulator/panel.html` |
 | The cockpit page | `web/templates/sim.html`, `web/static/sim.js`, `web/static/sim.css` |
 | The tiles the cockpit and dashboard share | `web/templates/tiles/*.html`, `web/static/tiles.js`, `web/static/tiles.css`, `web/static/tilestudio.js`, `web/static/alerts.js` (the cockpit's cards evaluate the same audible alert rules; the 🔔 mute is shared through localStorage) |

@@ -1,5 +1,5 @@
 [project]
-name = "ha-kake"
+name = "vehicletap"
 version = "0.2.0"
 description = "Battery-health and vehicle-telemetry dashboard for the 2011-2012 Nissan Leaf (ZE0) over an ELM327 OBD-II adapter"
 readme = "README.md"

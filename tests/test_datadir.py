@@ -7,13 +7,13 @@ import datadir
 
 def test_env_override_is_used_and_created(tmp_path, monkeypatch):
     d = tmp_path / "mine" / "data"
-    monkeypatch.setenv("HAKAKE_DATA_DIR", str(d))
+    monkeypatch.setenv("VEHICLETAP_DATA_DIR", str(d))
     assert datadir.data_dir() == str(d) and d.is_dir()
     assert datadir.path("leaf_battery.db") == str(d / "leaf_battery.db")
 
 
 def test_default_is_outside_the_source_tree(monkeypatch):
-    monkeypatch.delenv("HAKAKE_DATA_DIR", raising=False)
+    monkeypatch.delenv("VEHICLETAP_DATA_DIR", raising=False)
     monkeypatch.setenv("HOME", "/nonexistent-home-for-test")
     monkeypatch.setattr(datadir.os, "makedirs", lambda *a, **k: None)
     d = datadir.data_dir()
@@ -31,7 +31,7 @@ def test_runtime_modules_keep_their_files_in_the_data_folder(tmp_path):
             "for p in (rd.STATE_FILE, rd.TILES_FILE, rd.BOOKMARKS_FILE, rd.CALIB_FILE, rd.PAUSE_FILE, rd.LAYOUTS_FILE, st.DEFAULT_DB):\n"
             "    print(p)\n") % (root, root)
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
-                         env={**os.environ, "HAKAKE_DATA_DIR": str(tmp_path / "d")}, timeout=60)
+                         env={**os.environ, "VEHICLETAP_DATA_DIR": str(tmp_path / "d")}, timeout=60)
     paths = out.stdout.split()
     assert len(paths) == 7, out.stderr
     assert all(p.startswith(str(tmp_path / "d")) for p in paths), paths
@@ -43,7 +43,7 @@ def test_startup_note_warns_about_an_older_database_without_moving_it(tmp_path, 
     old = fake_root / "web" / "leaf_battery.db"
     old.write_bytes(b"old")
     monkeypatch.setattr(datadir, "_HERE", str(fake_root))
-    monkeypatch.setenv("HAKAKE_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("VEHICLETAP_DATA_DIR", str(tmp_path / "data"))
     note = datadir.startup_note()
     assert "NOT used" in note and "docs/DATA.md" in note
     assert old.exists() and old.read_bytes() == b"old"            # never moved or deleted
@@ -57,27 +57,27 @@ def test_no_warning_once_the_data_folder_has_a_database(home, tmp_path, monkeypa
     data.mkdir()
     (data / "leaf_battery.db").write_bytes(b"new")
     monkeypatch.setattr(datadir, "_HERE", str(fake_root))
-    monkeypatch.setenv("HAKAKE_DATA_DIR", str(data))
+    monkeypatch.setenv("VEHICLETAP_DATA_DIR", str(data))
     assert "NOT used" not in datadir.startup_note()
 
 
 def test_a_relative_data_dir_is_made_absolute_for_child_processes(tmp_path, monkeypatch):
     """app.py starts the reader with a different working directory; both must resolve the same folder."""
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("HAKAKE_DATA_DIR", "car1")
+    monkeypatch.setenv("VEHICLETAP_DATA_DIR", "car1")
     d = datadir.data_dir()
     assert os.path.isabs(d) and d == str(tmp_path / "car1") or d == os.path.realpath(str(tmp_path / "car1"))
-    assert os.path.isabs(os.environ["HAKAKE_DATA_DIR"])
+    assert os.path.isabs(os.environ["VEHICLETAP_DATA_DIR"])
 
 
 def test_an_unwritable_data_folder_fails_with_a_clear_message(tmp_path, monkeypatch):
     import pytest
     blocker = tmp_path / "file"
     blocker.write_text("x")
-    monkeypatch.setenv("HAKAKE_DATA_DIR", str(blocker / "sub"))
+    monkeypatch.setenv("VEHICLETAP_DATA_DIR", str(blocker / "sub"))
     with pytest.raises(SystemExit) as e:
         datadir.data_dir()
-    assert "HAKAKE_DATA_DIR" in str(e.value)
+    assert "VEHICLETAP_DATA_DIR" in str(e.value)
 
 
 # ── the folder from before the rename ──
@@ -90,7 +90,8 @@ import pytest  # noqa: E402
 @pytest.fixture
 def home(tmp_path, monkeypatch):
     """An empty home, a data folder that is not forced by the environment, and no XDG override."""
-    monkeypatch.delenv("HAKAKE_DATA_DIR", raising=False)     # restored afterwards: data_dir() re-exports it
+    monkeypatch.delenv("VEHICLETAP_DATA_DIR", raising=False)     # restored afterwards: data_dir() re-exports it
+    monkeypatch.delenv("HAKAKE_DATA_DIR", raising=False)
     monkeypatch.delenv("XDG_DATA_HOME", raising=False)
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setenv("APPDATA", str(tmp_path / "AppData"))
@@ -129,7 +130,7 @@ def test_an_install_from_before_the_rename_keeps_its_folder_untouched(home, monk
     assert d == str(old) and not new.exists()                 # nothing created beside it
     assert [p.name for p in old.iterdir()] == ["leaf_battery.db"]
     assert (old / "leaf_battery.db").read_bytes() == b"history"
-    assert datadir.os.environ["HAKAKE_DATA_DIR"] == str(old)  # the reader child process resolves the same folder
+    assert datadir.os.environ["VEHICLETAP_DATA_DIR"] == str(old)  # the reader child process resolves the same folder
 
 
 def test_with_both_folders_the_new_one_wins_and_the_note_says_the_old_one_is_unused(home, monkeypatch):
@@ -162,7 +163,7 @@ def test_a_file_or_a_dangling_link_at_the_old_path_is_not_a_data_folder(home, mo
     old.parent.mkdir(parents=True)
     old.write_text("not a folder")
     assert datadir.data_dir() == str(new)
-    datadir.os.environ.pop("HAKAKE_DATA_DIR")
+    datadir.os.environ.pop("VEHICLETAP_DATA_DIR")
     new.rmdir()
     old.unlink()
     old.symlink_to(home / "nowhere")
@@ -183,7 +184,7 @@ def test_the_environment_still_beats_both_folders(home, monkeypatch):
     on(monkeypatch, "linux")
     (home / FOLDERS["linux"][1]).mkdir(parents=True)
     mine = home / "chosen"
-    monkeypatch.setenv("HAKAKE_DATA_DIR", str(mine))
+    monkeypatch.setenv("VEHICLETAP_DATA_DIR", str(mine))
     assert datadir.data_dir() == str(mine) and mine.is_dir()
     assert "NOT used" in datadir.startup_note()               # the old folder is there and is not the one in use
 
@@ -194,3 +195,18 @@ def test_xdg_data_home_moves_both_names(home, monkeypatch):
     monkeypatch.setenv("XDG_DATA_HOME", str(xdg))
     (xdg / "ha-kake").mkdir(parents=True)
     assert datadir.data_dir() == str(xdg / "ha-kake")
+
+
+# ── the variable from before the rename ──
+
+def test_the_old_variable_name_still_chooses_the_folder(home, monkeypatch):
+    mine = home / "from-the-old-variable"
+    monkeypatch.setenv("HAKAKE_DATA_DIR", str(mine))
+    assert datadir.data_dir() == str(mine) and mine.is_dir()
+    assert datadir.os.environ["VEHICLETAP_DATA_DIR"] == str(mine)      # the reader child process gets the new name
+
+
+def test_the_new_variable_beats_the_old_one(home, monkeypatch):
+    monkeypatch.setenv("HAKAKE_DATA_DIR", str(home / "old"))
+    monkeypatch.setenv("VEHICLETAP_DATA_DIR", str(home / "new"))
+    assert datadir.data_dir() == str(home / "new") and not (home / "old").exists()

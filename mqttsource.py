@@ -29,7 +29,7 @@ set on the bus side. There is no other way onto the wire from here.
 
 No vehicle is named in this file. Ids are strings the profile hands over.
 Machine specifics (the broker host) come from ``config.local.json``
-(gitignored) or ``HAKAKE_MQTT_*``; none belong in code, fixtures or docs.
+(gitignored) or ``VEHICLETAP_MQTT_*``; none belong in code, fixtures or docs.
 """
 
 import asyncio
@@ -53,7 +53,7 @@ CONNECT_TIMEOUT = 10.0               # seconds to wait for CONNACK in start()
 DEFAULTS = {
     "host": "",
     "port": 1883,
-    "prefix": "hakake/leaf",
+    "prefix": "vehicletap/leaf",
     "bus": "car",
     "subscribe": "auto",
     "batch": False,
@@ -71,7 +71,7 @@ def _read_local_config(path=LOCAL_CONFIG):
 
 
 def mqtt_config(raw=None, path=LOCAL_CONFIG):
-    """The ``mqtt`` block, normalised, with ``HAKAKE_MQTT_*`` overriding the file.
+    """The ``mqtt`` block, normalised, with ``VEHICLETAP_MQTT_*`` overriding the file.
 
     ``raw`` is the block itself (a dict) when given; otherwise it is read from
     ``config.local.json``. An empty ``host`` means "not configured".
@@ -81,10 +81,10 @@ def mqtt_config(raw=None, path=LOCAL_CONFIG):
     cfg = dict(DEFAULTS)
     cfg.update({k: v for k, v in raw.items() if k in DEFAULTS})
     for key in ("host", "prefix", "bus"):
-        v = env(f"HAKAKE_MQTT_{key.upper()}")
+        v = env(f"VEHICLETAP_MQTT_{key.upper()}")
         if v:
             cfg[key] = v
-    port = env("HAKAKE_MQTT_PORT")
+    port = env("VEHICLETAP_MQTT_PORT")
     if port:
         cfg["port"] = int(port)
     cfg["host"] = str(cfg["host"] or "").strip()
@@ -256,7 +256,7 @@ class MqttSource:
         self.client = None
         self.connected = False
         self.status = {}
-        self.bridge = ""                       # "hakake-bridge 0.1", from status
+        self.bridge = ""                       # "vehicletap-bridge 0.1", from status
         self.frames = 0
         self.t_last = None                     # bridge clock of the last frame
         self._t_last_local = None              # monotonic, for age
@@ -305,7 +305,7 @@ class MqttSource:
         self._connected_evt = asyncio.Event()
         if self._want is None:                 # nobody narrowed it yet: mirror the bus
             self._want = self._wanted_topics(None)
-        c = self._factory(f"hakake-reader-{secrets.token_hex(3)}")
+        c = self._factory(f"vehicletap-reader-{secrets.token_hex(3)}")
         c.on_connect = self._on_connect
         c.on_disconnect = self._on_disconnect
         c.on_message = self._on_message
@@ -643,7 +643,7 @@ class StatePublisher:
         self.published = 0
 
     def connect(self):
-        c = self._factory(f"hakake-state-{secrets.token_hex(3)}")
+        c = self._factory(f"vehicletap-state-{secrets.token_hex(3)}")
         _configure_client(c, self.cfg)
         c.reconnect_delay_set(min_delay=1, max_delay=10)
         c.connect_async(self.cfg["host"], self.cfg["port"], keepalive=15)

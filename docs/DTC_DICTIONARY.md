@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Trouble-code dictionary — the format, and how to build your own
 
-> Ha-Kake ships the **format** for trouble-code descriptions and **none of the
+> VehicleTap ships the **format** for trouble-code descriptions and **none of the
 > data**. This document is the recipe for building a dictionary for the car you
 > actually own, with an AI agent, in an afternoon. The file you build stays on
 > your machine.
@@ -154,7 +154,7 @@ which your car cannot emit. Two better scopes, in order:
     asked with a wide status mask. That list **is** the scope: vehicle-specific,
     free, and read-only. Capture it first and hand it to the agent. (On a
     first-generation Leaf that is a `19 02 FF` read to the battery controller —
-    the research notes record a capture of 149 entries. Ha-Kake does not read
+    the research notes record a capture of 149 entries. VehicleTap does not read
     codes from the Leaf yet; that is a separate, car-side piece of work.)
   - *Otherwise seed and grow.* Start with the codes the car has actually
     reported, plus the generic ranges relevant to the vehicle type — for an EV,

@@ -1,7 +1,7 @@
 /* SPDX-FileCopyrightText: 2026 David D. Karnowski */
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
-/* The simulator cockpit (/sim). Sits on top of hakake.css (palette, .card,
+/* The simulator cockpit (/sim). Sits on top of vehicletap.css (palette, .card,
    grid), tilestudio.css (menus, gridstack) and tiles.css (the four reused
    tiles). Everything here is the cockpit's own: the hazard bar, the generated
    knob controls, the emulated cluster and climate head unit, the time and

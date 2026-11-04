@@ -118,7 +118,7 @@ def test_recorded_fixture_replays_to_the_same_values(tmp_path):
 
 def test_new_doc_carries_the_provenance_a_reader_needs():
     doc = rec.new_doc(get_vehicle("lancer_2009"), source=["a capture"], notes="hello")
-    assert doc["hakake_replay"] == 1
+    assert doc["vehicletap_replay"] == 1 and "hakake_replay" not in doc      # only the new key is written
     assert doc["vehicle"] == "lancer_2009" and doc["title"]
     assert doc["synthetic"] is False and doc["source"] == ["a capture"]
     assert doc["notes"] == "hello" and doc["captured"].endswith("Z")

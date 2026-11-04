@@ -23,7 +23,7 @@ Classes:
 
 Functions:
   open_can(cfg, log)   — what elm327.detect_adapter("can") calls
-  can_config(cfg)      — config.local.json `can_*` keys, HAKAKE_CAN_* env wins
+  can_config(cfg)      — config.local.json `can_*` keys, VEHICLETAP_CAN_* env wins
   classify_usb(...)    — which firmware a CANable runs, from USB VID:PID
   can_line(id, data)   — the one line format everything downstream parses
 
@@ -675,10 +675,10 @@ class LocalSource(FrameSource):
             return b
         iface = self.interface
         if iface == "virtual":
-            b = can.Bus(interface="virtual", channel=self.channel or "hakake", receive_own_messages=False)
+            b = can.Bus(interface="virtual", channel=self.channel or "vehicletap", receive_own_messages=False)
             self.firmware = "virtual"
             self.name = self.name or f"python-can {can.__version__} virtual"
-            self.port = f"virtual:{self.channel or 'hakake'}"
+            self.port = f"virtual:{self.channel or 'vehicletap'}"
             return b
         if iface == "socketcan":
             return self._open_socketcan()
@@ -709,7 +709,7 @@ class LocalSource(FrameSource):
                                   f"expected {' or '.join(SLCAN_PORT_PATTERNS)}; set can_channel")
         vp = f" {dev.idVendor:04x}:{dev.idProduct:04x}" if dev is not None else ""
         try:
-            b = HakakeSlcanBus(channel=port, bitrate=self.bitrate, listen_only=self.listen_only,
+            b = VehicleTapSlcanBus(channel=port, bitrate=self.bitrate, listen_only=self.listen_only,
                                sleep_after_open=0.5)
         except Exception as e:
             raise ConnectionError(f"cannot open slcan on {port}: {type(e).__name__}: {e}") from e
@@ -858,7 +858,7 @@ class LocalSource(FrameSource):
 # ── firmware-specific buses ──────────────────────────────────────────────
 
 
-class HakakeSlcanBus(_SlcanBus):
+class VehicleTapSlcanBus(_SlcanBus):
     """python-can's slcan, with listen-only done the way the stock CANable 2
     firmware understands it. python-can sends `L`, which canable2-fw does not
     implement and does not acknowledge — the channel never opens. The stock
@@ -1004,7 +1004,7 @@ def _truthy(v):
 
 
 def can_config(cfg=None):
-    """The `can_*` keys of config.local.json, HAKAKE_CAN_* environment winning.
+    """The `can_*` keys of config.local.json, VEHICLETAP_CAN_* environment winning.
 
     `can_bus` is required and has no default: the board cannot tell which
     pins it is wired to, and normal mode on EV-CAN would be a transmit-capable
@@ -1013,14 +1013,14 @@ def can_config(cfg=None):
     cfg = dict(cfg or {})
 
     def get(key, default=None):
-        v = env("HAKAKE_" + key.upper())
+        v = env("VEHICLETAP_" + key.upper())
         return v if v is not None else cfg.get(key, default)
 
     bus = str(get("can_bus") or "").strip().lower()
     if bus not in BUSES:
         raise ConnectionError('config.local.json needs "can_bus": "car" or "ev" (which OBD pins the '
                               'adapter is wired to — 6/14 or 13/12); it is never guessed. '
-                              'HAKAKE_CAN_BUS overrides it.')
+                              'VEHICLETAP_CAN_BUS overrides it.')
     out = {
         "interface": str(get("can_interface", "auto") or "auto").lower(),
         "channel": str(get("can_channel", "") or ""),
@@ -1063,14 +1063,14 @@ async def open_can(cfg=None, log=print, source_kwargs=None):
 # generated rows next to real ones. This block is additive; nothing above it
 # depends on it.
 
-SIM_CAN_ENV = "HAKAKE_SIM_CAN"           # "car" (or "1") | "ev": which channels to start
+SIM_CAN_ENV = "VEHICLETAP_SIM_CAN"           # "car" (or "1") | "ev": which channels to start
 SIM_CAN_ADVICE = ('can_interface "sim" is the simulated bus: run it as '
                   '`python web/app.py --adapter sim --sim-can` (rows go to the sim database), '
                   'never through --adapter can')
 
 
 def sim_can_mode(value=None):
-    """Normalise HAKAKE_SIM_CAN / --sim-can: None (off), "car" or "ev"."""
+    """Normalise VEHICLETAP_SIM_CAN / --sim-can: None (off), "car" or "ev"."""
     v = (value if value is not None else env(SIM_CAN_ENV)) or ""
     v = str(v).strip().lower()
     if v in ("", "0", "no", "false", "off"):
@@ -1165,7 +1165,7 @@ class SimCanFacade(CanFacade):
 
     def serve_control(self, port, log=print):
         """The knob server, in-process, with SimELM's busy-port fallback."""
-        from hakake_sim import serve_control          # lazy: utility, not a dependency
+        from vehicletap_sim import serve_control          # lazy: utility, not a dependency
         wanted = int(port or 0)
         try:
             self._control = serve_control(self.sim, wanted, lock=self.source.lock, log=log)
@@ -1193,7 +1193,7 @@ async def open_sim_can(log=print, mode=None, sim=None, scenario=None, seed=None,
                        control_port=None, bus_load=None, bus="car", source_kwargs=None):
     """Build and connect the simulated-bus transport.
 
-    Called by `elm327.detect_adapter(prefer="sim")` when HAKAKE_SIM_CAN is
+    Called by `elm327.detect_adapter(prefer="sim")` when VEHICLETAP_SIM_CAN is
     set — the `--adapter sim --sim-can [ev]` launch — and by the bench and
     the tests directly. Never by auto-detect, never by `--adapter can`."""
     from elm327 import make_simulator                 # lazy: elm327 imports this module lazily too

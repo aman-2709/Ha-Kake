@@ -76,7 +76,7 @@ web/bookmarks.json
 web/bookmarks.json.tmp
 
 # Simulator mode (--adapter sim) writes here, never to the real store/state.
-# `hakake_sim.py --generate` defaults to web/sim_history.db and writes a
+# `vehicletap_sim.py --generate` defaults to web/sim_history.db and writes a
 # _state.json beside it, so the same patterns cover generated history; an
 # explicit --out elsewhere is caught by the repo-wide *.db / *_state.json
 # rules above. Generated databases are synthetic and are never committed.

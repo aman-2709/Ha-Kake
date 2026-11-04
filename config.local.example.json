@@ -14,7 +14,7 @@
   "mqtt": {
     "host": "",
     "port": 1883,
-    "prefix": "hakake/leaf",
+    "prefix": "vehicletap/leaf",
     "bus": "car",
     "subscribe": "auto",
     "batch": false

@@ -126,8 +126,8 @@ class FakeClient:
         self.on_message(self, None, FakeMsg(topic, payload, retain=retain))
 
 
-CFG = {"host": "broker.example", "port": 1883, "prefix": "hakake/test", "bus": "car"}
-ROOT_T = "hakake/test/car"
+CFG = {"host": "broker.example", "port": 1883, "prefix": "vehicletap/test", "bus": "car"}
+ROOT_T = "vehicletap/test/car"
 
 
 class Sink:
@@ -165,26 +165,26 @@ async def started(cfg=None, ids=None):
 
 def test_config_defaults_and_normalisation(monkeypatch):
     for k in ("HOST", "PORT", "PREFIX", "BUS"):
-        monkeypatch.delenv(f"HAKAKE_MQTT_{k}", raising=False)
+        monkeypatch.delenv(f"VEHICLETAP_MQTT_{k}", raising=False)
     cfg = ms.mqtt_config({})
     assert cfg["host"] == "" and cfg["port"] == 1883 and cfg["subscribe"] == "auto"
-    assert cfg["prefix"] == "hakake/leaf" and cfg["bus"] == "car" and cfg["batch"] is False
-    cfg = ms.mqtt_config({"host": " b ", "prefix": "/x/y/", "subscribe": ["421", "hakake/x/car/rx/358"],
+    assert cfg["prefix"] == "vehicletap/leaf" and cfg["bus"] == "car" and cfg["batch"] is False
+    cfg = ms.mqtt_config({"host": " b ", "prefix": "/x/y/", "subscribe": ["421", "vehicletap/x/car/rx/358"],
                           "batch": 1, "port": "8883", "unknown": 1})
     assert cfg["host"] == "b" and cfg["prefix"] == "x/y" and cfg["port"] == 8883
-    assert cfg["subscribe"] == ["421", "hakake/x/car/rx/358"] and cfg["batch"] is True
+    assert cfg["subscribe"] == ["421", "vehicletap/x/car/rx/358"] and cfg["batch"] is True
     assert "unknown" not in cfg
 
 
 def test_env_overrides_file(monkeypatch):
-    monkeypatch.setenv("HAKAKE_MQTT_HOST", "envhost")
-    monkeypatch.setenv("HAKAKE_MQTT_PORT", "1884")
+    monkeypatch.setenv("VEHICLETAP_MQTT_HOST", "envhost")
+    monkeypatch.setenv("VEHICLETAP_MQTT_PORT", "1884")
     cfg = ms.mqtt_config({"host": "filehost", "port": 1883})
     assert cfg["host"] == "envhost" and cfg["port"] == 1884
 
 
 def test_config_file_is_read_when_no_block_given(tmp_path, monkeypatch):
-    monkeypatch.delenv("HAKAKE_MQTT_HOST", raising=False)
+    monkeypatch.delenv("VEHICLETAP_MQTT_HOST", raising=False)
     p = tmp_path / "config.local.json"
     p.write_text(json.dumps({"mqtt": {"host": "h", "bus": "ev"}}))
     cfg = ms.mqtt_config(path=str(p))
@@ -202,14 +202,14 @@ def test_example_config_carries_the_mqtt_block():
 
 
 def test_topics_tree():
-    t = ms.Topics("hakake/leaf", "car")
-    assert t.rx("421") == "hakake/leaf/car/rx/421"
-    assert t.batch == "hakake/leaf/car/rx/_batch"
-    assert t.uds == "hakake/leaf/car/tx/uds"
-    assert t.ack("a1b2") == "hakake/leaf/car/tx/uds/a1b2"
-    assert t.status == "hakake/leaf/car/status"
-    assert t.state == "hakake/leaf/state"
-    assert t.signal("soc") == "hakake/leaf/signal/soc"
+    t = ms.Topics("vehicletap/leaf", "car")
+    assert t.rx("421") == "vehicletap/leaf/car/rx/421"
+    assert t.batch == "vehicletap/leaf/car/rx/_batch"
+    assert t.uds == "vehicletap/leaf/car/tx/uds"
+    assert t.ack("a1b2") == "vehicletap/leaf/car/tx/uds/a1b2"
+    assert t.status == "vehicletap/leaf/car/status"
+    assert t.state == "vehicletap/leaf/state"
+    assert t.signal("soc") == "vehicletap/leaf/signal/soc"
 
 
 # ── frames → ELM lines ───────────────────────────────────────────────────
@@ -366,7 +366,7 @@ def test_subscribe_before_start_is_applied_on_connect():
 
 
 def test_explicit_topic_list_overrides_auto():
-    src, client, sink = run(started({"subscribe": ["421", "hakake/test/car/rx/1DB"]}, ids={"358"}))
+    src, client, sink = run(started({"subscribe": ["421", "vehicletap/test/car/rx/1DB"]}, ids={"358"}))
     assert (f"{ROOT_T}/rx/421", 0) in client.subscriptions
     assert (f"{ROOT_T}/rx/1DB", 0) in client.subscriptions
     assert all(t != f"{ROOT_T}/rx/358" for t, _ in client.subscriptions)
@@ -493,7 +493,7 @@ def test_the_whitelist_is_exactly_the_security_md_set():
 def test_listen_only_bridge_refuses_locally():
     src, client, sink = run(started())
     client.deliver(f"{ROOT_T}/status", {"v": 1, "online": True, "bus": "ev", "listen_only": True,
-                                        "bridge": "hakake-bridge 0.1"}, retain=True)
+                                        "bridge": "vehicletap-bridge 0.1"}, retain=True)
     assert src.listen_only is True
     ack = run(src.send_uds("79B", "7BB", b"\x21\x01", timeout=0.5))
     assert ack["error"] == "refused" and _published_request(client) is None
@@ -513,12 +513,12 @@ def test_status_and_lwt_drive_liveness():
     assert src.liveness()["online"] is True           # connected, no status yet: assume up
     client.deliver(f"{ROOT_T}/status", {"v": 1, "online": True, "bus": "car", "bitrate": 500000,
                                         "listen_only": False, "fps": 1688, "errors": 0,
-                                        "adapter": "socketcan can0", "bridge": "hakake-bridge 0.1",
+                                        "adapter": "socketcan can0", "bridge": "vehicletap-bridge 0.1",
                                         "t": 1757440000.0}, retain=True)
     live = src.liveness()
     assert live["online"] and live["fps"] == 1688 and live["bridge_online"] is True
-    assert src.name.startswith("hakake-bridge 0.1 @ ")
-    assert sink.status[-1]["bridge"] == "hakake-bridge 0.1"
+    assert src.name.startswith("vehicletap-bridge 0.1 @ ")
+    assert sink.status[-1]["bridge"] == "vehicletap-bridge 0.1"
     client.deliver(f"{ROOT_T}/status", {"v": 1, "online": False, "bus": "car"}, retain=True)   # the LWT
     live = src.liveness()
     assert live["online"] is False and live["connected"] is True and live["bridge_online"] is False
@@ -589,7 +589,7 @@ def test_open_mqtt_wraps_the_source_in_the_facade(stub_cantransport):
     elm = run(ms.open_mqtt(log=lambda *a: None, cfg=CFG, client_factory=factory))
     assert elm.adapter_type == "mqtt"
     assert any(ch.isdigit() for ch in elm.adapter_name)
-    assert elm.adapter_port == "mqtt://broker.example:1883/hakake/test/car"
+    assert elm.adapter_port == "mqtt://broker.example:1883/vehicletap/test/car"
     assert elm.marker() == {"can_bus": "car", "listen_only": False,
                             "remote": {"host": "broker.example", "bus": "car"}}
     assert run(elm.send("ATI")) == [elm.adapter_name]
@@ -656,7 +656,7 @@ def test_open_mqtt_with_the_real_facade_serves_atma_and_uds():
 
 
 def test_open_mqtt_refuses_when_unconfigured(stub_cantransport, monkeypatch):
-    monkeypatch.delenv("HAKAKE_MQTT_HOST", raising=False)
+    monkeypatch.delenv("VEHICLETAP_MQTT_HOST", raising=False)
     with pytest.raises(ConnectionError):
         run(ms.open_mqtt(log=lambda *a: None, cfg={"host": ""}))
 
@@ -690,16 +690,16 @@ def test_state_publisher_publishes_state_and_signals_retained_qos0():
     sp = ms.StatePublisher(CFG, client_factory=lambda cid: client).connect()
     n = sp.publish_state(RECORD)
     topics = {t: (p, q, r) for t, p, q, r in client.published}
-    state = json.loads(topics["hakake/test/state"][0])
+    state = json.loads(topics["vehicletap/test/state"][0])
     assert state["soc"] == 87.5 and state["v"] == 1 and state["timing"] == {"lbc01": 0.1}
-    assert topics["hakake/test/state"][1:] == (0, True)
-    assert topics["hakake/test/signal/soc"] == ("87.5", 0, True)
-    assert topics["hakake/test/signal/gear"] == ('"P"', 0, True)
-    assert topics["hakake/test/signal/alive"] == ("true", 0, True)
-    assert topics["hakake/test/signal/temps_f/1"] == ("71.6", 0, True)
-    assert topics["hakake/test/signal/cells/1"] == ("3.96", 0, True)
-    assert "hakake/test/signal/timing" not in topics
-    assert "hakake/test/signal/items/0" not in topics
+    assert topics["vehicletap/test/state"][1:] == (0, True)
+    assert topics["vehicletap/test/signal/soc"] == ("87.5", 0, True)
+    assert topics["vehicletap/test/signal/gear"] == ('"P"', 0, True)
+    assert topics["vehicletap/test/signal/alive"] == ("true", 0, True)
+    assert topics["vehicletap/test/signal/temps_f/1"] == ("71.6", 0, True)
+    assert topics["vehicletap/test/signal/cells/1"] == ("3.96", 0, True)
+    assert "vehicletap/test/signal/timing" not in topics
+    assert "vehicletap/test/signal/items/0" not in topics
     assert n == 1 + len(ms.flatten_signals(RECORD))
 
 
@@ -709,10 +709,10 @@ def test_state_publisher_sends_signals_on_change_and_state_every_cycle():
     sp.publish_state(RECORD)
     client.published.clear()
     n = sp.publish_state(RECORD)
-    assert n == 1 and client.published[0][0] == "hakake/test/state"
+    assert n == 1 and client.published[0][0] == "vehicletap/test/state"
     client.published.clear()
     sp.publish_state(dict(RECORD, soc=88.0))
-    assert [t for t, *_ in client.published] == ["hakake/test/state", "hakake/test/signal/soc"]
+    assert [t for t, *_ in client.published] == ["vehicletap/test/state", "vehicletap/test/signal/soc"]
 
 
 def test_state_publisher_publishes_temperatures_as_they_are():
@@ -721,7 +721,7 @@ def test_state_publisher_publishes_temperatures_as_they_are():
     sp = ms.StatePublisher(CFG, client_factory=lambda cid: client).connect()
     sp.publish_state({"ambient_c": 20.0, "ambient_f": 68.0})
     got = {t: p for t, p, *_ in client.published}
-    assert got["hakake/test/signal/ambient_c"] == "20.0" and got["hakake/test/signal/ambient_f"] == "68.0"
+    assert got["vehicletap/test/signal/ambient_c"] == "20.0" and got["vehicletap/test/signal/ambient_f"] == "68.0"
 
 
 def test_module_level_publish_state_is_a_noop_without_config(monkeypatch):
@@ -745,7 +745,7 @@ def test_module_level_publish_state_uses_the_config(monkeypatch):
     monkeypatch.setattr(ms, "paho_client", factory)
     try:
         assert ms.publish_state({"soc": 1}, log=lambda *a: None) == 2
-        assert clients[0].published[0][0] == "hakake/leaf/state"
+        assert clients[0].published[0][0] == "vehicletap/leaf/state"
         assert ms.publish_state({"soc": 1}, log=lambda *a: None) == 1
     finally:
         ms.reset_state_publisher()
@@ -798,7 +798,7 @@ def test_from_mqtt_builds_a_replay_fixture_with_relative_times(tmp_path, leaf_pr
     out = tmp_path / "session.json"
     path = rec.from_mqtt(str(src), str(out), vehicle="leaf_ze0", period=1.0)
     doc = json.load(open(path))
-    assert doc["hakake_replay"] == 1 and doc["vehicle"] == "leaf_ze0" and doc["synthetic"] is False
+    assert doc["vehicletap_replay"] == 1 and doc["vehicle"] == "leaf_ze0" and doc["synthetic"] is False
     frames = doc["frames"]
     assert [f["t"] for f in frames] == [0.0, 1.0, 2.0]                    # offsets, never epoch
     assert all(f["t"] < 1e6 for f in frames)

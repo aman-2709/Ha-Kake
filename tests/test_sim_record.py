@@ -159,7 +159,7 @@ def test_history_record_from_state_is_the_same_mapping_plus_the_stamp():
     st = sim.state()
     a = history.record_from_state(st, cells=True)
     b = M.record_from_state(st, cells=True)
-    assert a["generated"] is True and a["sim_source"].startswith("hakake_sim")
+    assert a["generated"] is True and a["sim_source"].startswith("vehicletap_sim")
     for k in b:
         assert a[k] == b[k], k
 

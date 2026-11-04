@@ -142,7 +142,7 @@ async def bench_one(load, seconds, scenario, seed, log, interval=DEFAULT_INTERVA
     from simulator import make_sim
     from simulator.canbus import expected_fps
 
-    tmp = tempfile.mkdtemp(prefix="hakake-bench-")
+    tmp = tempfile.mkdtemp(prefix="vehicletap-bench-")
     # the reader's on-disk state, all in the temp dir: never web/ files
     for attr, name in (("STATE_FILE", "state.json"), ("PAUSE_FILE", "reader.pause"),
                        ("TILES_FILE", "tiles.json"), ("CALIB_FILE", "calibration.json")):

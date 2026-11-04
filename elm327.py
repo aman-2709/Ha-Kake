@@ -63,11 +63,11 @@ def load_local_config():
             cfg = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         pass
-    # HAKAKE_* is the current spelling; the older LEAF_* names still work.
-    addr = env("HAKAKE_BLE_ADDR", "LEAF_BLE_ADDR")
+    # VEHICLETAP_* is the current spelling; the older LEAF_* names still work.
+    addr = env("VEHICLETAP_BLE_ADDR", "LEAF_BLE_ADDR")
     if addr:
         cfg["ble_addr"] = addr
-    name = env("HAKAKE_BLE_NAME", "LEAF_BLE_NAME")
+    name = env("VEHICLETAP_BLE_NAME", "LEAF_BLE_NAME")
     if name:
         cfg["ble_name"] = name
     return cfg
@@ -211,10 +211,10 @@ BRD_DIVISOR = {38400: 0x68, 57600: 0x45, 115200: 0x23, 230400: 0x11, 500000: 0x0
 
 
 def serial_target_baud():
-    """The rate to negotiate up to after connecting (HAKAKE_SERIAL_BAUD).
+    """The rate to negotiate up to after connecting (VEHICLETAP_SERIAL_BAUD).
 
     **Default 38400 — the rate every ELM327 powers up at.** Set
-    HAKAKE_SERIAL_BAUD=115200 to opt in to the faster wire.
+    VEHICLETAP_SERIAL_BAUD=115200 to opt in to the faster wire.
 
     Negotiating is worth roughly 2x on a long answer (a 29-frame 2102 is ~200 ms
     of wire at 38400 and ~65 ms at 115200), but it is the one thing here that
@@ -227,7 +227,7 @@ def serial_target_baud():
     opt-in. 230400 and 500000 are in the divisor table but this clone answers
     garbage or nothing at them.
     """
-    raw = (env("HAKAKE_SERIAL_BAUD") or "").strip().lower()
+    raw = (env("VEHICLETAP_SERIAL_BAUD") or "").strip().lower()
     if raw in ("0", "off", "no", "none", "false"):
         return SERIAL_BAUD
     if not raw:
@@ -464,13 +464,13 @@ class SerialELM:
 def _find_serial_port():
     """Find first available USB serial port.
 
-    HAKAKE_SERIAL_PORT overrides the glob. That is how the dashboard is
-    pointed at the pseudo-terminal published by hakake_sim.py --pty: a pty is
+    VEHICLETAP_SERIAL_PORT overrides the glob. That is how the dashboard is
+    pointed at the pseudo-terminal published by vehicletap_sim.py --pty: a pty is
     /dev/ttysNNN and matches no usbserial pattern, and pointing the *real*
     serial transport at it is the strongest test we have that the simulator
     is indistinguishable from a car.
     """
-    forced = env("HAKAKE_SERIAL_PORT")
+    forced = env("VEHICLETAP_SERIAL_PORT")
     if forced:
         return forced
     for pattern in SERIAL_PATTERNS:
@@ -493,14 +493,14 @@ async def detect_adapter(prefer=None, log=print, cfg=None):
         one file; without it the call reads the file as it always did.
 
     "replay" never touches hardware: it serves a recorded session fixture
-    (HAKAKE_REPLAY_FIXTURE, else the active profile's default). Auto-detect
+    (VEHICLETAP_REPLAY_FIXTURE, else the active profile's default). Auto-detect
     never picks it — replay must be asked for, so recorded data can never be
     mistaken for a live car.
 
     "sim" is the same bargain one step further from the car: a running model
     (simulator/) answers instead of a recording, and can be changed mid-run
     through the control API. Auto-detect never picks it either. Configured by
-    HAKAKE_SIM_{SCENARIO,SEED,SPEED,KNOBS,CONTROL_PORT}.
+    VEHICLETAP_SIM_{SCENARIO,SEED,SPEED,KNOBS,CONTROL_PORT}.
 
     Raises:
         ConnectionError if no adapter found.
@@ -508,26 +508,26 @@ async def detect_adapter(prefer=None, log=print, cfg=None):
     errors = []
 
     if prefer == "sim":
-        if env("HAKAKE_SIM_CAN"):
+        if env("VEHICLETAP_SIM_CAN"):
             # `--adapter sim --sim-can [ev]`: the model's ECUs on an in-process
             # virtual CAN bus behind the native-CAN façade (cantransport.py),
             # so the whole stack runs at the real frame rate with no board.
             # Still "sim": throwaway database, simulated stamp, never auto.
             from cantransport import open_sim_can
-            seed = env("HAKAKE_SIM_SEED")
-            port = env("HAKAKE_SIM_CONTROL_PORT")
+            seed = env("VEHICLETAP_SIM_SEED")
+            port = env("VEHICLETAP_SIM_CONTROL_PORT")
             try:
-                knobs = json.loads(env("HAKAKE_SIM_KNOBS") or "{}")
+                knobs = json.loads(env("VEHICLETAP_SIM_KNOBS") or "{}")
             except json.JSONDecodeError as e:
-                raise ConnectionError(f"HAKAKE_SIM_KNOBS is not valid JSON: {e}")
-            return await open_sim_can(log=log, scenario=env("HAKAKE_SIM_SCENARIO") or None,
+                raise ConnectionError(f"VEHICLETAP_SIM_KNOBS is not valid JSON: {e}")
+            return await open_sim_can(log=log, scenario=env("VEHICLETAP_SIM_SCENARIO") or None,
                                       seed=int(seed) if seed not in (None, "") else None,
                                       knobs=knobs or None,
                                       control_port=int(port) if port not in (None, "") else None)
-        serial_path = env("HAKAKE_SIM_SERIAL")
+        serial_path = env("VEHICLETAP_SIM_SERIAL")
         if serial_path:
             # The model is in another process, behind a pty published by
-            # hakake_sim.py --pty. We reach it with the *real* serial
+            # vehicletap_sim.py --pty. We reach it with the *real* serial
             # transport — the point of the exercise — but the mode is still
             # "sim", so the throwaway database and the simulated stamp apply.
             elm = SimSerialELM(port=serial_path)
@@ -536,24 +536,24 @@ async def detect_adapter(prefer=None, log=print, cfg=None):
             log(f"  adapter answers: {elm.adapter_name}")
             log("  *** SIMULATED DATA — not a reading from any vehicle ***")
             return elm
-        seed = env("HAKAKE_SIM_SEED")
-        port = env("HAKAKE_SIM_CONTROL_PORT")
+        seed = env("VEHICLETAP_SIM_SEED")
+        port = env("VEHICLETAP_SIM_CONTROL_PORT")
         try:
-            knobs = json.loads(env("HAKAKE_SIM_KNOBS") or "{}")
+            knobs = json.loads(env("VEHICLETAP_SIM_KNOBS") or "{}")
         except json.JSONDecodeError as e:
-            raise ConnectionError(f"HAKAKE_SIM_KNOBS is not valid JSON: {e}")
-        elm = SimELM(scenario=env("HAKAKE_SIM_SCENARIO") or None,
+            raise ConnectionError(f"VEHICLETAP_SIM_KNOBS is not valid JSON: {e}")
+        elm = SimELM(scenario=env("VEHICLETAP_SIM_SCENARIO") or None,
                      seed=int(seed) if seed not in (None, "") else None,
                      knobs=knobs or None,
-                     speed=float(env("HAKAKE_SIM_SPEED", default="1") or 1),
+                     speed=float(env("VEHICLETAP_SIM_SPEED", default="1") or 1),
                      control_port=int(port) if port not in (None, "") else None)
         await elm.connect(log=log)
         return elm
 
     if prefer == "replay":
-        elm = ReplayELM(path=env("HAKAKE_REPLAY_FIXTURE") or None,
-                        loop=env("HAKAKE_REPLAY_LOOP", default="1") not in ("0", "no", "false"),
-                        speed=float(env("HAKAKE_REPLAY_SPEED", default="1") or 1))
+        elm = ReplayELM(path=env("VEHICLETAP_REPLAY_FIXTURE") or None,
+                        loop=env("VEHICLETAP_REPLAY_LOOP", default="1") not in ("0", "no", "false"),
+                        speed=float(env("VEHICLETAP_REPLAY_SPEED", default="1") or 1))
         await elm.connect(log=log)
         return elm
 
@@ -662,9 +662,10 @@ async def passive_capture(elm, can_id, seconds=0.5, set_caf=True):
 # what makes a vehicle profile writable (and reviewable) by someone who does
 # not own the car.
 #
-# Session-fixture format (see docs/REPLAY.md):
+# Session-fixture format (see docs/REPLAY.md). Files recorded before the rename have "hakake_replay": 1
+# where this has "vehicletap_replay": 1; both are read, only the new key is written.
 #
-#   {"hakake_replay": 1,
+#   {"vehicletap_replay": 1,
 #    "vehicle": "leaf_ze0",              # profile the capture came from
 #    "adapter": "ELM327 v1.5",           # what ATI answers
 #    "synthetic": false,                 # true == not recorded from a car
@@ -683,11 +684,12 @@ async def passive_capture(elm, can_id, seconds=0.5, set_caf=True):
 # answers NO DATA — the same thing a car that did not reply would say. The
 # replay adapter never invents a value.
 
-REPLAY_MARKER = "hakake_replay"
+REPLAY_MARKER = "vehicletap_replay"
+OLD_REPLAY_MARKER = "hakake_replay"      # sessions recorded before the rename carry this key instead; both are read
 
 
 class ReplayFixtureError(ValueError):
-    """The file is not a Ha-Kake replay session fixture."""
+    """The file is not a VehicleTap replay session fixture."""
 
 
 def replay_fixture_path(vehicle=None, root=None):
@@ -701,7 +703,7 @@ def replay_fixture_path(vehicle=None, root=None):
 def load_replay_fixture(path):
     with open(path) as f:
         data = json.load(f)
-    if not isinstance(data, dict) or REPLAY_MARKER not in data:
+    if not isinstance(data, dict) or not (REPLAY_MARKER in data or OLD_REPLAY_MARKER in data):
         raise ReplayFixtureError(
             f"{path} is not a replay session fixture (no {REPLAY_MARKER!r} key). "
             f"Build one with:  python record_session.py --derive")
@@ -881,7 +883,7 @@ class ReplayELM:
 #   web/app.py --adapter sim        SimELM in-process inside the reader; the
 #                                   optional control server (--sim-control)
 #                                   lets an agent turn knobs mid-run.
-#   hakake_sim.py --pty             the model behind a real pseudo-terminal,
+#   vehicletap_sim.py --pty             the model behind a real pseudo-terminal,
 #                                   driven through the real SerialELM. Slower,
 #                                   but it exercises the serial transport and
 #                                   the dashboard genuinely cannot tell.
@@ -926,7 +928,7 @@ class SimELM:
     Holds exactly the adapter state a real ELM327 keeps between commands —
     ATSH (request header), ATCRA (response filter), ATCAF (ISO-TP formatting)
     — and hands everything else to the model. `handle()` is the synchronous
-    core so the pty server in hakake_sim.py can share this one state machine
+    core so the pty server in vehicletap_sim.py can share this one state machine
     rather than growing a second, subtly different one.
     """
 
@@ -1052,14 +1054,14 @@ class SimELM:
 
         A busy port falls back to a free one instead of raising. This runs
         inside the reader child, and `web/app.py` restarts that child whenever
-        it dies — so an OSError here (a stale `hakake_sim.py --pty` still
+        it dies — so an OSError here (a stale `vehicletap_sim.py --pty` still
         holding 8099, or a second dashboard) was a silent crash loop: no
         readings, "restarting in 2s" forever. Now the model runs, the record
         carries the port actually bound, and the log says loudly which port
         was wanted and which was used. Port 0 is already "any free port", so
         there is nothing to fall back to and its error propagates.
         """
-        from hakake_sim import serve_control      # lazy: utility, not a dependency
+        from vehicletap_sim import serve_control      # lazy: utility, not a dependency
         wanted = int(port or 0)
         self.control_port_requested = wanted
         try:
@@ -1070,7 +1072,7 @@ class SimELM:
             self._control = serve_control(self.sim, 0, lock=self.lock, log=log)
             bound = self._control.server_address[1]
             log(f"  *** sim control port {wanted} is busy ({e.strerror or e}) — "
-                f"serving on {bound} instead. Is a stale `hakake_sim.py --pty` or "
+                f"serving on {bound} instead. Is a stale `vehicletap_sim.py --pty` or "
                 f"another dashboard holding {wanted}? (`lsof -i :{wanted}`) ***")
         self.control_port = self._control.server_address[1]
         self.control_url = f"http://127.0.0.1:{self.control_port}"
@@ -1109,4 +1111,4 @@ class SimSerialELM(SerialELM):
                 "sim_seed": None,
                 "sim_vehicle": None,
                 "sim_transport": f"serial {self.adapter_port}",
-                "sim_control_url": env("HAKAKE_SIM_CONTROL_URL") or ""}
+                "sim_control_url": env("VEHICLETAP_SIM_CONTROL_URL") or ""}

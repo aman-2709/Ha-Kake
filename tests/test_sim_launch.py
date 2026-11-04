@@ -6,7 +6,7 @@
 `python web/app.py --adapter sim` is canonical: the control API comes up on
 8099 unless told otherwise, and a busy port is a fallback with a loud log —
 not a reader child that dies and is restarted every two seconds for ever
-(that is what a stale `hakake_sim.py --pty` on 8099 used to cause under a
+(that is what a stale `vehicletap_sim.py --pty` on 8099 used to cause under a
 default-on port). The pty rig, for its part, prints the exact dashboard
 command instead of a pty path and a shrug, and can start the dashboard
 itself.
@@ -26,8 +26,8 @@ import pytest
 
 from conftest import ROOT                                                # noqa: E402
 import elm327                                                            # noqa: E402
-import hakake_sim                                                        # noqa: E402
-from hakake_sim import (DEFAULT_DASHBOARD_PORT, DashboardChild,          # noqa: E402
+import vehicletap_sim                                                        # noqa: E402
+from vehicletap_sim import (DEFAULT_DASHBOARD_PORT, DashboardChild,          # noqa: E402
                         dashboard_command, panel_url)
 from sim_stub import make_sim                                            # noqa: E402
 from test_sim_control import run_cli                                     # noqa: E402
@@ -210,13 +210,13 @@ def stubbed_rig(monkeypatch):
                         lambda vehicle=None, scenario=None, seed=None, knobs=None:
                         make_sim(vehicle=vehicle or "leaf_ze0", knobs=knobs,
                                  seed=seed, scenario=scenario))
-    monkeypatch.setattr(hakake_sim.subprocess, "Popen", FakeProc)
+    monkeypatch.setattr(vehicletap_sim.subprocess, "Popen", FakeProc)
     FakeProc.started.clear()
     yield FakeProc
 
 
 def test_launch_dashboard_spawns_the_printed_command_and_stops_it(stubbed_rig, capsys):
-    rc = hakake_sim.main(["--json", "--pty", "--control", "0", "--launch-dashboard", "5077",
+    rc = vehicletap_sim.main(["--json", "--pty", "--control", "0", "--launch-dashboard", "5077",
                           "--duration", "0.3", "--report", "0"])
     assert rc == 0
     ready = json.loads(capsys.readouterr().out.splitlines()[0])
@@ -231,7 +231,7 @@ def test_launch_dashboard_spawns_the_printed_command_and_stops_it(stubbed_rig, c
 
 
 def test_launch_dashboard_defaults_to_5055_and_never_5000(stubbed_rig, capsys):
-    rc = hakake_sim.main(["--json", "--pty", "--no-control", "--launch-dashboard",
+    rc = vehicletap_sim.main(["--json", "--pty", "--no-control", "--launch-dashboard",
                           "--duration", "0.2", "--report", "0"])
     assert rc == 0
     proc = stubbed_rig.started[0]
@@ -244,7 +244,7 @@ def test_a_dashboard_that_dies_stops_the_rig(stubbed_rig, capsys, monkeypatch):
         self.rc = 1
         return 1
     monkeypatch.setattr(stubbed_rig, "poll", die)
-    rc = hakake_sim.main(["--json", "--pty", "--no-control", "--launch-dashboard",
+    rc = vehicletap_sim.main(["--json", "--pty", "--no-control", "--launch-dashboard",
                           "--duration", "30", "--report", "0"])
     assert rc == 1
     events = [json.loads(l)["event"] for l in capsys.readouterr().out.splitlines() if l.strip()]
@@ -252,7 +252,7 @@ def test_a_dashboard_that_dies_stops_the_rig(stubbed_rig, capsys, monkeypatch):
 
 
 def test_launch_dashboard_needs_a_pty(stubbed_rig, capsys):
-    rc = hakake_sim.main(["--no-control", "--launch-dashboard", "--duration", "0.1"])
+    rc = vehicletap_sim.main(["--no-control", "--launch-dashboard", "--duration", "0.1"])
     assert rc == 2 and "--pty" in capsys.readouterr().err
     assert not stubbed_rig.started
 

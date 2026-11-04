@@ -161,8 +161,8 @@ def test_strip_marks_the_playhead_with_a_triangle_and_the_clock_time():
     assert "strip.style.cursor = nearPlayhead(e) ? 'ew-resize' : 'crosshair'" in init
 
 
-def test_timeline_css_lives_in_hakake_only():
-    css = read(os.path.join(STATIC, "hakake.css"))
+def test_timeline_css_lives_in_vehicletap_only():
+    css = read(os.path.join(STATIC, "vehicletap.css"))
     for sel in (".timeline {", ".tl-transport button.on", "#tl-strip {", ".tiles-btn.on"):
         assert sel in css, sel
     assert ".tl-" not in read(os.path.join(STATIC, "tiles.css"))
@@ -174,7 +174,7 @@ def test_timeline_docks_to_the_window_so_playback_can_be_driven_from_any_tile():
     assert "const DOCKS = ['bottom', 'top', 'inline'];" in page and "function setDock(mode)" in page
     assert "setDock(dockMode());" in page.split("async function enterPlayback")[1].split("}")[0]   # docked on entry
     assert "document.body.style.paddingBottom" in page                                          # the page is not covered
-    css = read(os.path.join(STATIC, "hakake.css"))
+    css = read(os.path.join(STATIC, "vehicletap.css"))
     assert ".timeline.dock-bottom, .timeline.dock-top { position: fixed;" in css
     assert ".timeline.dock-bottom { bottom: 8px;" in css and ".timeline.dock-top { top: 8px;" in css
 
@@ -183,7 +183,7 @@ def test_the_docked_timeline_is_no_wider_than_the_page_s_own_column():
     """It floats over the page, so without a cap it spans the window while everything
     beneath it stops at the content column — the owner saw that on a wide display.
     One custom property states the column; `.dash` and the docked timeline both read it."""
-    css = read(os.path.join(STATIC, "hakake.css"))
+    css = read(os.path.join(STATIC, "vehicletap.css"))
     page = read(INDEX)
     assert "--app-max: 1400px;" in css and "--app-pad: 20px;" in css
     assert "--app-col: calc(var(--app-max) - 2 * var(--app-pad));" in css

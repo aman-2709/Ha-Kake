@@ -11,9 +11,9 @@ import mqtt_session_catcher as msc  # noqa: E402
 
 
 def test_record_line_embeds_json_and_keeps_text():
-    rec = json.loads(msc.record_line("hakake/leaf/car/status", b'{"online": true}'))
-    assert rec == {"topic": "hakake/leaf/car/status", "payload": {"online": True}}
-    rec = json.loads(msc.record_line("hakake/leaf/link/x", b"not json"))
+    rec = json.loads(msc.record_line("vehicletap/leaf/car/status", b'{"online": true}'))
+    assert rec == {"topic": "vehicletap/leaf/car/status", "payload": {"online": True}}
+    rec = json.loads(msc.record_line("vehicletap/leaf/link/x", b"not json"))
     assert rec["payload"] == "not json"
     assert json.loads(msc.record_line("t", b""))["payload"] is None
 

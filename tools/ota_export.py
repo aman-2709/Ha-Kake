@@ -24,7 +24,7 @@ and ostree checksums, and esync's state may carry more than a version: none of t
 input, so it cannot be in the output. The dashboard's reader whitelists again on the other side.
 
 Usage:
-  python3 ota_export.py --out /var/lib/ha-kake-ota/ota_status.json --service esync --service candump
+  python3 ota_export.py --out /var/lib/vehicletap-ota/ota_status.json --service esync --service candump
   python3 ota_export.py --out FILE --service esync --interval 30      # keep it fresh; Ctrl-C to stop
 """
 
@@ -289,7 +289,7 @@ def seconds(value):
 
 
 def parse_args(argv=None):
-    p = argparse.ArgumentParser(description="Write the board's OTA status file for the Ha-Kake dashboard (docs/OTA.md).")
+    p = argparse.ArgumentParser(description="Write the board's OTA status file for the VehicleTap dashboard (docs/OTA.md).")
     p.add_argument("--out", required=True, help="the status file to write (its directory must exist)")
     p.add_argument("--service", action="append", type=unit_name, metavar="UNIT",
                    help="a systemd unit to report on; repeat for several")

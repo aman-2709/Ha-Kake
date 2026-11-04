@@ -2,7 +2,7 @@
   "name": "degradation_arc",
   "vehicle": "leaf_ze0",
   "seed": 5,
-  "description": "Two years of ageing compressed into a couple of minutes: capacity, HX and cell spread walked along an arc while the dashboard watches, so the health tiles and their colour scales can be exercised at every point of the range. The car sits switched off (only the base_off drain). For a POPULATED degradation CHART use `hakake_sim.py --generate` instead — a live scenario cannot write months of history, only walk through it. THE ONE SHIPPED SCENARIO THAT DOES NOT RUN AT REAL TIME. It keeps clock_scale 3600 \u2014 one simulated HOUR per real second \u2014 because two years of ageing at 1x is two years of waiting. Everything else ships at 1x and is compressed with --speed.",
+  "description": "Two years of ageing compressed into a couple of minutes: capacity, HX and cell spread walked along an arc while the dashboard watches, so the health tiles and their colour scales can be exercised at every point of the range. The car sits switched off (only the base_off drain). For a POPULATED degradation CHART use `vehicletap_sim.py --generate` instead — a live scenario cannot write months of history, only walk through it. THE ONE SHIPPED SCENARIO THAT DOES NOT RUN AT REAL TIME. It keeps clock_scale 3600 \u2014 one simulated HOUR per real second \u2014 because two years of ageing at 1x is two years of waiting. Everything else ships at 1x and is compressed with --speed.",
   "knobs": {"soc": 62, "capacity_ah": 45.0, "hx": 72, "cell_spread_mv": 18,
             "pack_temp_c": 24, "ambient_c": 22, "cabin_temp_c": 24,
             "gear": "P", "handbrake": true, "locked": true,

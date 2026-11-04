@@ -164,15 +164,15 @@ def test_target_baud_from_env(monkeypatch):
     # Default is the power-up rate: ATBRD is the one change that leaves state
     # on the device across runs, so speeding the wire is opt-in (see the
     # docstring on serial_target_baud). Regression, 2026-09-03.
-    monkeypatch.delenv("HAKAKE_SERIAL_BAUD", raising=False)
+    monkeypatch.delenv("VEHICLETAP_SERIAL_BAUD", raising=False)
     assert elm327.serial_target_baud() == elm327.SERIAL_BAUD
-    monkeypatch.setenv("HAKAKE_SERIAL_BAUD", "115200")
+    monkeypatch.setenv("VEHICLETAP_SERIAL_BAUD", "115200")
     assert elm327.serial_target_baud() == 115200
-    monkeypatch.setenv("HAKAKE_SERIAL_BAUD", "off")
+    monkeypatch.setenv("VEHICLETAP_SERIAL_BAUD", "off")
     assert elm327.serial_target_baud() == elm327.SERIAL_BAUD
-    monkeypatch.setenv("HAKAKE_SERIAL_BAUD", "230400")
+    monkeypatch.setenv("VEHICLETAP_SERIAL_BAUD", "230400")
     assert elm327.serial_target_baud() == 230400
-    monkeypatch.setenv("HAKAKE_SERIAL_BAUD", "nonsense")
+    monkeypatch.setenv("VEHICLETAP_SERIAL_BAUD", "nonsense")
     assert elm327.serial_target_baud() == elm327.SERIAL_BAUD
 
 

@@ -44,8 +44,8 @@ _DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
 
 
 def path():
-    """The status file: HAKAKE_OTA_FILE, else ota_status.json in the data folder."""
-    return env("HAKAKE_OTA_FILE") or datadir.path("ota_status.json")
+    """The status file: VEHICLETAP_OTA_FILE, else ota_status.json in the data folder."""
+    return env("VEHICLETAP_OTA_FILE") or datadir.path("ota_status.json")
 
 
 # ── the clock ────────────────────────────────────────────────────────────

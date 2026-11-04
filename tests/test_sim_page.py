@@ -39,7 +39,7 @@ SIM_JS = os.path.join(STATIC, "sim.js")
 ANCHORS = {"vehicle": 'id="shifter"', "tires": 'id="wheels"', "body": 'id="body-svg"', "climate": 'id="hvac-cabin"'}
 CARDS = ("cluster", "climate-head", "time", "state")
 LAUNCH = ("python web/app.py --adapter sim --port 5055",
-          "python hakake_sim.py --pty --scenario drive --launch-dashboard")
+          "python vehicletap_sim.py --pty --scenario drive --launch-dashboard")
 
 
 def read(path):
@@ -106,7 +106,7 @@ def test_sim_loads_the_shared_engine_in_order_and_nothing_external(client):
                     "/static/tiles.js", "/static/sim.js"]
     links = re.findall(r'<link rel="stylesheet" href="([^"]+)"', page)
     assert links[:4] == ["/static/vendor/gridstack.min.css", "/static/tilestudio.css",
-                         "/static/hakake.css", "/static/tiles.css"], "the dashboard's cascade order"
+                         "/static/vehicletap.css", "/static/tiles.css"], "the dashboard's cascade order"
     assert links[-1] == "/static/sim.css"
     for bad in ("<img", "data:image", "https://"):
         assert bad not in page, bad

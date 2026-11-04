@@ -42,7 +42,7 @@ _chan = [0]
 
 def channel():
     _chan[0] += 1
-    return f"hakake-simcan-test-{os.getpid()}-{_chan[0]}"
+    return f"vehicletap-simcan-test-{os.getpid()}-{_chan[0]}"
 
 
 def run(coro):
@@ -434,12 +434,12 @@ def test_the_sim_can_facade_is_labelled_sim_and_stamps_every_record():
 
 
 def test_detect_adapter_sim_with_sim_can_builds_the_can_facade(monkeypatch):
-    monkeypatch.setenv("HAKAKE_SIM_CAN", "car")
-    monkeypatch.setenv("HAKAKE_SIM_SCENARIO", "idle")
-    monkeypatch.setenv("HAKAKE_SIM_SEED", "3")
-    monkeypatch.setenv("HAKAKE_SIM_KNOBS", '{"bus_load": 0.1, "noise": 0}')
-    monkeypatch.delenv("HAKAKE_SIM_CONTROL_PORT", raising=False)
-    monkeypatch.delenv("HAKAKE_SIM_SERIAL", raising=False)
+    monkeypatch.setenv("VEHICLETAP_SIM_CAN", "car")
+    monkeypatch.setenv("VEHICLETAP_SIM_SCENARIO", "idle")
+    monkeypatch.setenv("VEHICLETAP_SIM_SEED", "3")
+    monkeypatch.setenv("VEHICLETAP_SIM_KNOBS", '{"bus_load": 0.1, "noise": 0}')
+    monkeypatch.delenv("VEHICLETAP_SIM_CONTROL_PORT", raising=False)
+    monkeypatch.delenv("VEHICLETAP_SIM_SERIAL", raising=False)
     said = []
     elm = run(elm327.detect_adapter(prefer="sim", log=said.append))
     try:
@@ -453,7 +453,7 @@ def test_detect_adapter_sim_with_sim_can_builds_the_can_facade(monkeypatch):
 
 
 def test_sim_can_mode_parses_the_environment(monkeypatch):
-    monkeypatch.delenv("HAKAKE_SIM_CAN", raising=False)
+    monkeypatch.delenv("VEHICLETAP_SIM_CAN", raising=False)
     assert ct.sim_can_mode() is None
     assert ct.sim_can_mode("1") == "car" and ct.sim_can_mode("car") == "car" and ct.sim_can_mode("ev") == "ev"
     assert ct.sim_can_mode("0") is None
@@ -464,14 +464,14 @@ def test_sim_can_mode_parses_the_environment(monkeypatch):
 def test_can_interface_sim_through_adapter_can_is_refused_with_advice(monkeypatch):
     """Generated rows must never land in web/leaf_battery.db: the reader picks
     the database from --adapter, so the simulated bus is `--adapter sim --sim-can`."""
-    monkeypatch.delenv("HAKAKE_CAN_BUS", raising=False)
-    monkeypatch.delenv("HAKAKE_CAN_INTERFACE", raising=False)
+    monkeypatch.delenv("VEHICLETAP_CAN_BUS", raising=False)
+    monkeypatch.delenv("VEHICLETAP_CAN_INTERFACE", raising=False)
     with pytest.raises(ConnectionError, match="--sim-can"):
         run(ct.open_can({"can_bus": "car", "can_interface": "sim"}, log=lambda *a: None))
 
 
 def test_auto_detect_never_picks_the_simulated_bus(monkeypatch):
-    monkeypatch.setenv("HAKAKE_SIM_CAN", "car")
+    monkeypatch.setenv("VEHICLETAP_SIM_CAN", "car")
     monkeypatch.setattr(elm327, "_find_serial_port", lambda: None)
 
     async def no_ble(self, log=print):

@@ -9,7 +9,7 @@ compare_sessions.py — the expected pull against the observed one.
 Each side is a replay fixture (`.json`, `record_session.py` format), a
 readings database (`.db`, the reader's or the pull's), or a captured frame
 stream (`.jsonl`, the MQTT `rx/#` message format of docs/MQTT.md — what
-`mosquitto_sub` or `hakake_sim.py --pull` writes). The tool prints, side by
+`mosquitto_sub` or `vehicletap_sim.py --pull` writes). The tool prints, side by
 side and with the difference:
 
   * peak pack current, its time, speed and power
@@ -210,7 +210,7 @@ def load_stream(path, vehicle=None, period=0.5):
                 continue
             if "/rx/" in msg.get("topic", ""):
                 buses.add(_topic_bus_id(msg["topic"], msg.get("payload"))[0])
-    tmpdir = tempfile.mkdtemp(prefix="hakake-compare-")
+    tmpdir = tempfile.mkdtemp(prefix="vehicletap-compare-")
     tmp, thinned = os.path.join(tmpdir, "fixture.json"), os.path.join(tmpdir, "stream.jsonl")
     try:
         src = path

@@ -19,7 +19,7 @@ that changes something (POST/PUT/DELETE) must come from a page on one (`Origin`)
 or, from a tool with no Origin such as curl, be sent as `application/json`;
 anything else gets 403. Responses carry `X-Content-Type-Options: nosniff` and a
 Content-Security-Policy that allows only the server's own scripts and styles
-(the pages load nothing third-party). `HAKAKE_ALLOWED_HOSTS` (comma list) adds
+(the pages load nothing third-party). `VEHICLETAP_ALLOWED_HOSTS` (comma list) adds
 host names for someone who deliberately serves the page elsewhere. Spawns **`web/reader.py`** as a supervised subprocess and
 restarts it if it exits (a crash costs seconds, not the page). Each request
 thread gets its own SQLite connection — sharing one segfaulted (2026-08-24).
@@ -33,11 +33,11 @@ with one exception worth knowing: the cell-log fast lane names the Leaf's cell
 item (`CELLLOG_ITEM = "lbc02"`), which belongs in a profile and has not moved yet —
 and its per-cycle console line is built from the first few fast-lane signals in
 the registry. Shared car-independent helpers (`c_to_f`, `fmt_temp`, and `env()`,
-which reads the `HAKAKE_*` variables with the older `LEAF_*` names as silent
+which reads the `VEHICLETAP_*` variables with the older `LEAF_*` names as silent
 fallbacks) live in `util.py` at the repo root; `leaf_decoders.py` re-exports the
 temperature pair for its long-standing callers.
 
-**`bridge/hakake_bridge.py`** — optional, and the one exception to "the reader
+**`bridge/vehicletap_bridge.py`** — optional, and the one exception to "the reader
 is the only process that talks to the car": a bridge on a Raspberry Pi at the
 car's OBD port talks to the bus *on the reader's behalf*. It mirrors CAN frames
 to an MQTT broker as `<prefix>/<bus>/rx/<ID>` messages (or 50 ms batches),
@@ -62,7 +62,7 @@ registry entries, the `HISTORY_COLS` it wants as real database columns,
 Leaf's current fusion). `NAME`, `TITLE` and an optional `LOGO` name the car
 in the page chrome. `reader.set_vehicle()` binds the active profile to the
 reader's globals and the signal registry; `--vehicle` on `app.py` /
-`reader.py`, `HAKAKE_VEHICLE`, or `"vehicle"` in `config.local.json`
+`reader.py`, `VEHICLETAP_VEHICLE`, or `"vehicle"` in `config.local.json`
 selects it, default `leaf_ze0`. The scheduler, store, supervisor, API and
 Tile Studio are all profile-agnostic — `vehicles/lancer_2009.py` (standard
 mode-01 PIDs, no reverse engineering) is the proof and the template.
@@ -192,7 +192,7 @@ things about the USB path are worth knowing because they cost real time:
 - **The wire rate can be negotiated, but is not by default.** Every ELM327
   powers up at 38400, where a 29-frame answer spends ~200 ms just being
   transmitted, and **that is where the link stays** unless
-  `HAKAKE_SERIAL_BAUD=115200` asks otherwise (`serial_target_baud()` returns
+  `VEHICLETAP_SERIAL_BAUD=115200` asks otherwise (`serial_target_baud()` returns
   38400 for unset and for `off`). The reason is in that function's docstring:
   `ATBRD` is the one thing here that leaves persistent state on the *adapter*,
   so a killed run leaves the chip fast while the next one opens slow and hears
@@ -266,7 +266,7 @@ bridge per bus. Since 2026-09-09 the reader routes **by item, not by id**:
   whose silence means the car is asleep.
 - **One transport per bus.** `config.local.json` `"adapters": [{"type":
   "usb", "bus": "car"}, {"type": "can", "bus": "ev", "can_channel": …}]`
-  (`HAKAKE_ADAPTERS`, a JSON list, wins over the file); an entry's other keys
+  (`VEHICLETAP_ADAPTERS`, a JSON list, wins over the file); an entry's other keys
   are per-adapter overrides that `detect_adapter(cfg=)` merges over the file
   (`reader.adapter_entries()`, `reader.entry_cfg()`). `--adapter X` stays the
   one-entry shorthand for the primary bus and carries no overrides, so the

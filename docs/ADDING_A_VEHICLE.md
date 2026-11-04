@@ -7,7 +7,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 How to make this dashboard work on your car.
 
-Everything car-specific in Ha-Kake lives in one module: `vehicles/<name>.py`.
+Everything car-specific in VehicleTap lives in one module: `vehicles/<name>.py`.
 The reader, the scheduler, the SQLite store, the API, Tile Studio and the
 whole page are vehicle-agnostic, and a profile is the only thing you write.
 Two ship today — `vehicles/leaf_ze0.py` (2012 Nissan Leaf, largely reverse

@@ -89,12 +89,36 @@ def test_rejects_a_file_that_is_not_a_session_fixture(tmp_path):
         load_replay_fixture(str(p))
 
 
+def write_session(tmp_path, marker):
+    p = tmp_path / "s.json"
+    p.write_text(json.dumps({marker: 1, "vehicle": "leaf_ze0", "frames": [{"t": 0.0, "uds": {}, "passive": {}}]}))
+    return str(p)
+
+
+def test_a_session_recorded_before_the_rename_still_loads(tmp_path):
+    """Real car captures carry the old key, and they cannot be re-recorded."""
+    assert elm327.OLD_REPLAY_MARKER == "hakake_replay" and elm327.REPLAY_MARKER == "vehicletap_replay"
+    assert load_replay_fixture(write_session(tmp_path, elm327.OLD_REPLAY_MARKER))["vehicle"] == "leaf_ze0"
+    with open(os.path.join(FIXTURES, "session_leaf_ze0.json")) as f:          # a real capture, left as recorded
+        assert elm327.OLD_REPLAY_MARKER in json.load(f)
+    assert load_replay_fixture(os.path.join(FIXTURES, "session_leaf_ze0.json"))["frames"]
+
+
+def test_a_session_with_the_new_key_loads(tmp_path):
+    assert load_replay_fixture(write_session(tmp_path, elm327.REPLAY_MARKER))["vehicle"] == "leaf_ze0"
+
+
+def test_a_file_with_neither_key_is_refused_and_names_the_new_one(tmp_path):
+    with pytest.raises(ReplayFixtureError, match="vehicletap_replay"):
+        load_replay_fixture(write_session(tmp_path, "something_else"))
+
+
 def test_rejects_empty_and_malformed_frames(tmp_path):
     p = tmp_path / "s.json"
-    p.write_text(json.dumps({"hakake_replay": 1, "frames": []}))
+    p.write_text(json.dumps({"vehicletap_replay": 1, "frames": []}))
     with pytest.raises(ReplayFixtureError):
         load_replay_fixture(str(p))
-    p.write_text(json.dumps({"hakake_replay": 1, "frames": [{"uds": []}]}))
+    p.write_text(json.dumps({"vehicletap_replay": 1, "frames": [{"uds": []}]}))
     with pytest.raises(ReplayFixtureError):
         load_replay_fixture(str(p))
 
@@ -205,7 +229,7 @@ def test_passive_values_change_over_the_session(leaf):
 # ── detect_adapter wiring ────────────────────────────────────────────────
 
 def test_detect_adapter_replay_uses_the_env_fixture(monkeypatch):
-    monkeypatch.setenv("HAKAKE_REPLAY_FIXTURE", SESSIONS["lancer_2009"])
+    monkeypatch.setenv("VEHICLETAP_REPLAY_FIXTURE", SESSIONS["lancer_2009"])
     elm = run(elm327.detect_adapter(prefer="replay", log=lambda *a: None))
     assert isinstance(elm, ReplayELM)
     assert elm.adapter_type == "replay" and elm.replay is True
@@ -214,9 +238,9 @@ def test_detect_adapter_replay_uses_the_env_fixture(monkeypatch):
 
 
 def test_detect_adapter_replay_honours_speed_and_loop_env(monkeypatch):
-    monkeypatch.setenv("HAKAKE_REPLAY_FIXTURE", SESSIONS["leaf_ze0"])
-    monkeypatch.setenv("HAKAKE_REPLAY_SPEED", "4")
-    monkeypatch.setenv("HAKAKE_REPLAY_LOOP", "0")
+    monkeypatch.setenv("VEHICLETAP_REPLAY_FIXTURE", SESSIONS["leaf_ze0"])
+    monkeypatch.setenv("VEHICLETAP_REPLAY_SPEED", "4")
+    monkeypatch.setenv("VEHICLETAP_REPLAY_LOOP", "0")
     elm = run(elm327.detect_adapter(prefer="replay", log=lambda *a: None))
     assert elm.speed == 4.0 and elm.loop is False
 
@@ -244,7 +268,7 @@ def test_connect_log_says_it_is_a_replay(leaf):
 
 def test_synthetic_fixture_is_announced(tmp_path):
     p = tmp_path / "s.json"
-    p.write_text(json.dumps({"hakake_replay": 1, "vehicle": "leaf_ze0", "synthetic": True,
+    p.write_text(json.dumps({"vehicletap_replay": 1, "vehicle": "leaf_ze0", "synthetic": True,
                              "frames": [{"t": 0, "uds": {}, "passive": {}}]}))
     elm = ReplayELM(str(p))
     lines = []

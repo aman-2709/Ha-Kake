@@ -1,4 +1,4 @@
-# Ha-Kake
+# VehicleTap
 
 A read-only telemetry dashboard for **any car with an OBD-II port**, read
 through a cheap ELM327 adapter — BLE or USB — with a never-pruned SQLite
@@ -60,7 +60,7 @@ A sincere thank you to David for the time, effort, and dedication he has put int
 > not a substitute for a mechanic, and nothing here should be your only
 > evidence for a repair, a purchase or a decision to keep driving.
 
-![Ha-Kake dashboard — a real 2012 Leaf, 35% state of health, read over BLE](docs/img/dashboard.png)
+![VehicleTap dashboard — a real 2012 Leaf, 35% state of health, read over BLE](docs/img/dashboard.png)
 
 ## What it is, and what it is not
 
@@ -76,7 +76,7 @@ what it asks for, not whether it is on the bus: it transmits requests like any
 scan tool, and the Safety section says what follows from that. Do not operate the laptop while driving.
 See [`SECURITY.md`](SECURITY.md).
 
-> **Where your data lives:** Ha-Kake keeps its database and settings in a data folder outside the source tree, created on first run (`docs/DATA.md`). **Monitoring a car from your house** over wifi with a Pi and a broker: `docs/REMOTE_MQTT.md`.
+> **Where your data lives:** VehicleTap keeps its database and settings in a data folder outside the source tree, created on first run (`docs/DATA.md`). **Monitoring a car from your house** over wifi with a Pi and a broker: `docs/REMOTE_MQTT.md`.
 
 ## Any vehicle
 
@@ -144,7 +144,7 @@ response code. See **[docs/SIMULATOR.md](docs/SIMULATOR.md)**.
 
 ```bash
 python web/app.py --adapter sim --sim-can        # ... behind a simulated CAN bus
-python hakake_sim.py --pull                      # a scripted acceleration, ready to play back
+python vehicletap_sim.py --pull                      # a scripted acceleration, ready to play back
 ```
 
 **The simulated bus** puts the same model behind a *native CAN* adapter instead
@@ -155,13 +155,13 @@ app at the rate the CANable will deliver, before the board arrives. On this
 laptop, at a full Car-CAN load of about 1,700 frames a second, the reader's
 scheduler cycle stays near 4 ms and no read request is missed. `--sim-can ev`
 adds the EV-CAN channel, whose frame layouts are *assumed* from published
-documentation and labelled so. `hakake_sim.py --pull` runs a scripted
+documentation and labelled so. `vehicletap_sim.py --pull` runs a scripted
 acceleration and leaves three things behind: a session to play back, the raw
 frame stream, and a fixture of the expected curve to compare against the car.
 See **[docs/SIMULATOR.md](docs/SIMULATOR.md)** and `tools/compare_sessions.py`.
 
 ```bash
-python hakake_sim.py --generate --days 180 --out /tmp/ui.db
+python vehicletap_sim.py --generate --days 180 --out /tmp/ui.db
 python web/app.py --db /tmp/ui.db --no-reader   # months of history, for working on the charts
 python web/app.py --demo                        # canned JSON, no reader at all
 ```
@@ -295,7 +295,7 @@ python web/app.py --no-reader      # … then press Playback in the header to sc
 ```
 
 Adapter address: copy `config.local.example.json` to `config.local.json` and
-set `ble_addr` (or export `HAKAKE_BLE_ADDR`; the older `LEAF_BLE_ADDR`
+set `ble_addr` (or export `VEHICLETAP_BLE_ADDR`; the older `LEAF_BLE_ADDR`
 still works). Leave it empty and the reader
 finds the first device named `OBDBLE` (`ble_name`). `scan_ble.py` lists what
 it sees. `config.local.json` is gitignored — it identifies *your* adapter.
@@ -312,7 +312,7 @@ python calibrate_input.py lights            # walk parking / headlights / high b
 python door_watch.py                        # live: print body-CAN bytes as you open/lock things
 python record_session.py --seconds 60       # record a replayable session fixture
 python vehicles/__init__.py                 # lint every vehicle profile against the contract
-touch "${HAKAKE_DATA_DIR:-$HOME/Library/Application Support/Ha-Kake}"/reader.pause                                # hand the adapter to a tool; rm to resume
+touch "${VEHICLETAP_DATA_DIR:-$HOME/Library/Application Support/VehicleTap}"/reader.pause                                # hand the adapter to a tool; rm to resume
 ```
 
 ## Hardware
@@ -321,7 +321,7 @@ touch "${HAKAKE_DATA_DIR:-$HOME/Library/Application Support/Ha-Kake}"/reader.pau
   - **LELink BLE** ("OBDBLE", ELM327 v1.5 clone) — wireless, ~2 s cycles
   - **obdiisoft USB** (CH340, ELM327 v1.5, HS/MS switch — leave it on **HS**)
     — a command round-trip is 5–10 ms. The link stays at the ELM327's default
-    38400 unless you opt in with `HAKAKE_SERIAL_BAUD=115200`, which is worth
+    38400 unless you opt in with `VEHICLETAP_SERIAL_BAUD=115200`, which is worth
     roughly 2× on a long answer but leaves persistent state on the adapter
     (`docs/ARCHITECTURE.md` says why it is not the default). Measure your own
     adapter with `python tools/bench_transport.py`.
@@ -337,7 +337,7 @@ touch "${HAKAKE_DATA_DIR:-$HOME/Library/Application Support/Ha-Kake}"/reader.pau
   requests; `--adapter mqtt` ingests it. With `mqtt` configured, any reader
   also publishes its decoded record to `<prefix>/state` and every value to
   `<prefix>/signal/<key>` — a gauge needs one topic and no Python:
-  `mosquitto_sub -h <broker> -t 'hakake/leaf/signal/soc'`. The wire protocol
+  `mosquitto_sub -h <broker> -t 'vehicletap/leaf/signal/soc'`. The wire protocol
   is a standalone spec, `docs/MQTT.md`. *Tested in-process only (fake broker,
   virtual CAN bus) as of 2026-09-09; not yet on a Pi or a car.*
 - macOS, Python 3.12 (tested on 3.12.13; ≥3.10 required). bleak + CoreBluetooth for BLE. Linux should work for USB; BLE untested.
@@ -396,7 +396,7 @@ stays the one-adapter shorthand. `docs/ARCHITECTURE.md` "Several adapters".
 | `web/templates/index.html` | the dashboard page (no framework); the styled tiles are partials in `web/templates/tiles/`, painted by `web/static/tiles.js` (the 3D pack by `pack3d.js`) |
 | `record_session.py` | record a drive (or convert an old capture) into a replayable session fixture |
 | `docs/REPLAY.md` | **running the whole dashboard with no car — replay mode and its fixtures** |
-| `simulator/`, `hakake_sim.py` | the simulated car: model, load table, scenarios, encoder; the rig, control API and history generator |
+| `simulator/`, `vehicletap_sim.py` | the simulated car: model, load table, scenarios, encoder; the rig, control API and history generator |
 | `web/templates/sim.html`, `web/static/sim.js` | the simulator cockpit (`/sim`), built on the dashboard's own tiles |
 | `docs/SIMULATOR.md` | **the simulator: launch, the cockpit, the load model and its provenance, the control API** |
 | `docs/SIMULATOR_CONTRACT.md` | what a simulator core must provide |
@@ -465,7 +465,7 @@ generic port names. Personal captures belong in `research/` (gitignored).
 ## Safety
 
 **Read-only means the services it sends, not that it stays off the bus.**
-Ha-Kake is an active participant on your car's diagnostic bus — it transmits
+VehicleTap is an active participant on your car's diagnostic bus — it transmits
 requests and reads the replies. It is not a passive tap.
 
 What it sends, exhaustively: UDS service `0x21` group reads (the Leaf's battery
@@ -579,7 +579,7 @@ Being on the bus at all has consequences worth knowing:
   stack against simulated ECUs on a virtual bus at real frame rates, so the app
   could be measured at the CANable's data rate before the board arrived. At a
   full Car-CAN load the scheduler cycle stays near 4 ms with no missed read.
-  `hakake_sim.py --pull` generates an acceleration with a fixture of the
+  `vehicletap_sim.py --pull` generates an acceleration with a fixture of the
   expected curve, to compare against the car when the hardware runs. Measured
   on the laptop against a virtual bus: no wire, no bit errors, no real ECU
   pacing. EV-CAN frame layouts are assumed from public documentation.
@@ -654,6 +654,6 @@ Bundled third-party code keeps its own license: gridstack.js (MIT) in
 `web/static/vendor/` and three.js (MIT) in `web/static/vendor/three/`, both
 credited in NOTICE. CAN identities were cross-checked against
 the OVMS Nissan Leaf module and the `leaf_can_bus_messages` DBC collection
-(credited in `docs/SIGNALS.md` and NOTICE). "Ha-Kake" and its logo are the
+(credited in `docs/SIGNALS.md` and NOTICE). "VehicleTap" and its logo are the
 author's trademarks and are not licensed with the code; forks, please pick your
 own name. Not affiliated with or endorsed by Nissan.

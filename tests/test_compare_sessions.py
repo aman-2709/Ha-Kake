@@ -84,7 +84,7 @@ def _lbc_lines(sim):
 
 
 def _fixture_doc(frames, synthetic=True):
-    return {"hakake_replay": 1, "vehicle": "leaf_ze0", "title": "t", "adapter": "test",
+    return {"vehicletap_replay": 1, "vehicle": "leaf_ze0", "title": "t", "adapter": "test",
             "synthetic": synthetic, "captured": "2026-01-01T00:00:00Z", "source": [], "notes": "",
             "frames": frames}
 

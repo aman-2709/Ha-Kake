@@ -1,6 +1,6 @@
 # OTA status: the file the dashboard reads
 
-The board Ha-Kake runs on can tell you which operating-system image it booted, what is waiting behind it, which
+The board VehicleTap runs on can tell you which operating-system image it booted, what is waiting behind it, which
 update components are installed and whether the services around them are up. The dashboard container cannot see
 any of that itself: it runs `--read-only --cap-drop all`, with no `bootc`, no `systemctl` and no view of the host's
 `/etc/os-release` or SELinux. So a process **on the host** writes one small JSON file, and the app only reads it.
@@ -30,7 +30,7 @@ The page is about the board, so it does not carry the vehicle's name. The dashbo
 | | |
 |---|---|
 | Default | `ota_status.json` in the data folder ([DATA.md](DATA.md)) |
-| Override | `HAKAKE_OTA_FILE=/path/to/ota_status.json` |
+| Override | `VEHICLETAP_OTA_FILE=/path/to/ota_status.json` |
 | Size limit | 64 KB, refused unparsed beyond that (a real file is about 1 KB) |
 
 Dropping a sample file into the data folder is the whole setup on a laptop. `docs/demo/ota.json` is a complete one.
@@ -102,7 +102,7 @@ there starts 4.5.0.**
 nothing from the project, so it is copied to a board on its own.
 
 ```bash
-python3 ota_export.py --out /var/lib/ha-kake-ota/ota_status.json --service esync --service candump
+python3 ota_export.py --out /var/lib/vehicletap-ota/ota_status.json --service esync --service candump
 python3 ota_export.py --out FILE --service esync --interval 30        # keep it fresh; Ctrl-C to stop
 ```
 
@@ -123,9 +123,9 @@ python3 ota_export.py --out FILE --service esync --interval 30        # keep it 
 * **A source that fails is an empty section**, with one line on stderr, never an error: the rest of the file is still
   written. In `--interval` mode a bad pass is logged and the next one runs. A one-shot run exits 1 only if it cannot
   write the file.
-* **Mount the directory, not the file** (`deploy/quadlet/optional/ha-kake.container.d/10-ota.conf` does, and CONTAINER.md
+* **Mount the directory, not the file** (`deploy/quadlet/optional/vehicletap.container.d/10-ota.conf` does, and CONTAINER.md
   says how to install it). An atomic replace gives the file a new inode, and a single-file bind mount
-  keeps pointing at the old one. Give the container the directory, read-only, and set `HAKAKE_OTA_FILE` to the file
+  keeps pointing at the old one. Give the container the directory, read-only, and set `VEHICLETAP_OTA_FILE` to the file
   in it.
 
 Run once on the J7 test board (2026-10-28) it produced a file the dashboard's reader accepted whole, with `booted

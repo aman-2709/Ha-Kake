@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 David D. Karnowski
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""The simulated pull: the scenario, `hakake_sim.py --pull`, and the fixture.
+"""The simulated pull: the scenario, `vehicletap_sim.py --pull`, and the fixture.
 
 Pinned: the peak current of the pull sits in the band the owner observed
 (−250..−270 A, reported −271 A / −89 kW at 54 mph on 2026-09-08 — OWNER
@@ -69,7 +69,7 @@ def test_the_database_side_is_stamped_and_playback_finds_the_pull(pulled):
     ro = sqlite3.connect(f"file:{pulled['db']}?mode=ro", uri=True)
     meta = dict(ro.execute("SELECT key, value FROM meta").fetchall())
     ro.close()
-    assert meta["synthetic"] == "true" and "hakake_sim --pull" in meta["warning"]
+    assert meta["synthetic"] == "true" and "vehicletap_sim --pull" in meta["warning"]
     st = Store(pulled["db"], vehicle="leaf_ze0")
     try:
         t0, t1 = st.conn.execute("SELECT MIN(ts_epoch), MAX(ts_epoch) FROM readings").fetchone()
@@ -96,7 +96,7 @@ def test_the_stream_is_the_mqtt_message_format_with_offset_times(pulled):
         first = json.loads(f.readline())
         rest = [json.loads(l) for l in f]
     assert set(first) == {"topic", "payload"}
-    assert first["topic"].startswith("hakake/sim/") and "/rx/" in first["topic"]
+    assert first["topic"].startswith("vehicletap/sim/") and "/rx/" in first["topic"]
     p = first["payload"]
     assert p["t"] == 0.0 and p["id"] == first["topic"].rsplit("/", 1)[-1]
     assert all(len(b) == 2 for b in p["d"].split())
@@ -154,7 +154,7 @@ def test_the_pull_refuses_the_real_database(tmp_path):
 
 
 def test_the_shipped_fixture_is_the_generated_one_and_replays():
-    assert os.path.exists(SHIPPED), "python hakake_sim.py --pull writes it"
+    assert os.path.exists(SHIPPED), "python vehicletap_sim.py --pull writes it"
     doc = load_replay_fixture(SHIPPED)
     assert doc["synthetic"] is True and "ASSERTED" in doc["notes"]
     e = ReplayELM(path=SHIPPED, loop=False)
@@ -172,9 +172,9 @@ def test_the_shipped_fixture_is_the_generated_one_and_replays():
         run(e.close())
 
 
-def test_hakake_sim_pull_cli(tmp_path):
+def test_vehicletap_sim_pull_cli(tmp_path):
     import subprocess, sys
-    p = subprocess.run([sys.executable, os.path.join(ROOT, "hakake_sim.py"), "--pull",
+    p = subprocess.run([sys.executable, os.path.join(ROOT, "vehicletap_sim.py"), "--pull",
                         "--out", str(tmp_path / "c.db"), "--jsonl", str(tmp_path / "c.jsonl"),
                         "--fixture", str(tmp_path / "c.json"), "--json"],
                        capture_output=True, text=True, cwd=ROOT, timeout=120)

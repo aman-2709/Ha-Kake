@@ -330,20 +330,20 @@ def test_the_mqtt_source_taps_what_the_facade_never_sees(tmp_path):
     façade, and tapping both would print every frame twice."""
     import mqttsource
     c = con.Console(str(tmp_path / "c.jsonl"), ids=["421"], rate_cap=1000)
-    src = mqttsource.MqttSource(cfg={"host": "broker.invalid", "prefix": "hakake", "bus": "car"},
+    src = mqttsource.MqttSource(cfg={"host": "broker.invalid", "prefix": "vehicletap", "bus": "car"},
                                 log=lambda *a: None)
     src.event_tap = c.tap(bus="car")
     seen = []
     src._on_frame = lambda *a: seen.append(a)
 
     class Msg:
-        topic = "hakake/car/rx/421"
+        topic = "vehicletap/car/rx/421"
         payload = b"not json at all"
 
     src._on_message(None, None, Msg())
     rows = c.ring.entries()
     assert [e["kind"] for e in rows] == ["event"]
-    assert "dropped message" in rows[0]["text"] and "hakake/car/rx/421" in rows[0]["text"]
+    assert "dropped message" in rows[0]["text"] and "vehicletap/car/rx/421" in rows[0]["text"]
     assert seen == [], "a message that did not parse is not a frame"
 
 

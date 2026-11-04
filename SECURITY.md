@@ -32,7 +32,7 @@ Even so:
   `0x27` security access) without an explicit, documented safety review. Pull
   requests that add them will not be merged.
 
-**Native CAN adapter.** Ha-Kake can also read through a USB-CAN controller
+**Native CAN adapter.** VehicleTap can also read through a USB-CAN controller
 (CANable 2.0 class, `--adapter can`, `cantransport.py`). What "transmit" means
 does not change: on Car-CAN the adapter sends the same read services the
 ELM327 sends today — UDS `0x21` and OBD modes `01`, `03`, `07`, with their
@@ -56,7 +56,7 @@ controller on that bus. Reviewed 2026-09-09 as a transport, not a new service.
 
 ### Remote ingestion (MQTT bridge)
 
-`bridge/hakake_bridge.py` puts a **second process on the bus**: a Raspberry Pi
+`bridge/vehicletap_bridge.py` puts a **second process on the bus**: a Raspberry Pi
 at the OBD port that mirrors frames to an MQTT broker and runs read requests
 for a reader elsewhere (`docs/MQTT.md`). "The reader must be the only process
 that talks to the car" therefore reads: *the reader, or a bridge that accepts
@@ -93,7 +93,7 @@ broker, Pi or car.
 - A request reaching the API from a page on another origin, or naming a host
   other than a loopback one: the server checks `Host` on every request, and
   `Origin` (or a JSON content type) on every change.
-- The simulator's control API (`hakake_sim.py`, `127.0.0.1` only, no
+- The simulator's control API (`vehicletap_sim.py`, `127.0.0.1` only, no
   authentication) reaching anything but the in-memory model — it can put a
   fault on a dashboard someone is reading, and it must never be exposed.
 

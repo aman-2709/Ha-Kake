@@ -1,7 +1,7 @@
 /* SPDX-FileCopyrightText: 2026 David D. Karnowski */
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
-// sim.js — the simulator cockpit (/sim). Drives hakake_sim.py's control API
+// sim.js — the simulator cockpit (/sim). Drives vehicletap_sim.py's control API
 // from a page that looks like the car, built on the dashboard's own tile
 // engine (tilestudio.js) and its four styled tiles (tiles.js).
 //
@@ -159,7 +159,7 @@
   // ── where the control API is ──
   // ?control= in the URL → what app.py knew at startup → what the reader
   // publishes in /api/status (the port it really bound, e.g. --sim-control 0).
-  // The control API always runs on this machine (hakake_sim.py binds 127.0.0.1),
+  // The control API always runs on this machine (vehicletap_sim.py binds 127.0.0.1),
   // so only an http URL on a loopback host is accepted from any of the three
   // sources; anything else is ignored and the notice says why.
   const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
@@ -574,7 +574,7 @@
     root.appendChild(m);
     root.appendChild(el('div', 'cluster-note',
       'Drawn here from published descriptions of the 2011–2012 layout, in plain SVG and CSS — no photograph, screenshot or manufacturer mark. ' +
-      'Ha-Kake is not affiliated with or endorsed by Nissan (see NOTICE). It is a face on the simulator, not a reproduction of an instrument, and everything it shows is generated. ' +
+      'VehicleTap is not affiliated with or endorsed by Nissan (see NOTICE). It is a face on the simulator, not a reproduction of an instrument, and everything it shows is generated. ' +
       'Dashed, dim indicators are real ones the model has no driver for — they never light here.'));
     // the strip, once: every lamp the model publishes, then the ones it says it cannot drive
     const strip = $('#cl-lamps', root);

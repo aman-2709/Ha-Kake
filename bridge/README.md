@@ -3,12 +3,12 @@ SPDX-FileCopyrightText: 2026 David D. Karnowski
 SPDX-License-Identifier: CC-BY-SA-4.0
 -->
 
-# hakake-bridge — the car's CAN bus, over MQTT, from a Raspberry Pi
+# vehicletap-bridge — the car's CAN bus, over MQTT, from a Raspberry Pi
 
 A small Python process that sits on the car's diagnostic connector and mirrors
 CAN frames to an MQTT broker, and runs the reader's ISO-TP **read** requests on
 its behalf. The wire protocol is `docs/MQTT.md` in the main repository; a
-Ha-Kake reader ingests it with `--adapter mqtt`, and any MQTT client can build
+VehicleTap reader ingests it with `--adapter mqtt`, and any MQTT client can build
 a gauge on the same stream.
 
 **Status (2026-10):** tested against python-can's `virtual` bus and a fake broker, and run for real on a Raspberry Pi 4
@@ -19,7 +19,7 @@ a step-by-step set-up for monitoring a car from your house, see `docs/REMOTE_MQT
 ## What it does, in one screen
 
 ```
- car ──CAN──▶ can0 (kernel) ──filter──▶ hakake_bridge.py ──▶ mosquitto ──▶ reader / gauges
+ car ──CAN──▶ can0 (kernel) ──filter──▶ vehicletap_bridge.py ──▶ mosquitto ──▶ reader / gauges
                                              ▲                     │
                                              └── tx/uds (reads) ◀──┘
 ```
@@ -104,11 +104,11 @@ Everything below is generic SocketCAN and Python; nothing is board-specific.
 
 ```bash
 sudo apt install -y python3-venv mosquitto mosquitto-clients can-utils
-sudo mkdir -p /opt/hakake-bridge && sudo chown "$USER" /opt/hakake-bridge
-cd /opt/hakake-bridge
+sudo mkdir -p /opt/vehicletap-bridge && sudo chown "$USER" /opt/vehicletap-bridge
+cd /opt/vehicletap-bridge
 python3 -m venv venv
 ./venv/bin/pip install python-can==4.6.1 can-isotp==2.0.7 paho-mqtt==2.1.0
-# copy hakake_bridge.py, config.example.json → config.json, hakake-bridge.service here
+# copy vehicletap_bridge.py, config.example.json → config.json, vehicletap-bridge.service here
 ```
 
 Bring the interface up and look at the bus before starting anything:
@@ -139,23 +139,23 @@ is your statement of what it is wired to, and it goes into every topic.
 Run it by hand first:
 
 ```bash
-./venv/bin/python hakake_bridge.py --config config.json --stats 5
+./venv/bin/python vehicletap_bridge.py --config config.json --stats 5
 ```
 
 Then as a service:
 
 ```bash
-sudo cp hakake-bridge.service /etc/systemd/system/
+sudo cp vehicletap-bridge.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now hakake-bridge
-journalctl -u hakake-bridge -f
+sudo systemctl enable --now vehicletap-bridge
+journalctl -u vehicletap-bridge -f
 ```
 
 Check from any machine on the LAN:
 
 ```bash
-mosquitto_sub -h <pi> -t 'hakake/leaf/car/status' -v          # retained: appears at once
-mosquitto_sub -h <pi> -t 'hakake/leaf/car/rx/+' -v            # frames
+mosquitto_sub -h <pi> -t 'vehicletap/leaf/car/status' -v          # retained: appears at once
+mosquitto_sub -h <pi> -t 'vehicletap/leaf/car/rx/+' -v            # frames
 ```
 
 ### Configuration (`config.json`)
@@ -163,7 +163,7 @@ mosquitto_sub -h <pi> -t 'hakake/leaf/car/rx/+' -v            # frames
 | Key | Default | Meaning |
 |---|---|---|
 | `host`, `port` | `127.0.0.1`, `1883` | the broker, plain MQTT; a broker on the Pi itself needs nothing else |
-| `prefix` | `hakake/leaf` | the topic root shared with the reader's `mqtt.prefix` |
+| `prefix` | `vehicletap/leaf` | the topic root shared with the reader's `mqtt.prefix` |
 | `bus` | `car` | `car` or `ev` — which bus this Pi is wired to; part of every topic |
 | `interface`, `channel` | `socketcan`, `can0` | python-can interface and channel; `slcan` + `/dev/ttyACM0` as a slow fallback |
 | `bitrate` | `500000` | informational for `socketcan` (the `ip link` line sets it); used for `slcan` |
@@ -189,11 +189,11 @@ owner's decision: the protection is the network, not a password. Keep the
 broker on the car's own LAN (the Pi's WiFi hotspot, or the car's network) and
 bind it there. To reach it from anywhere else, put the Pi and the laptop on a
 **Tailscale tailnet or a private VPN** — that authenticates both ends and
-encrypts the whole path, with nothing to configure in Ha-Kake, and it is the
+encrypts the whole path, with nothing to configure in VehicleTap, and it is the
 recommended way to use the bridge beyond the car. Never expose the broker to
 the internet directly.
 
-A minimal `/etc/mosquitto/conf.d/hakake.conf` for a broker on the Pi:
+A minimal `/etc/mosquitto/conf.d/vehicletap.conf` for a broker on the Pi:
 
 ```
 listener 1883

@@ -6,18 +6,18 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 # Watching your car remotely over MQTT
 
 A common use: the car sits in a garage, and you want to see its state of charge (and a few other values) from the
-house, over wifi, without leaving a laptop in the car. Ha-Kake supports this with two small pieces and a broker you
+house, over wifi, without leaving a laptop in the car. VehicleTap supports this with two small pieces and a broker you
 run yourself.
 
 ```
- car ──CAN──▶ Raspberry Pi (bridge) ──MQTT──▶ broker ──▶ Ha-Kake on your computer (--adapter mqtt)
+ car ──CAN──▶ Raspberry Pi (bridge) ──MQTT──▶ broker ──▶ VehicleTap on your computer (--adapter mqtt)
                                                       └─▶ any other MQTT client (a gauge, a phone app, an alert)
 ```
 
 - **The bridge** (`bridge/`, `bridge/README.md`) runs on a Raspberry Pi wired to the car's OBD-II connector with a CAN
   adapter. It publishes the car's CAN frames to MQTT and carries out the reader's *read-only* requests.
-- **The broker** is any MQTT broker, such as Mosquitto. Ha-Kake does not install or manage it.
-- **The reader** is Ha-Kake on your computer, started with `--adapter mqtt`. It sees the same data as if the adapter
+- **The broker** is any MQTT broker, such as Mosquitto. VehicleTap does not install or manage it.
+- **The reader** is VehicleTap on your computer, started with `--adapter mqtt`. It sees the same data as if the adapter
   were plugged into it. The wire format is `docs/MQTT.md`.
 
 How your computer and the Pi reach the broker (the same wifi, a VPN, a tunnel) is your own network's business and is
@@ -31,7 +31,7 @@ Install Mosquitto on a machine that is always on (the Pi itself works for a home
 you intend, not to every interface:
 
 ```
-# /etc/mosquitto/conf.d/hakake.conf
+# /etc/mosquitto/conf.d/vehicletap.conf
 listener 1883 127.0.0.1          # this machine only; use your LAN address to serve other machines
 allow_anonymous true             # fine on a private network you control; use a password file otherwise
 ```
@@ -44,18 +44,18 @@ service unit, the read-only request rules and how to check it; a minimal run is:
 
 ```bash
 sudo ip link set can0 up type can bitrate 500000 restart-ms 100
-./venv/bin/python bridge/hakake_bridge.py --config config.json
+./venv/bin/python bridge/vehicletap_bridge.py --config config.json
 ```
 
 with `host` in `config.json` pointing at your broker. The bridge publishes a retained `status` message every two
-seconds, so `mosquitto_sub -h <broker> -t 'hakake/leaf/car/status' -v` shows at a glance whether it is alive.
+seconds, so `mosquitto_sub -h <broker> -t 'vehicletap/leaf/car/status' -v` shows at a glance whether it is alive.
 
-## 3. Ha-Kake on your computer
+## 3. VehicleTap on your computer
 
 In `config.local.json` (not tracked by git) point the reader at the broker:
 
 ```json
-{ "mqtt": { "host": "<broker address>", "prefix": "hakake/leaf" } }
+{ "mqtt": { "host": "<broker address>", "prefix": "vehicletap/leaf" } }
 ```
 
 ```bash

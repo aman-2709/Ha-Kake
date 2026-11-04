@@ -138,9 +138,9 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=1883)
-    ap.add_argument("--prefix", default="hakake/leaf")
+    ap.add_argument("--prefix", default="vehicletap/leaf")
     ap.add_argument("--out-dir", default=None,
-                    help="where the session files go (default: a sessions/ folder in the Ha-Kake data folder)")
+                    help="where the session files go (default: a sessions/ folder in the VehicleTap data folder)")
     ap.add_argument("--rotate-min", type=int, default=60)
     ap.add_argument("--min-free-mb", type=int, default=2048)
     ap.add_argument("--stats", type=float, default=60.0, help="stats line period, seconds")
@@ -153,7 +153,7 @@ def main(argv=None):
         import datadir
         args.out_dir = datadir.path("sessions")
     c = Catcher(args, log=log)
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"hakake-catcher-{os.getpid()}")
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"vehicletap-catcher-{os.getpid()}")
     client.on_connect, client.on_disconnect, client.on_message = c.on_connect, c.on_disconnect, c.on_message
     client.reconnect_delay_set(min_delay=1, max_delay=60)
     stop = threading.Event()

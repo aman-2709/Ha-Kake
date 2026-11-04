@@ -170,7 +170,7 @@ never in code.
   refused). Every EV-CAN byte it emits is ASSERTED from the dalathegreat
   DBC / OVMS and says so in the encoder's docstring; the bench numbers
   (`tools/bench_canrate.py`) are MEASURED ON THE LAPTOP, VIRTUAL BUS and
-  nothing else. `hakake_sim.py --pull` writes the expected pull three ways;
+  nothing else. `vehicletap_sim.py --pull` writes the expected pull three ways;
   `tools/compare_sessions.py` is the comparison for the day the board comes.
 
 ## 6. Where to look
@@ -192,6 +192,6 @@ never in code.
 | Two adapters at once (Car-CAN + EV-CAN)? Which source a value came from? | `docs/ARCHITECTURE.md` "Several adapters" / "Provenance": `ITEMS[i]["bus"]`, `BUSES`, the `adapters` list in `config.local.json`, `reader.resolve_sources()`, `sources` / `tolerance` on a SIGNALS entry (Leaf `current_a` is the example) |
 | Use a native CAN adapter / CANable | `docs/CAN_TRANSPORT.md`: arrival checklist, wiring (termination jumper OFF), `can_*` config keys, `--adapter can`, the ELM-command mapping, listen-only on EV-CAN; the façade is `cantransport.py` |
 | Test the app at native-CAN frame rates with no board | `docs/SIMULATOR.md` "The simulated bus": `python web/app.py --adapter sim --sim-can [ev]`, `python tools/bench_canrate.py`; the ECUs are `simulator/canbus.py` |
-| Generate the expected pull / compare it with the real one | `python hakake_sim.py --pull` (sim DB with the cell log, both channels' frames as JSONL, a synthetic fixture); `python tools/compare_sessions.py expected observed` |
+| Generate the expected pull / compare it with the real one | `python vehicletap_sim.py --pull` (sim DB with the cell log, both channels' frames as JSONL, a synthetic fixture); `python tools/compare_sessions.py expected observed` |
 | Run it in a container / on a headless board (RHIVOS, TDA4) | `docs/CONTAINER.md`: `Containerfile` (explicit `COPY` paths, never `COPY . .`), `.containerignore`, `deploy/quadlet/`; host networking because the app is loopback-only, viewed through an SSH tunnel; the simulator DB is never pruned (~90 MB/day, derived); what was and was not verified |
 | Ingest a remote car over MQTT / build a gauge on the stream | `docs/MQTT.md` (the public wire protocol: topics, JSON schemas, `mosquitto_sub` examples, a Python and a browser gauge), `bridge/README.md` (the Raspberry Pi side); `--adapter mqtt`, `mqttsource.py`, the `mqtt` block in `config.local.json` |

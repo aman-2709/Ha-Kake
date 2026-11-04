@@ -204,9 +204,9 @@ an exception — it removes the pause file so the dashboard comes back. If you a
 doing this by hand rather than with the walker:
 
 ```bash
-touch "${HAKAKE_DATA_DIR:-$HOME/Library/Application Support/Ha-Kake}"/reader.pause      # wait a few seconds for the reader to let go
+touch "${VEHICLETAP_DATA_DIR:-$HOME/Library/Application Support/VehicleTap}"/reader.pause      # wait a few seconds for the reader to let go
 # ... capture ...
-rm "${HAKAKE_DATA_DIR:-$HOME/Library/Application Support/Ha-Kake}"/reader.pause
+rm "${VEHICLETAP_DATA_DIR:-$HOME/Library/Application Support/VehicleTap}"/reader.pause
 ```
 
 **Print the instruction and wait for a human.** Each step prints what to do and

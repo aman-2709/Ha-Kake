@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2026 David D. Karnowski
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """
-hakake-bridge — the process on the car's CAN bus, on behalf of a reader elsewhere.
+vehicletap-bridge — the process on the car's CAN bus, on behalf of a reader elsewhere.
 
 Runs on a Raspberry Pi (Zero 2 W or 4) plugged into the OBD port, and speaks
 the wire protocol in ``docs/MQTT.md`` (the copy of that file next to this one
@@ -36,7 +36,7 @@ Built for a Pi Zero 2 W (four slow cores, 512 MB, WiFi):
     everything — the recommended setting on a Zero.
 
 Standalone on purpose: depends on python-can, can-isotp and paho-mqtt only,
-nothing from the Ha-Kake tree, so it can be copied to the Pi alone. No
+nothing from the VehicleTap tree, so it can be copied to the Pi alone. No
 vehicle is named here: ids come from the config file.
 """
 
@@ -52,7 +52,7 @@ import threading
 import time
 
 VERSION = "0.1"
-BRIDGE = f"hakake-bridge {VERSION}"
+BRIDGE = f"vehicletap-bridge {VERSION}"
 PROTOCOL_VERSION = 1
 READ_SERVICES = frozenset({0x21, 0x01, 0x03, 0x07})
 HEX = [f"{i:02X}" for i in range(256)]
@@ -63,7 +63,7 @@ UDS_QUEUE = 32                 # requests waiting for the bus; beyond this a req
 DEFAULTS = {
     "host": "127.0.0.1",
     "port": 1883,
-    "prefix": "hakake/leaf",
+    "prefix": "vehicletap/leaf",
     "bus": "car",                # which bus the wiring reaches; never guessed
     "interface": "socketcan",    # python-can interface: socketcan | slcan | gs_usb | virtual
     "channel": "can0",
@@ -81,7 +81,7 @@ DEFAULTS = {
     "uds_targets": ["79B:7BB", "744:764"],
 }
 
-log = logging.getLogger("hakake-bridge")
+log = logging.getLogger("vehicletap-bridge")
 
 
 # ── config ───────────────────────────────────────────────────────────────
@@ -228,7 +228,7 @@ def socketcan_is_listen_only(channel):
 def _silent_slcan_class():
     """python-can's slcan with silent mode set the way the stock CANable 2
     firmware understands it: M1 before O (python-can sends L, which that firmware
-    does not implement). Copied from cantransport.HakakeSlcanBus."""
+    does not implement). Copied from cantransport.VehicleTapSlcanBus."""
     from can.interfaces.slcan import slcanBus
 
     class SilentSlcan(slcanBus):
@@ -429,7 +429,7 @@ class Bridge:
         import paho.mqtt.client as mqtt
         # Plain MQTT: no credentials, no TLS (owner's decision, 2026-09-09). The
         # broker is LAN-only; beyond the LAN the path is Tailscale or a private VPN.
-        return mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"hakake-bridge-{os.getpid()}")
+        return mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"vehicletap-bridge-{os.getpid()}")
 
     def attach_client(self, client):
         self.client = client
@@ -714,7 +714,7 @@ class Bridge:
 # ── CLI ──────────────────────────────────────────────────────────────────
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="Ha-Kake CAN → MQTT bridge (read-only)")
+    ap = argparse.ArgumentParser(description="VehicleTap CAN → MQTT bridge (read-only)")
     ap.add_argument("--config", default=None, help="JSON config (see config.example.json)")
     ap.add_argument("--host"), ap.add_argument("--port", type=int)
     ap.add_argument("--prefix"), ap.add_argument("--bus", choices=["car", "ev"])
