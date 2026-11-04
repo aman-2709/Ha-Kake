@@ -1,11 +1,11 @@
 [project]
 name = "vehicletap"
 version = "0.2.0"
-description = "Battery-health and vehicle-telemetry dashboard for the 2011-2012 Nissan Leaf (ZE0) over an ELM327 OBD-II adapter"
+description = "Read-only vehicle telemetry dashboard for OBD-II cars, developed on a 2011-2012 Nissan Leaf (ZE0), over ELM327 or native CAN adapters"
 readme = "README.md"
 license = "AGPL-3.0-or-later"
 license-files = ["LICENSE", "LICENSE-DOCS", "NOTICE"]
-authors = [{ name = "David D. Karnowski" }]
+authors = [{ name = "David D. Karnowski" }, { name = "Amandeep Kirpalsingh" }]
 requires-python = ">=3.10"   # pyobjc 12 needs 3.10+
 keywords = ["nissan-leaf", "ev", "obd-ii", "elm327", "can-bus", "battery", "bms", "telemetry"]
 classifiers = [

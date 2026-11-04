@@ -12,6 +12,15 @@ decode in the actual car — many sessions in this log happened in a parked Leaf
 with the AC running. A second profile (`lancer_2009`) and two hardware-free
 harnesses (replay, simulator) came later; see §5.
 
+**This is a fork.** VehicleTap is based on Ha-Kake by David D. Karnowski, whose `NOTICE`
+asks forks to use their own name and logo. His copyright notices (`NOTICE`, the SPDX
+headers, `LICENSE-DOCS`) stay exactly as they are; the fork's changes are dated in
+`CHANGELOG.md`, and the fork offers no proprietary license. The old names still work
+where someone's data or setup carries them: `HAKAKE_*` variables (read by `util.env()`),
+the `Ha-Kake` data folder (`datadir.py`) and the `hakake_replay` recording key
+(`elm327.py`). `tests/test_no_old_name.py` fails if the old name creeps back anywhere
+else, so add a new use of it to its list only with a reason.
+
 ## 2. Governing documents
 
 - `docs/SIGNALS.md` — the authority on what each byte means and how sure we are.

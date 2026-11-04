@@ -20,6 +20,8 @@ WHOLE_FILE = {
     "NOTICE": "attribution: the original author's copyright notice and trademark paragraph",
     "LICENSE-DOCS": "the documentation licence's original copyright header",
     "WORKLOG.md": "history: entries written when the project had the old name",
+    "CHANGELOG.md": "says what the project was called and what changed",
+    "CLAUDE.md": "the note on what the project was called and which old names still work",
     "util.py": "env() reads the HAKAKE_ twin of every VEHICLETAP_ name",
     "datadir.py": "the data folder from before the rename is still used",
     "elm327.py": "replay files recorded before the rename carry the old key",
@@ -39,8 +41,8 @@ WHOLE_FILE = {
 STORAGE_KEYS = ("hakake-alerts-muted", "hakake-sim-folded-v1", "hakake-sim-tiles-v1", "hakake-sim-tiles-v0",
                 "hakake-tiles-v2", "hakake-timeline-dock")
 # The upstream project is named where it is credited.
-UPSTREAM = re.compile(r"davidkarnowski|fork of \[Ha-Kake\]|based on Ha-Kake", re.IGNORECASE)
-UPSTREAM_FILES = {"README.md"}
+UPSTREAM = re.compile(r"davidkarnowski|fork of \[?Ha-Kake|based on Ha-Kake", re.IGNORECASE)
+UPSTREAM_FILES = {"README.md", "CONTRIBUTING.md"}
 
 
 def text_files():

@@ -4,4 +4,5 @@ This project follows the [Contributor Covenant](https://www.contributor-covenant
 version 2.1. Be kind, be specific, assume good faith, and remember that the
 person on the other end is probably crouched in a car with a laptop.
 
-Report unacceptable behaviour to the maintainer at kn6irv@gmail.com. <!-- privacy-ok:e-mail -->
+Report unacceptable behaviour to the maintainer privately: open this repository's **Security** tab, choose
+**Report a vulnerability** and say it is a conduct report.

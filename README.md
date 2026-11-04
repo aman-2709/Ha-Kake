@@ -1,8 +1,12 @@
 # VehicleTap
 
-A read-only telemetry dashboard for **any car with an OBD-II port**, read
-through a cheap ELM327 adapter — BLE or USB — with a never-pruned SQLite
-history so you can watch a vehicle age over months, not minutes.
+**Open-source, read-only vehicle telemetry and OBD-II monitoring.**
+
+A local-first telemetry dashboard for **any car with an OBD-II port**, read
+through a cheap ELM327 adapter — BLE or USB — or a native CAN adapter, with a
+never-pruned SQLite history so you can watch a vehicle age over months, not
+minutes. It includes a simulated vehicle, so everything also runs with no car
+and no hardware.
 
 It runs on a laptop in the passenger seat. No app, no cloud, no account,
 nothing sent anywhere. It was developed on a 2011–2012 Nissan Leaf, where it
@@ -11,11 +15,20 @@ decodes far more than the OBD-II standard carries — battery state of health,
 **the method used to find all of that is documented in full**, so you can do
 the same on a car nobody has touched yet.
 
-![status](https://img.shields.io/badge/tests-1572%20passing-brightgreen) ![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/davidkarnowski/Ha-Kake)
+![status](https://img.shields.io/badge/tests-1634%20passing-brightgreen) ![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)
 
 ## About This Fork
 
-This project is a fork of [Ha-Kake](https://github.com/davidkarnowski/Ha-Kake), originally created and developed by **David Karnowski**.
+VehicleTap is an independently maintained fork of [Ha-Kake](https://github.com/davidkarnowski/Ha-Kake), created and developed by **David D. Karnowski**. It continues that work under its own name, with modifications and new features. [CHANGELOG.md](CHANGELOG.md) lists what was changed and when; the first change was made on 2026-10-09.
+
+| | |
+|---|---|
+| Original project | [Ha-Kake](https://github.com/davidkarnowski/Ha-Kake) |
+| Original author | David D. Karnowski |
+| Maintainer of this fork | Amandeep Kirpalsingh |
+| License | AGPL-3.0-or-later (code); CC BY-SA 4.0 (documentation under `docs/`) |
+
+All original copyright and license notices are retained ([NOTICE](NOTICE)). VehicleTap is not affiliated with and not endorsed by the original author.
 
 All credit for the original project goes to David. His work forms the foundation of this fork, which I am continuing to develop by making improvements, modifying existing functionality, and introducing new features.
 
@@ -489,8 +502,12 @@ Being on the bus at all has consequences worth knowing:
   **do not operate the laptop while driving.** The dashboard is a passenger's
   tool.
 
-## Status (2026-10-27)
+## Status (2026-11-03)
 
+- **The project is now VehicleTap** (2026-11-03). It is based on Ha-Kake, whose notice asks forks for their own
+  name and logo. Nothing you have needs moving: an existing data folder, the old variable names and old replay
+  recordings keep working. The MQTT default topic root is now `vehicletap/leaf`, so a bridge and a reader must be
+  updated together. [`CHANGELOG.md`](CHANGELOG.md) has the list.
 - **An OTA status page** (2026-10-27, branch `feature/ota-status`): `/ota` and `GET /api/ota` show which OS
   image the board booted, what is staged or queued for rollback (and which image the *next* boot starts), the
   installed update components, the services around them and basic health. The container is
@@ -644,16 +661,15 @@ publish your complete corresponding source under the same license.
 including `docs/SIGNALS.md` and `docs/reverse-engineering/`. Quote it, translate
 it, build on it; credit the project and share alike.
 
-**Need to ship this in a closed-source product or a hosted service?** A
-proprietary license is available — see [COMMERCIAL.md](COMMERCIAL.md).
+**Need a commercial license?** VehicleTap does not offer one. The original Ha-Kake code is its author's to license: ask the [upstream project](https://github.com/davidkarnowski/Ha-Kake).
 
-Contributions are offered inbound under Apache-2.0 with a DCO sign-off
+Contributions are accepted under the same licenses (code AGPL-3.0-or-later, documentation CC BY-SA 4.0) with a DCO sign-off
 (`git commit -s`); see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Bundled third-party code keeps its own license: gridstack.js (MIT) in
 `web/static/vendor/` and three.js (MIT) in `web/static/vendor/three/`, both
 credited in NOTICE. CAN identities were cross-checked against
 the OVMS Nissan Leaf module and the `leaf_can_bus_messages` DBC collection
-(credited in `docs/SIGNALS.md` and NOTICE). "VehicleTap" and its logo are the
-author's trademarks and are not licensed with the code; forks, please pick your
-own name. Not affiliated with or endorsed by Nissan.
+(credited in `docs/SIGNALS.md` and NOTICE). VehicleTap is based on Ha-Kake: "Ha-Kake" and its leaf logo are trademarks of its
+original author and are not licensed with the code, and VehicleTap uses neither.
+Not affiliated with or endorsed by Nissan.
