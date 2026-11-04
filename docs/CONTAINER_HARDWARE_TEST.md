@@ -1,9 +1,13 @@
 # Hardware test plan: the container on J7 and x5h
 
-> **Temporary.** This file lives on the branch `feature/container-quadlet` only.
-> It is never merged to `main`. When both boards have been tested the branch is
-> deleted (`git push origin --delete feature/container-quadlet`), and whatever
-> the tests proved goes into `docs/CONTAINER.md` through a normal PR from `main`.
+> **Temporary.** A test plan, not documentation. It was written on a branch and
+> run on the J7 in October 2026 (phases 0 to 6; the cleanup in phase 7 is still
+> to do). The x5h has not been run. It sits on `main` so that the x5h run and the
+> J7 cleanup work from the same text. When both boards are done, delete this file;
+> whatever the tests proved goes into `docs/CONTAINER.md` through a normal PR.
+>
+> The J7 was set up **before the project was renamed**, so what it was left with
+> is named `ha-kake`, not `vehicletap`. Phase 7 lists both.
 
 You are a Claude Code session on a machine that can reach two boards: **J7**
 (TI TDA4 / Jacinto 7, running RHIVOS, boots to a command line) and **x5h** (the
@@ -14,7 +18,7 @@ testing; you are not fixing.
 
 ## What is being tested
 
-Ha-Kake's simulator (`--adapter sim`, a web dashboard backed by a simulated
+VehicleTap's simulator (`--adapter sim`, a web dashboard backed by a simulated
 car) packaged as an OCI image (`Containerfile`) and a Podman Quadlet unit
 (`deploy/quadlet/`). Read `docs/CONTAINER.md` first: it explains the design and
 has a table of what was already checked on an x86 laptop and what was not. The
@@ -35,7 +39,7 @@ CAN bus.
    in your results as a suggested diff.
 3. **Leave the board as you found it.** Ask the user before rebooting, and
    before using credentials you were not given. Do not change the SELinux mode
-   (`setenforce`), do not touch services other than `ha-kake`, do not use
+   (`setenforce`), do not touch services other than `vehicletap`, do not use
    `--privileged`, do not publish ports beyond loopback, and do not install
    packages: a minimal board may lack `ss`, `ip`, `free` or `uptime`, so the
    commands below fall back to `/proc` and `/sys`.
@@ -57,7 +61,7 @@ CAN bus.
 On the machine you work from (not necessarily a board):
 
 ```bash
-git fetch origin && git switch feature/container-quadlet && git pull
+git fetch origin && git switch main && git pull
 ```
 
 Commands below say "on the board". Run them over `ssh` if you are not on it.
@@ -122,11 +126,11 @@ Either route works; record which you used and how long it took.
 with qemu binfmt (`docker buildx ls` lists `linux/arm64`):
 
 ```bash
-docker buildx build --platform linux/arm64 -f Containerfile -t localhost/ha-kake --load .
-docker save -o /tmp/ha-kake.tar localhost/ha-kake
-scp /tmp/ha-kake.tar deploy/quadlet/ha-kake.container deploy/quadlet/ha-kake.volume <user>@<board>:
+docker buildx build --platform linux/arm64 -f Containerfile -t localhost/vehicletap --load .
+docker save -o /tmp/vehicletap.tar localhost/vehicletap
+scp /tmp/vehicletap.tar deploy/quadlet/vehicletap.container deploy/quadlet/vehicletap.volume <user>@<board>:
 # then, on the board (this lands in <user>'s home directory):
-sudo podman load -i ha-kake.tar
+sudo podman load -i vehicletap.tar
 ```
 
 Do not pipe the archive into `ssh ... sudo podman load`: `sudo` needs a terminal
@@ -135,19 +139,19 @@ passwordless. The two unit files are copied in the same step because Phase 3
 installs them from the board. Save the archive under `/tmp`, not in the checkout
 (about 200 MB, and not git-ignored).
 
-Use `podman build --platform linux/arm64 -t localhost/ha-kake .` instead of
+Use `podman build --platform linux/arm64 -t localhost/vehicletap .` instead of
 docker if that is what you have. The `localhost/` prefix is required: it makes
-the image `localhost/ha-kake:latest`, the name `ha-kake.container` uses.
+the image `localhost/vehicletap:latest`, the name `vehicletap.container` uses.
 
 **B. Build on the board** (needs the registry and PyPI):
-`sudo podman build -t localhost/ha-kake .` from a checkout (the unit files are
+`sudo podman build -t localhost/vehicletap .` from a checkout (the unit files are
 then in that checkout, under `deploy/quadlet/`).
 
 Then, on the board:
 
 ```bash
-sudo podman images localhost/ha-kake
-sudo podman image inspect localhost/ha-kake --format '{{.Architecture}} {{.Size}}'   # architecture must equal uname -m
+sudo podman images localhost/vehicletap
+sudo podman image inspect localhost/vehicletap --format '{{.Architecture}} {{.Size}}'   # architecture must equal uname -m
 ```
 
 ### Phase 2: run by hand
@@ -155,28 +159,28 @@ sudo podman image inspect localhost/ha-kake --format '{{.Architecture}} {{.Size}
 These are the flags the Quadlet generator produces, run directly.
 
 ```bash
-sudo podman volume create ha-kake-data
-sudo podman run -d --name ha-kake --replace --network host --security-opt=no-new-privileges \
-    --cap-drop all --read-only -v ha-kake-data:/data --env HAKAKE_DATA_DIR=/data \
-    localhost/ha-kake:latest python web/app.py --adapter sim
+sudo podman volume create vehicletap-data
+sudo podman run -d --name vehicletap --replace --network host --security-opt=no-new-privileges \
+    --cap-drop all --read-only -v vehicletap-data:/data --env VEHICLETAP_DATA_DIR=/data \
+    localhost/vehicletap:latest python web/app.py --adapter sim
 
 # how long until it answers (the laptop under qemu answered within 25 s)
-t0=$(date +%s); until sudo podman exec ha-kake python -c "import urllib.request as u;u.urlopen('http://127.0.0.1:5000/api/status',timeout=2)" 2>/dev/null; do sleep 1; done; echo "ready after $(( $(date +%s)-t0 )) s"
+t0=$(date +%s); until sudo podman exec vehicletap python -c "import urllib.request as u;u.urlopen('http://127.0.0.1:5000/api/status',timeout=2)" 2>/dev/null; do sleep 1; done; echo "ready after $(( $(date +%s)-t0 )) s"
 ```
 
 Then check each and record the output:
 
 ```bash
-sudo podman logs ha-kake | head -20                       # expect "SIMULATOR MODE" and "data folder: /data"
+sudo podman logs vehicletap | head -20                       # expect "SIMULATOR MODE" and "data folder: /data"
 for p in 5000/ 5000/sim 5000/api/status 8099/sim/schema; do
-  sudo podman exec ha-kake python -c "import urllib.request as u;print('$p', u.urlopen('http://127.0.0.1:$p',timeout=5).status)"; done
+  sudo podman exec vehicletap python -c "import urllib.request as u;print('$p', u.urlopen('http://127.0.0.1:$p',timeout=5).status)"; done
 listening                                                 # on the BOARD host: both must be 127.0.0.1 only
-sudo podman run --rm -v ha-kake-data:/data --entrypoint sh localhost/ha-kake:latest -c 'ls -ln /data'   # files owned by uid 1001, gid 0
-sudo podman exec ha-kake sh -c 'touch /app/x' 2>&1        # expect "Read-only file system"
-sudo podman exec ha-kake sh -c 'grep CapEff /proc/self/status'   # expect all zeros
-time sudo podman stop ha-kake; sudo podman inspect ha-kake --format '{{.State.ExitCode}}'   # expect 143
-sudo podman start ha-kake; sleep 12; sudo podman logs ha-kake 2>&1 | grep -E "store:.*readings"   # N > 0: data survived
-sudo podman rm -f ha-kake
+sudo podman run --rm -v vehicletap-data:/data --entrypoint sh localhost/vehicletap:latest -c 'ls -ln /data'   # files owned by uid 1001, gid 0
+sudo podman exec vehicletap sh -c 'touch /app/x' 2>&1        # expect "Read-only file system"
+sudo podman exec vehicletap sh -c 'grep CapEff /proc/self/status'   # expect all zeros
+time sudo podman stop vehicletap; sudo podman inspect vehicletap --format '{{.State.ExitCode}}'   # expect 143
+sudo podman start vehicletap; sleep 12; sudo podman logs vehicletap 2>&1 | grep -E "store:.*readings"   # N > 0: data survived
+sudo podman rm -f vehicletap
 ```
 
 The line that matters most: `listening` **on the board host**. If it shows
@@ -188,7 +192,7 @@ network namespace, and Phase 4 will fail for that reason.
 Start from a clean slate so the volume is created by the unit:
 
 ```bash
-sudo podman rm -f ha-kake; sudo podman volume rm ha-kake-data
+sudo podman rm -f vehicletap; sudo podman volume rm vehicletap-data
 ```
 
 Find the units directory from Phase 0 (`/etc/containers/systemd/` unless QM
@@ -197,35 +201,35 @@ files: your home directory after route A, `deploy/quadlet/` in the checkout afte
 route B.
 
 ```bash
-sudo cp ha-kake.container ha-kake.volume /etc/containers/systemd/
+sudo cp vehicletap.container vehicletap.volume /etc/containers/systemd/
 sudo /usr/libexec/podman/quadlet -dryrun                  # or: /usr/lib/systemd/system-generators/podman-system-generator --dryrun
 sudo systemctl daemon-reload
-systemctl cat ha-kake | head -40                          # the generated unit; expect --network host --read-only --cap-drop all
-sudo systemctl start ha-kake; sleep 15
-systemctl status ha-kake --no-pager; journalctl -u ha-kake -n 40 --no-pager
-systemctl is-enabled ha-kake                              # a Quadlet unit with [Install] reports "generated"
+systemctl cat vehicletap | head -40                          # the generated unit; expect --network host --read-only --cap-drop all
+sudo systemctl start vehicletap; sleep 15
+systemctl status vehicletap --no-pager; journalctl -u vehicletap -n 40 --no-pager
+systemctl is-enabled vehicletap                              # a Quadlet unit with [Install] reports "generated"
 ```
 
 Re-run the Phase 2 endpoint, `listening`, volume and read-only checks against
-this container (it is also named `ha-kake`). Then the lifecycle, recording the
-exact states each time (`systemctl show ha-kake -p ActiveState -p SubState -p Result -p NRestarts`):
+this container (it is also named `vehicletap`). Then the lifecycle, recording the
+exact states each time (`systemctl show vehicletap -p ActiveState -p SubState -p Result -p NRestarts`):
 
 ```bash
-sudo systemctl stop ha-kake;  systemctl is-failed ha-kake     # expect inactive, NOT failed (SuccessExitStatus=143)
-sudo systemctl start ha-kake; sleep 10
-sudo podman kill ha-kake;     sleep 12; systemctl show ha-kake -p ActiveState -p NRestarts   # SIGKILL: expect restarted (Restart=on-failure, RestartSec=5)
-sudo podman kill --signal TERM ha-kake; sleep 12; systemctl show ha-kake -p ActiveState -p Result -p NRestarts   # observe; I did not predict whether a TERM is restarted
+sudo systemctl stop vehicletap;  systemctl is-failed vehicletap     # expect inactive, NOT failed (SuccessExitStatus=143)
+sudo systemctl start vehicletap; sleep 10
+sudo podman kill vehicletap;     sleep 12; systemctl show vehicletap -p ActiveState -p NRestarts   # SIGKILL: expect restarted (Restart=on-failure, RestartSec=5)
+sudo podman kill --signal TERM vehicletap; sleep 12; systemctl show vehicletap -p ActiveState -p Result -p NRestarts   # observe; I did not predict whether a TERM is restarted
 ```
 
 **Reboot test (ask the user first):** reboot the board and check the unit came
-up by itself (`systemctl status ha-kake`, then the endpoint check).
+up by itself (`systemctl status vehicletap`, then the endpoint check).
 
 **SELinux:** after the unit has run for a minute, look for denials and record
 them whether or not anything broke. Do not change the mode.
 
 ```bash
 sudo ausearch -m avc -ts recent 2>/dev/null | tail -20 || sudo journalctl -k --no-pager | grep -i avc | tail -20
-sudo ls -dZ $(sudo podman volume inspect ha-kake-data --format '{{.Mountpoint}}')
+sudo ls -dZ $(sudo podman volume inspect vehicletap-data --format '{{.Mountpoint}}')
 ```
 
 ### Phase 4: reach the page
@@ -256,9 +260,9 @@ record that you had to.
 With the unit running, record at 1, 5 and 15 minutes:
 
 ```bash
-sudo podman stats --no-stream ha-kake || sudo podman exec ha-kake sh -c 'grep -H VmRSS /proc/[0-9]*/status'
+sudo podman stats --no-stream vehicletap || sudo podman exec vehicletap sh -c 'grep -H VmRSS /proc/[0-9]*/status'
 cat /proc/loadavg
-sudo podman exec ha-kake python -c "
+sudo podman exec vehicletap python -c "
 import sqlite3, os
 c = sqlite3.connect('file:/data/sim_leaf_ze0.db?mode=ro', uri=True)
 print('readings', c.execute('select count(*) from readings').fetchone()[0],
@@ -269,7 +273,7 @@ print('readings', c.execute('select count(*) from readings').fetchone()[0],
 Compute rows per minute from the counts; the byte figure includes a write-ahead
 log that grows in steps, so trust the row counts and the later samples more than
 the early byte counts. Also record `df -h` for the volume's filesystem and
-`sudo du -sh $(sudo podman volume inspect ha-kake-data --format '{{.Mountpoint}}')`.
+`sudo du -sh $(sudo podman volume inspect vehicletap-data --format '{{.Mountpoint}}')`.
 This replaces the "about 90 MB a day, derived" figure in `docs/CONTAINER.md`
 with a measured one.
 
@@ -293,13 +297,29 @@ whether each one is hardware. Do nothing else.
 Unless the user says to keep them:
 
 ```bash
+sudo systemctl stop vehicletap
+sudo rm /etc/containers/systemd/vehicletap.container /etc/containers/systemd/vehicletap.volume   # or the QM directory you used
+sudo systemctl daemon-reload
+sudo podman rm -f vehicletap; sudo podman volume rm vehicletap-data
+sudo podman rmi localhost/vehicletap                         # ask first if the other board will reuse it from here
+listening || echo "ports free again"
+```
+
+**The J7 is the exception.** It was set up with the names from before the rename,
+so the block above would find nothing there. Look first (`systemctl list-units
+'*kake*'`, `sudo podman ps -a`, `sudo podman volume ls`, `sudo podman images`),
+and remove only what the test created:
+
+```bash
 sudo systemctl stop ha-kake
 sudo rm /etc/containers/systemd/ha-kake.container /etc/containers/systemd/ha-kake.volume   # or the QM directory you used
 sudo systemctl daemon-reload
 sudo podman rm -f ha-kake; sudo podman volume rm ha-kake-data
-sudo podman rmi localhost/ha-kake                         # ask first if the other board will reuse it from here
-listening || echo "ports free again"
+sudo podman rmi localhost/ha-kake                         # ask first if the x5h will reuse it from here
 ```
+
+Also remove what was copied onto the board (the image archive and the two unit
+files, in your home directory or `/var/tmp`, whichever you used).
 
 Close any `ssh -N -L` tunnels you opened.
 
@@ -326,7 +346,9 @@ suggested diff, not applied), and **what you did not get to**.
 
 ## Baselines from the x86 laptop
 
-So that a difference stands out. All amd64 unless stated.
+So that a difference stands out. All amd64 unless stated. Measured before the
+rename: the last two rows show the names as they were, where the board now gets
+`vehicletap`.
 
 | Thing | Laptop |
 |---|---|

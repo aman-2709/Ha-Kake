@@ -27,6 +27,8 @@ WHOLE_FILE = {
     "elm327.py": "replay files recorded before the rename carry the old key",
     "docs/DATA.md": "explains the old folder and variable",
     "docs/REPLAY.md": "explains the old replay key",
+    "docs/CONTAINER_HARDWARE_TEST.md": "the J7 was set up before the rename, so its cleanup names the old unit, "
+                                       "image and volume; the laptop baseline rows record the old names",
     "tests/test_util_env.py": "tests the old-name twin",
     "tests/test_datadir.py": "tests the old folder and variable",
     "tests/test_legacy_env_names.py": "tests the old variable names at the real readers",

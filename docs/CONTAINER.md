@@ -175,6 +175,8 @@ the service and reset the volume now and then, or watch `du` on the volume.
 | SIGTERM | stops in 0.15 s, exit **143** (the app exits 128+signal), so the unit sets `SuccessExitStatus=143` | amd64 image |
 | **A real TDA4 running RHIVOS** | **not tried** | its Podman version, SELinux policy and writable `/etc`, systemd actually running the unit, and an SSH tunnel to a real browser are all untested |
 
+The plan for trying it on a board is [CONTAINER_HARDWARE_TEST.md](CONTAINER_HARDWARE_TEST.md).
+
 Re-run the Quadlet check after editing the units:
 
 ```bash
