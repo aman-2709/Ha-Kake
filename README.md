@@ -73,7 +73,7 @@ A sincere thank you to David for the time, effort, and dedication he has put int
 > not a substitute for a mechanic, and nothing here should be your only
 > evidence for a repair, a purchase or a decision to keep driving.
 
-![VehicleTap dashboard — a real 2012 Leaf, 35% state of health, read over BLE](docs/img/dashboard.png)
+![VehicleTap dashboard in demo mode — the canned data of a 2012 Leaf at 35% state of health](docs/img/dashboard.png)
 
 ## What it is, and what it is not
 
