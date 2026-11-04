@@ -1,0 +1,20 @@
+{
+  "systemctl_show": {
+    "esync": "NRestarts=0\nLoadState=loaded\nActiveState=active\nSubState=running\nActiveEnterTimestampMonotonic=52715896\n",
+    "candump": "NRestarts=0\nLoadState=loaded\nActiveState=active\nSubState=running\nActiveEnterTimestampMonotonic=38779273\n",
+    "cangen": "NRestarts=0\nLoadState=loaded\nActiveState=active\nSubState=running\nActiveEnterTimestampMonotonic=38771612\n",
+    "nosuchunit": "NRestarts=0\nLoadState=not-found\nActiveState=inactive\nSubState=dead\nActiveEnterTimestampMonotonic=0\n"
+  },
+  "selinux_enforce": "1\n",
+  "ntp": "NTPSynchronized=yes\n",
+  "kernel": "6.12.0-251.el10iv.aarch64",
+  "monotonic": 15078.653690087,
+  "boottime": 15078.653762488,
+  "time": 1793159892.2915993,
+  "statvfs": {
+    "f_frsize": 4096,
+    "f_blocks": 7553536,
+    "f_bfree": 5755224,
+    "f_bavail": 5424121
+  }
+}

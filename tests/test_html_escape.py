@@ -48,11 +48,13 @@ def test_html_esc_turns_markup_characters_into_entities():
     assert out[5] is True
 
 
-def test_html_js_loads_first_on_both_pages():
+def test_html_js_loads_first_on_every_page():
     index, sim = read(TEMPLATES, "index.html"), read(TEMPLATES, "sim.html")
     assert index.index('src="/static/html.js"') < index.index('src="/static/pack_layout.js"')
     assert index.index('src="/static/html.js"') < index.index('src="/static/tilestudio.js"')
     assert sim.index('src="/static/html.js"') < sim.index('src="/static/alerts.js"')
+    ota = read(TEMPLATES, "ota.html")
+    assert ota.index('src="/static/html.js"') < ota.index('src="/static/ota.js"')
 
 
 # ── tile renderers: numbers only ─────────────────────────────────────────
@@ -141,7 +143,7 @@ def test_no_innerhtml_template_interpolates_a_bare_title_or_label():
     to innerHTML in these files interpolates .title / .label / .name unescaped."""
     risky = re.compile(r"\$\{\s*[A-Za-z_.]*\.(title|label|name)\b[^}]*\}")
     for path in (os.path.join(STATIC, "tilestudio.js"), os.path.join(STATIC, "pack3d.js"),
-                 os.path.join(TEMPLATES, "index.html")):
+                 os.path.join(STATIC, "ota.js"), os.path.join(TEMPLATES, "index.html")):
         src = read(path)
         for m in re.finditer(r"innerHTML\s*=\s*`([^`]*)`", src):
             for hit in risky.finditer(m.group(1)):

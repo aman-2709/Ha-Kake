@@ -33,6 +33,7 @@ The startup banner prints the folder in use (`data folder: …`). The folder is 
 | `bookmarks.json` | timeline flags you dropped | no, unless you do not need them |
 | `calibration.json` | per-car offsets (for example the current-sensor zero) | no, unless you will recalibrate |
 | `console.jsonl`, `reader.pause` | the raw console's window; the pause flag | yes |
+| `ota_status.json` | the board's OS-update status, written by a process on the host ([OTA.md](OTA.md)) | yes, the exporter rewrites it |
 | `replay_*.db`, `sim_*.db` (and `*_state.json`) | replay and simulator runs, kept apart from real readings | yes, disposable |
 
 ## Moving an older install's data
