@@ -29,11 +29,37 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "web"))
 
 from simulator import history                                   # noqa: E402
+import store as store_module                                    # noqa: E402
 from store import Store                                         # noqa: E402
 import vehicles.leaf_ze0 as leaf                                 # noqa: E402
 
 DAYS = 6
 END = dt.datetime(2026, 6, 1, 18, 0, 0)      # fixed, so the tests are not seasonal
+
+
+class FrozenClock:
+    """Stands in for the `datetime` module inside web/store.py, with `datetime.now()` fixed.
+
+    `Store.history(minutes=None)` buckets from the first row to the wall-clock now. This module's database ends
+    on a fixed day, so every day that passes makes the buckets wider and their count smaller, and a test that
+    counts them stops passing on the day the count reaches its threshold (it did, in November 2026).
+    `calls` lets a test check that the stand-in was really read, so a later rewrite of history() that reads
+    the clock another way fails loudly instead of quietly going back to the real clock."""
+
+    def __init__(self, now):
+        self.calls = 0
+        clock = self
+
+        class FrozenDatetime(dt.datetime):
+            @classmethod
+            def now(cls, tz=None):
+                clock.calls += 1
+                return now.astimezone(tz) if tz else now.replace(tzinfo=None)
+
+        self.datetime = FrozenDatetime
+
+    def __getattr__(self, name):             # timezone, timedelta and the rest are the real ones
+        return getattr(dt, name)
 
 
 @pytest.fixture(scope="module")
@@ -74,13 +100,17 @@ def test_the_columns_the_charts_query_are_populated(generated):
     assert not empty, f"never populated: {empty}"
 
 
-def test_history_and_health_routes_have_something_to_draw(generated):
+def test_history_and_health_routes_have_something_to_draw(generated, monkeypatch):
     _, store = generated
-    # NB: Store.history() buckets from the first row to *wall-clock now*, and
-    # this fixture's END is deliberately in the past, so the bucket count is
-    # smaller than it would be for a database generated with the default
-    # end-of-period (now). What matters here is that every bucket is drawable.
+    # Store.history() buckets from the first row to *now*. Pin now to the moment the data ends, as it is for a
+    # database that was just generated with the default end-of-period; against the real clock the bucket
+    # count shrinks every day this fixture's fixed END falls further into the past. What matters here is that
+    # every bucket is drawable.
+    last = store.conn.execute("SELECT MAX(ts_epoch) FROM readings").fetchone()[0]
+    clock = FrozenClock(dt.datetime.fromtimestamp(last, dt.timezone.utc))
+    monkeypatch.setattr(store_module, "dt", clock)
     hist = store.history(minutes=None, max_points=800)
+    assert clock.calls, "history() no longer reads the clock through store.dt, so it is not pinned"
     assert len(hist) > 30
     assert all("t" in h and h.get("soc") is not None for h in hist)
     assert [h["t"] for h in hist] == sorted(h["t"] for h in hist)
