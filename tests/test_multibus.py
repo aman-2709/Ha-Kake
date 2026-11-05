@@ -415,6 +415,13 @@ def test_resolver_stale_and_disagreement_and_decoded_keys():
 
 def test_leaf_current_is_resolved_beside_the_reported_value_and_disagreement_is_an_event(env, monkeypatch):
     tmp_path, store = env
+    # lbc01 and lbc05 are polled one after the other in the same cycle, a few ms apart, and the resolver sees
+    # their ages rounded to 1 ms, so which of the two is "the fresher" is noise (it went the other way about one
+    # run in thirty, and every assertion below names lbc01 first). Give lbc01 the smaller age; the rule itself,
+    # with fixed ages, is test_resolver_precedence.
+    resolve = rd.resolve_sources
+    monkeypatch.setattr(rd, "resolve_sources", lambda specs, cache, ages, *a, **k:
+                        resolve(specs, cache, {**ages, "lbc01": 0.0, "lbc05": 1.0}, *a, **k))
     r = rd.Reader(interval=0, adapter_pref=None, store=store, budget=100)
     elm = FakeBusELM("car", "Car 1")
     rec, _ = run(r.poll_once(elm))                                     # lbc01 + lbc05 both polled on the first cycle
